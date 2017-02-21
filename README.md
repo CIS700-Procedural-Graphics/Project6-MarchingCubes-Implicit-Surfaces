@@ -98,5 +98,7 @@ Interesting shader materials beyond just the provided threejs materials. We enco
 - Create a [pull request](https://help.github.com/articles/creating-a-pull-request/) to this repository, and in the comment, include a link to your published project.
 - Submit the link to your pull request on Canvas.
 
-
-
+## Deploy
+- `npm run build`
+- Add and commit all changes
+- `npm run deploy`
