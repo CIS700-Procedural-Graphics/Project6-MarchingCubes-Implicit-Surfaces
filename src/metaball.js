@@ -41,6 +41,17 @@ export default class Metaball {
   };
 
   update() {
-    // @TODO
+    var date = new Date();
+    var velocity = new THREE.Vector3();
+    velocity.copy(this.vel);
+    this.pos.add(velocity);
+
+    var x = (this.pos.x + this.radius) > this.gridWidth || (this.pos.x + this.radius) < 0;
+    var y = (this.pos.y + this.radius) > this.gridWidth || (this.pos.y + this.radius) < 0;
+    var z = (this.pos.z + this.radius) > this.gridWidth || (this.pos.z + this.radius) < 0;
+    if (x || y || z) {
+      this.vel.multiplyScalar(-1);
+    }
+    this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
   }
 }
