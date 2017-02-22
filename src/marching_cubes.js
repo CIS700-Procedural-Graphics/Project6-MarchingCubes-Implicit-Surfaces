@@ -147,7 +147,6 @@ export default class MarchingCubes {
       var ball = new Metaball(pos, radius, vel, this.gridWidth, VISUAL_DEBUG);
       balls.push(ball);
       
-      
       if (VISUAL_DEBUG) {
         this.scene.add(ball.mesh);
       }
@@ -219,6 +218,8 @@ export default class MarchingCubes {
     // @TODO
     this.geo = new THREE.Geometry();
     this.mesh = new THREE.Mesh(this.geo, LAMBERT_WHITE);
+    this.mesh.geometry.dynamic = true;
+    this.scene.add(this.mesh);
   }
 
   updateMesh() {
@@ -391,20 +392,20 @@ class Voxel {
     var allVert = 0;
     for (var i = 0; i < 8; i ++) {
       if (this.corners[i].isovalue > isolevel) {
-        allVert = allVert | corner;
+        allVert |= corner;
       }
       corner = corner << 1;
     }
 
-    if (allVert == 0) {
+    if (allVert != 0) {
       // get intersected edges
       var edges = LUT.EDGE_TABLE[allVert];
 
       // get 12 points
-      var points = this.edgePoints(edges);
+      var points = this.edgePoints(edges, isolevel);
 
       for (var j = 0; j < 16; j ++) {
-        var tri = LUT.TRI_TABLE[edges + j];
+        var tri = LUT.TRI_TABLE[allVert*16 + j];
         if (tri < 0) break;
         var vertex = points[tri];
         vertexList.push(vertex);
