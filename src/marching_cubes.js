@@ -27,12 +27,12 @@ function sample(point) {
 
 export default class MarchingCubes {
 
-  constructor(App) {      
+  constructor(App) {
     this.init(App);
   }
 
   init(App) {
-    this.isPaused = false;    
+    this.isPaused = false;
     VISUAL_DEBUG = App.config.visualDebug;
 
     // Initializing member variables.
@@ -120,7 +120,7 @@ export default class MarchingCubes {
         this.scene.add(voxel.wireframe);
         this.scene.add(voxel.mesh);
       }
-    }    
+    }
   }
 
   setupMetaballs() {
@@ -132,21 +132,21 @@ export default class MarchingCubes {
 
     // Randomly generate metaballs with different sizes and velocities
     for (var i = 0; i < this.numMetaballs; i++) {
-      x = this.gridWidth / 2;    
-      y = this.gridWidth / 2;    
-      z = this.gridWidth / 2;    
+      x = this.gridWidth / 2;
+      y = this.gridWidth / 2;
+      z = this.gridWidth / 2;
       pos = new THREE.Vector3(x, y, z);
-      
+
       vx = (Math.random() * 2 - 1) * this.maxSpeed;
       vy = (Math.random() * 2 - 1) * this.maxSpeed;
       vz = (Math.random() * 2 - 1) * this.maxSpeed;
       vel = new THREE.Vector3(vx, vy, vz);
-      
+
       radius = Math.random() * (this.maxRadius - this.minRadius) + this.minRadius;
 
       var ball = new Metaball(pos, radius, vel, this.gridWidth, VISUAL_DEBUG);
       balls.push(ball);
-      
+
       if (VISUAL_DEBUG) {
         this.scene.add(ball.mesh);
       }
@@ -216,8 +216,8 @@ export default class MarchingCubes {
 
   makeMesh() {
     // @TODO
-    this.geo = new THREE.Geometry();
-    this.mesh = new THREE.Mesh(this.geo, LAMBERT_WHITE);
+    var geo = new THREE.Geometry();
+    this.mesh = new THREE.Mesh(geo, LAMBERT_WHITE);
     this.mesh.geometry.dynamic = true;
     this.scene.add(this.mesh);
   }
@@ -226,18 +226,26 @@ export default class MarchingCubes {
     // @TODO
     var vertices = [];
     var normals = [];
+    var faces = [];
+    var count = 0;
     for (var i = 0; i < this.res3; i ++) {
       var vANDn = this.voxels[i].polygonize(this.isolevel);
-      for (var j = 0; j < vANDn.vertPositions.length; j ++) {
-        vertices.push(vANDn.vertPositions[j]);
-        normals.push(vANDn.vertNormals[j]);
+      for (var j = 0; j < vANDn.vertPositions.length/3; j ++) {
+        for (var k = 0; k < 3; k ++) {
+          vertices.push(vANDn.vertPositions[k*j]);
+          normals.push(vANDn.vertNormals[k*j]);
+          count++;
+        }
+        faces.push(new THREE.Face3(count - 3, count - 2, count - 1));
       }
     }
-    this.geo.vertices = vertices;
-    this.geo.normals = normals;
-    this.geo.verticesNeedUpdate = true;
-    this.geo.normalsNeedUpdate = true;
-  }  
+    this.mesh.geometry.vertices = vertices;
+    this.mesh.geometry.normals = normals;
+    this.mesh.geometry.faces = faces;
+    this.mesh.geometry.verticesNeedUpdate = true;
+    this.mesh.geometry.normalsNeedUpdate = true;
+    this.mesh.geometry.elementsNeedUpdate = true;
+  }
 };
 
 // ------------------------------------------- //
@@ -256,8 +264,8 @@ class Voxel {
     if (VISUAL_DEBUG) {
       this.makeMesh();
     }
-    
-    this.makeInspectPoints();      
+
+    this.makeInspectPoints();
   }
 
   makeMesh() {
@@ -386,6 +394,7 @@ class Voxel {
 
     var vertexList = [];
     var normalList = [];
+    var faceList = [];
 
     // get corner vertices that are inside metaballs
     var corner = 1;
@@ -402,21 +411,21 @@ class Voxel {
       var edges = LUT.EDGE_TABLE[allVert];
 
       // get 12 points
-      var points = this.edgePoints(edges, isolevel);
+            var points = this.edgePoints(edges, isolevel);
 
-      for (var j = 0; j < 16; j ++) {
-        var tri = LUT.TRI_TABLE[allVert*16 + j];
-        if (tri < 0) break;
-        var vertex = points[tri];
-        vertexList.push(vertex);
-        normalList.push(this.getNormal(vertex));
+            for (var j = 0; j < 16; j ++) {
+              var tri = LUT.TRI_TABLE[allVert*16 + j];
+              if (tri < 0) break;
+              var vertex = points[tri];
+              vertexList.push(vertex);
+              normalList.push(this.getNormal(vertex));
+            }
+          }
+
+
+          return {
+            vertPositions: vertexList,
+            vertNormals: normalList
+          };
+        };
       }
-    }
-
-
-    return {
-      vertPositions: vertexList,
-      vertNormals: normalList
-    };
-  };
-}
