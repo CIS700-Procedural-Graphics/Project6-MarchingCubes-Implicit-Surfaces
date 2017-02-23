@@ -144,9 +144,23 @@ export default class MarchingCubes {
   // Implement a function that returns the value of the all metaballs influence to a given point.
   // Please follow the resources given in the write-up for details.
   sample(point) {
-    // @TODO
-    var isovalue = 1.1;
-    return isovalue;
+    // f(pointInfluence) = (r^2)/d^2;
+    
+    var isoVal = 0.0;
+    for (var i = 0; i < this.numMetaballs; i++) {
+      var ball = this.balls[i];
+
+      var xD = ball.pos.x - point.x;
+      var yD = ball.pos.y - point.y;
+      var zD = ball.pos.z - point.z;
+
+      var dist = Math.sqrt(xD * xD + yD * yD + zD * zD);
+      var rad = ball.radius;
+      isoVal += (rad * rad) / (dist * dist);
+    }
+
+    // note: sum must be > 1.0 to show up
+    return isoVal;
   }
 
   update() {

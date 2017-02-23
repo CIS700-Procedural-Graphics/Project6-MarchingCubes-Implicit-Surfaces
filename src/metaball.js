@@ -48,7 +48,7 @@ export default class Metaball {
 
   update() {
 
-    // @TODO - make the meatball move 
+    // make the meatball move 
     /********************************************************************************************************/
     // move its position based velocity. Reverse the velocity whenever the metaball goes out of bounds.
     // Since the metaball function is not well defined at the boundaries, maintain an additional small margin
@@ -67,13 +67,12 @@ export default class Metaball {
     // checking bounds with new pos
     var min = 0.0 + marginBeforeBounds;
     var max = 10.0 - marginBeforeBounds;
-    //console.log(newPos);
 
     // within?
     var within = (newPos.x > min && newPos.x < max)
                   && (newPos.y > min && newPos.y < max)
                   && (newPos.z > min && newPos.z < max);
-    //console.log("updated velocity from : " + this.vel.x + "," + this.vel.y + "," + this.vel.z);
+
     if (!within) {
       this.vel.x *= -1.0;
       this.vel.y *= -1.0;
