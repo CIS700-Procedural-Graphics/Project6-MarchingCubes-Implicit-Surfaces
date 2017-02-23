@@ -65,22 +65,23 @@ export default class Metaball {
     // if (!boolFirst) { return; } else { boolFirst = false; } // <-- used for testing updates so one iter
 
     // checking bounds with new pos
-    var within = true;
-    for (var i = 0; i < 3; i++) {
-      if (newPos[i] > 4*10 - marginBeforeBounds || newPos[i] < 0 + marginBeforeBounds) {
-        within = false;
-      }
-    }
-    // console.log("WITHIN: " + within);
-    
-    /// NOTE: SHOULD SWAP VELO OF COMPONENTS THAT ARE WRONG NOT WHOLE VELO ENTIRELY?
+    var min = 0.0 + marginBeforeBounds;
+    var max = 10.0 - marginBeforeBounds;
+    //console.log(newPos);
 
+    // within?
+    var within = (newPos.x > min && newPos.x < max)
+                  && (newPos.y > min && newPos.y < max)
+                  && (newPos.z > min && newPos.z < max);
+    //console.log("updated velocity from : " + this.vel.x + "," + this.vel.y + "," + this.vel.z);
     if (!within) {
-      this.vel *= -1.0;
+      this.vel.x *= -1.0;
+      this.vel.y *= -1.0;
+      this.vel.z *= -1.0;
     } else {
       this.pos = newPos;
       this.updateMeshPos();
-      console.log("this.pos: " + this.pos.x + "," + this.pos.y + "," + this.pos.z);
     }
   }
-}
+
+}//end: Metaball class
