@@ -55,7 +55,7 @@ export default class Metaball {
     // so that the metaball can reverse its moving direction before reaching the bounds.
     /********************************************************************************************************/
 
-    var marginBeforeBounds = 0.5 + this.radius;
+    var marginBeforeBounds = 0.1 + this.radius;
     var newPos = new THREE.Vector3(0.0, 0.0, 0.0);
 
     newPos = new THREE.Vector3(this.vel.x + this.pos.x,

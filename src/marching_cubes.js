@@ -57,6 +57,10 @@ export default class MarchingCubes {
 
     this.setupCells();
     this.setupMetaballs();
+
+    // -HB : added to calc samples at corners
+    this.calcAllVoxelSamples();
+
     this.makeMesh();
   };
 
@@ -140,12 +144,49 @@ export default class MarchingCubes {
     }
   }
 
+  // -HB
+  // performed for each voxel
+  calcAllVoxelSamples() {
+    /********************************************************************************************************/
+    // In order to polygonize a voxel, generate new samples at each corner of the voxel. Their isovalues must
+    // be updated as the metaball function changes due of metaballs moving.
+    /********************************************************************************************************/
+
+    for (var i = 0; i < this.voxels.length; i++) {
+      var c = new THREE.Vector3(0.0, 0.0, 0.0);
+      c = this.voxels[i].pos;
+      var hW = this.gridCellWidth / 2.0;
+
+      var allPoints = new Array();
+
+      var cx = c.x;
+      var cy = c.y;
+      var cz = c.z;
+      allPoints.push( new THREE.Vector3(cx-hW, cy-hW, cz+hW), // bottom face: 0, 1, 2, 3
+                      new THREE.Vector3(cx+hW, cy-hW, cz+hW),
+                      new THREE.Vector3(cx+hW, cy-hW, cz-hW),
+                      new THREE.Vector3(cx-hW, cy-hW, cz-hW),
+                      new THREE.Vector3(cx-hW, cy+hW, cz+hW), // top face: 4, 5, 6, 7
+                      new THREE.Vector3(cx+hW, cy+hW, cz+hW),
+                      new THREE.Vector3(cx+hW, cy+hW, cz-hW),
+                      new THREE.Vector3(cx-hW, cy+hW, cz-hW));
+
+      var samp = new Array();
+
+      for (var j = 0; j < allPoints.length; j++) {
+        samp.push(this.sample(allPoints[j]));
+      }
+
+      this.voxels[i].samples = samp;
+    }
+  }
+
   // This function samples a point from the metaball's density function
   // Implement a function that returns the value of the all metaballs influence to a given point.
   // Please follow the resources given in the write-up for details.
   sample(point) {
     // f(pointInfluence) = (r^2)/d^2;
-    
+
     var isoVal = 0.0;
     for (var i = 0; i < this.numMetaballs; i++) {
       var ball = this.balls[i];
@@ -193,6 +234,9 @@ export default class MarchingCubes {
         this.voxels[c].center.clearLabel();
       }
     }
+
+    // -HB : added to calc samples at corners
+    this.calcAllVoxelSamples();
 
     this.updateMesh();
   }
@@ -244,7 +288,16 @@ class Voxel {
       this.makeMesh();
     }
     
-    this.makeInspectPoints();      
+    this.makeInspectPoints(); 
+
+    //-HB: added to be the sample value at each corner
+    // to initialize: filling with 8 items so array.length is 8
+    this.samples = new Array();
+    for (var i = 0; i < 8; i++) {
+      this.samples.push(0.0);
+    } 
+    // this.calcSamplesAtCorners(); // to actually fill with approp values
+    // console.log("samples[0] changed to: " + this.samples[0]);     
   }
 
   makeMesh() {
@@ -265,9 +318,9 @@ class Voxel {
     ]);
 
     var indices = new Uint16Array([
-      0, 1, 2, 3,
-      4, 5, 6, 7,
-      0, 7, 7, 4,
+      0, 1, 2, 3, 
+      4, 5, 6, 7, 
+      0, 7, 7, 4,  
       4, 3, 3, 0,
       1, 6, 6, 5,
       5, 2, 2, 1
