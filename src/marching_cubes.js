@@ -1,4 +1,5 @@
 const THREE = require('three');
+import {fireTexture} from './shaders/textures'
 
 import Metaball from './metaball.js';
 import InspectPoint from './inspect_point.js'
@@ -6,7 +7,39 @@ import LUT from './marching_cube_LUT.js';
 var VISUAL_DEBUG = true;
 var episolon = 0.1;
 var balls = [];
+var fire;
 
+var options = {
+    lightColor: '#ffffff',
+    lightIntensity: 1,
+    ambient: '#111111',
+    texture: null
+}
+
+var mat = {
+  uniforms: {
+    texture: {
+      type: "t",
+      value: null
+    },
+    u_ambient: {
+      type: 'v3',
+      value: new THREE.Color(options.ambient)
+    },
+    u_lightCol: {
+      type: 'v3',
+      value: new THREE.Color(options.lightColor)
+    },
+    u_lightIntensity: {
+      type: 'f',
+      value: options.lightIntensity
+    }
+  },
+  vertexShader: require('./shaders/litsphere-vert.glsl'),
+  fragmentShader: require('./shaders/litsphere-frag.glsl')
+};
+
+const LIT_SPHERE = new THREE.ShaderMaterial(mat);
 const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparent: true, opacity: 0.5 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
@@ -64,6 +97,10 @@ export default class MarchingCubes {
     this.showSpheres = true;
     this.showGrid = true;
 
+    fireTexture.then(function(texture) {
+        mat.uniforms.texture.value = texture;
+    });
+
     if (App.config.material) {
       this.material = new THREE.MeshPhongMaterial({ color: 0xff6a1d});
     } else {
@@ -82,9 +119,9 @@ export default class MarchingCubes {
 
     // @note: ~~ is a fast substitute for Math.floor()
     return [
-    i1 % this.res,
-    ~~ ((i1 % this.res2) / this.res),
-    ~~ (i1 / this.res2)
+      i1 % this.res,
+      ~~ ((i1 % this.res2) / this.res),
+      ~~ (i1 / this.res2)
     ];
   };
 
@@ -103,7 +140,7 @@ export default class MarchingCubes {
       i3[0] * this.gridCellWidth + this.origin.x + this.halfCellWidth,
       i3[1] * this.gridCellWidth + this.origin.y + this.halfCellWidth,
       i3[2] * this.gridCellWidth + this.origin.z + this.halfCellWidth
-      );
+    );
   };
 
   setupCells() {
@@ -217,7 +254,7 @@ export default class MarchingCubes {
   makeMesh() {
     // @TODO
     var geo = new THREE.Geometry();
-    this.mesh = new THREE.Mesh(geo, LAMBERT_WHITE);
+    this.mesh = new THREE.Mesh(geo, LIT_SPHERE);
     this.mesh.geometry.dynamic = true;
     this.scene.add(this.mesh);
   }
@@ -225,26 +262,29 @@ export default class MarchingCubes {
   updateMesh() {
     // @TODO
     var vertices = [];
-    var normals = [];
     var faces = [];
     var count = 0;
     for (var i = 0; i < this.res3; i ++) {
+      var vox_count = 0;
       var vANDn = this.voxels[i].polygonize(this.isolevel);
       for (var j = 0; j < vANDn.vertPositions.length/3; j ++) {
+        var normals = [];
         for (var k = 0; k < 3; k ++) {
-          vertices.push(vANDn.vertPositions[k*j]);
-          normals.push(vANDn.vertNormals[k*j]);
+          vertices.push(vANDn.vertPositions[vox_count]);
+          normals.push(vANDn.vertNormals[vox_count]);
+          vox_count++;
           count++;
         }
-        faces.push(new THREE.Face3(count - 3, count - 2, count - 1));
+        faces.push(new THREE.Face3(count - 3, count - 2, count - 1, normals));
       }
     }
     this.mesh.geometry.vertices = vertices;
-    this.mesh.geometry.normals = normals;
+    //this.mesh.geometry.normals = normals;
     this.mesh.geometry.faces = faces;
     this.mesh.geometry.verticesNeedUpdate = true;
     this.mesh.geometry.normalsNeedUpdate = true;
     this.mesh.geometry.elementsNeedUpdate = true;
+    this.mesh.geometry.computeFaceNormals();
   }
 };
 
@@ -283,7 +323,7 @@ class Voxel {
       -halfGridCellWidth, -halfGridCellWidth, -halfGridCellWidth,
       halfGridCellWidth, -halfGridCellWidth, -halfGridCellWidth,
       halfGridCellWidth,  halfGridCellWidth, -halfGridCellWidth,
-      ]);
+    ]);
 
     var indices = new Uint16Array([
       0, 1, 2, 3,
@@ -292,7 +332,7 @@ class Voxel {
       4, 3, 3, 0,
       1, 6, 6, 5,
       5, 2, 2, 1
-      ]);
+    ]);
 
     // Buffer geometry
     var geo = new THREE.BufferGeometry();
@@ -411,21 +451,21 @@ class Voxel {
       var edges = LUT.EDGE_TABLE[allVert];
 
       // get 12 points
-            var points = this.edgePoints(edges, isolevel);
+      var points = this.edgePoints(edges, isolevel);
 
-            for (var j = 0; j < 16; j ++) {
-              var tri = LUT.TRI_TABLE[allVert*16 + j];
-              if (tri < 0) break;
-              var vertex = points[tri];
-              vertexList.push(vertex);
-              normalList.push(this.getNormal(vertex));
-            }
-          }
-
-
-          return {
-            vertPositions: vertexList,
-            vertNormals: normalList
-          };
-        };
+      for (var j = 0; j < 16; j ++) {
+        var tri = LUT.TRI_TABLE[allVert*16 + j];
+        if (tri < 0) break;
+        var vertex = points[tri];
+        vertexList.push(vertex);
+        normalList.push(this.getNormal(vertex));
       }
+    }
+
+
+    return {
+      vertPositions: vertexList,
+      vertNormals: normalList
+    };
+  };
+}
