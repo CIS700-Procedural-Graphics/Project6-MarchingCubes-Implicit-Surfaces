@@ -16,7 +16,7 @@ const DEFAULT_VISUAL_DEBUG = false;
 const DEFAULT_ISO_LEVEL = 1.0;
 const DEFAULT_GRID_RES = 30;
 const DEFAULT_GRID_WIDTH = 6;
-const DEFAULT_GRID_HEIGHT = 15;
+const DEFAULT_GRID_HEIGHT = 17;
 const DEFAULT_GRID_DEPTH = 6;
 const DEFAULT_NUM_METABALLS = 10;
 const DEFAULT_MIN_RADIUS = 0.5;
@@ -24,7 +24,12 @@ const DEFAULT_MAX_RADIUS = 1;
 const DEFAULT_MAX_SPEEDX = 0.005;
 const DEFAULT_MAX_SPEEDY = 0.03;
 
-var options = {lightColor: '#ffffff',lightIntensity: 1,ambient: '#111111', albedo: '#110000'}
+var options = {lightColor: '#ffffff',lightIntensity: 1,ambient: '#111111', albedo: '#110000'};
+var loaded = false;
+var red = new THREE.Color(1.0,0.0,0.0);
+var green = new THREE.Color(0.0,1.0,0.0);
+var glassGeo;
+var lampGeo;
 
 // glass, emissive, iridescent
 var g_mat = {
@@ -50,8 +55,8 @@ var m_mat = {
 };
 
 //const GLASS_MAT = new THREE.ShaderMaterial(g_mat);
-const GLASS_MAT = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xff0000, transparent: true, opacity: 0.3});
-const METAL_MAT = new THREE.MeshPhongMaterial({ color: 0xffffff});
+var GLASS_MAT = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xff0000, transparent: true, opacity: 0.3});
+var METAL_MAT = new THREE.MeshPhongMaterial({ color: 0xffffff});
 
 var App = {
   //
@@ -115,19 +120,20 @@ function onLoad(framework) {
   App.renderer = renderer;
 
   renderer.setClearColor( 0x111111 );
-  scene.add(new THREE.AxisHelper(20));
+  //scene.add(new THREE.AxisHelper(20));
 
   var objLoader = new THREE.OBJLoader();
   var obj = objLoader.load('glass.obj', function(obj) {
-    var glassGeo = obj.children[0].geometry;
+    glassGeo = obj.children[0].geometry;
     var glass = new THREE.Mesh(glassGeo, GLASS_MAT);
     glass.translateX(-1.5);
     glass.translateZ(-1.5);
     App.scene.add(glass);
+    loaded = true;
   });
 
   var obj = objLoader.load('lamp.obj', function(obj) {
-    var lampGeo = obj.children[0].geometry;
+    lampGeo = obj.children[0].geometry;
     var lamp = new THREE.Mesh(lampGeo, METAL_MAT);
     lamp.translateX(-1.5);
     lamp.translateZ(-1.5);
@@ -140,9 +146,20 @@ function onLoad(framework) {
   setupGUI(gui);
 }
 
+function cosine(a,b,c,d,t) {
+  return a + b * Math.cos(2.0 * Math.PI * (c * t + d));
+}
+
 // called on frame updates
 function onUpdate(framework) {
-
+  if (loaded) {
+    var date = new Date();
+    var sec = date.getSeconds();
+    var r = cosine(0.5, 0.5, 1.0, 0.0, sec/60.0);
+    var g = cosine(0.5, 0.5, 1.0, 0.33, sec/60.0);
+    var b = cosine(0.5, 0.5, 1.0, 0.67, sec/60.0); 
+    GLASS_MAT.emissive.set(new THREE.Color(r,g,b));
+  }
   if (App.marchingCubes) {
     App.marchingCubes.update();
   }
@@ -169,20 +186,9 @@ function setupScene(scene) {
   App.marchingCubes = new MarchingCubes(App);
 }
 
-
 function setupGUI(gui) {
 
   // more information here: https://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
-
-  // --- CONFIG ---
-  gui.addColor(App, 'color').onChange(function(value) {
-    App.isPaused = value;
-    if (value) {
-      App.marchingCubes.pause();
-    } else {
-      App.marchingCubes.play();
-    }
-  });
 
   gui.add(App, 'isPaused').onChange(function(value) {
     App.isPaused = value;

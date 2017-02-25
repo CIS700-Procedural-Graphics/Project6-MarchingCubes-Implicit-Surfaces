@@ -44,16 +44,16 @@ export default class Metaball {
 
   update() {
 
-    var cir = new THREE.Vector2(this.pos.x, this.pos.z);
-    var disp = new THREE.Vector2(this.gridWidth/2, this.gridWidth/2).sub(cir);
-    var dist = cir.distanceTo(new THREE.Vector2(this.gridWidth/2, this.gridWidth/2));
-    var x = (this.pos.x + 2* this.radius) > this.gridWidth || (this.pos.x + 2 *this.radius) < 0;
-    if (x) this.vel.x *= -1;
-    var y = (this.pos.y + 2* this.radius) > this.gridHeight || (this.pos.y + 2* this.radius) < 0;
+  //   var cir = new THREE.Vector3(this.pos.x, 0, this.pos.z);
+  //   var disp = new THREE.Vector3(this.gridWidth/2, 0, this.gridWidth/2).sub(cir);
+  //   var dist = cir.distanceTo(new THREE.Vector3(this.gridWidth/2, 0, this.gridWidth/2));
+  //   if ((dist + 2*this.radius) > this.gridWidth 
+  //     || (dist + 2*this.radius) > this.gridDepth) {
+  //     this.vel.add(disp);
+  // }
+    var y = (this.pos.y + this.radius) > this.gridHeight || (this.pos.y + 2* this.radius) < 0;
     if (y) this.vel.y *= -1;
-    var z = (this.pos.z + 2* this.radius) > this.gridDepth || (this.pos.z + 2* this.radius) < 0;
-    if (z) this.vel.z *= -1;
-
+    
     var date = new Date();
     var velocity = new THREE.Vector3();
     velocity.copy(this.vel).multiplyScalar(3);

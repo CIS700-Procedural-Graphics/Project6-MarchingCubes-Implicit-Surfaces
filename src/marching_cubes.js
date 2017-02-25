@@ -35,7 +35,8 @@ function sample(point) {
   for (var i = 0; i < balls.length; i ++) {
     var r = balls[i].radius;
     var d = point.distanceTo(balls[i].pos);
-    isovalue += (r * r / (d * d)) * balls[i].neg;
+    //isovalue += (r * r / (d * d)) * balls[i].neg;
+    isovalue += (r * r / (d * d));
   }
   return isovalue;
 }
@@ -164,9 +165,9 @@ export default class MarchingCubes {
       z = this.gridDepth / 2;
       pos = new THREE.Vector3(3, 3, 3);
 
-      vx = (Math.random() * 2 - 1) * this.maxSpeedX;
+      vx = 0
       vy = (Math.random() * 2 - 1) * this.maxSpeedY;
-      vz = (Math.random() * 2 - 1) * this.maxSpeedZ;
+      vz = 0
       vel = new THREE.Vector3(vx, vy, vz);
 
       radius = Math.random() * (this.maxRadius - this.minRadius) + this.minRadius;
