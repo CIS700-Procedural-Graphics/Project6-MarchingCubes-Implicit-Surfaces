@@ -1,5 +1,5 @@
 const THREE = require('three');
-import {fireTexture} from './shaders/textures'
+import {silverTexture} from './textures'
 
 import Metaball from './metaball.js';
 import InspectPoint from './inspect_point.js'
@@ -7,40 +7,23 @@ import LUT from './marching_cube_LUT.js';
 var VISUAL_DEBUG = true;
 var episolon = 0.1;
 var balls = [];
-var fire;
 
-var options = {
-    lightColor: '#ffffff',
-    lightIntensity: 1,
-    ambient: '#111111',
-    texture: null
-}
+var options = {lightColor: '#ffffff',lightIntensity: 1,ambient: '#111111',texture: null};
 
-var mat = {
+// lava
+var l_mat = {
   uniforms: {
-    texture: {
-      type: "t",
-      value: null
-    },
-    u_ambient: {
-      type: 'v3',
-      value: new THREE.Color(options.ambient)
-    },
-    u_lightCol: {
-      type: 'v3',
-      value: new THREE.Color(options.lightColor)
-    },
-    u_lightIntensity: {
-      type: 'f',
-      value: options.lightIntensity
-    }
+    texture: {type: "t",value: null},
+    u_ambient: {type: 'v3',value: new THREE.Color(options.ambient)},
+    u_lightCol: {type: 'v3',value: new THREE.Color(options.lightColor)},
+    u_lightIntensity: {type: 'f',value: options.lightIntensity}
   },
-  vertexShader: require('./shaders/litsphere-vert.glsl'),
-  fragmentShader: require('./shaders/litsphere-frag.glsl')
+  vertexShader: require('./shaders/lava-vert.glsl'),
+  fragmentShader: require('./shaders/lava-frag.glsl')
 };
 
-const LIT_SPHERE = new THREE.ShaderMaterial(mat);
-const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
+const LAVA_MAT = new THREE.ShaderMaterial(l_mat);
+const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0x111111, emissive: 0xff0000 });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparent: true, opacity: 0.5 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
 
@@ -48,12 +31,11 @@ const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth:
 // Implement a function that returns the value of the all metaballs influence to a given point.
 // Please follow the resources given in the write-up for details.
 function sample(point) {
-  // @TODO
   var isovalue = 0.0;
   for (var i = 0; i < balls.length; i ++) {
     var r = balls[i].radius;
     var d = point.distanceTo(balls[i].pos);
-    isovalue += r * r / (d * d);
+    isovalue += (r * r / (d * d)) * balls[i].neg;
   }
   return isovalue;
 }
@@ -77,14 +59,22 @@ export default class MarchingCubes {
     this.maxRadius = App.config.maxRadius;
 
     this.gridCellWidth = App.config.gridCellWidth;
+    this.gridCellHeight = App.config.gridCellHeight;
+    this.gridCellDepth = App.config.gridCellDepth;
     this.halfCellWidth = App.config.gridCellWidth / 2.0;
+    this.halfCellHeight = App.config.gridCellHeight / 2.0;
+    this.halfCellDepth = App.config.gridCellDepth / 2.0;
     this.gridWidth = App.config.gridWidth;
+    this.gridHeight = App.config.gridHeight;
+    this.gridDepth = App.config.gridDepth;
 
     this.res = App.config.gridRes;
     this.res2 = App.config.gridRes * App.config.gridRes;
     this.res3 = App.config.gridRes * App.config.gridRes * App.config.gridRes;
 
-    this.maxSpeed = App.config.maxSpeed;
+    this.maxSpeedX = App.config.maxSpeedX;
+    this.maxSpeedY = App.config.maxSpeedY;
+    this.maxSpeedZ = App.config.maxSpeedZ;
     this.numMetaballs = App.config.numMetaballs;
 
     this.camera = App.camera;
@@ -97,8 +87,8 @@ export default class MarchingCubes {
     this.showSpheres = true;
     this.showGrid = true;
 
-    fireTexture.then(function(texture) {
-        mat.uniforms.texture.value = texture;
+    silverTexture.then(function(texture) {
+        l_mat.uniforms.texture.value = texture;
     });
 
     if (App.config.material) {
@@ -138,8 +128,8 @@ export default class MarchingCubes {
 
     return new THREE.Vector3(
       i3[0] * this.gridCellWidth + this.origin.x + this.halfCellWidth,
-      i3[1] * this.gridCellWidth + this.origin.y + this.halfCellWidth,
-      i3[2] * this.gridCellWidth + this.origin.z + this.halfCellWidth
+      i3[1] * this.gridCellHeight + this.origin.y + this.halfCellHeight,
+      i3[2] * this.gridCellDepth + this.origin.z + this.halfCellDepth
     );
   };
 
@@ -150,7 +140,7 @@ export default class MarchingCubes {
     for (var i = 0; i < this.res3; i++) {
       var i3 = this.i1toi3(i);
       var {x, y, z} = this.i3toPos(i3);
-      var voxel = new Voxel(new THREE.Vector3(x, y, z), this.gridCellWidth);
+      var voxel = new Voxel(new THREE.Vector3(x, y, z), this.gridCellWidth, this.gridCellHeight, this.gridCellDepth);
       this.voxels.push(voxel);
 
       if (VISUAL_DEBUG) {
@@ -170,23 +160,24 @@ export default class MarchingCubes {
     // Randomly generate metaballs with different sizes and velocities
     for (var i = 0; i < this.numMetaballs; i++) {
       x = this.gridWidth / 2;
-      y = this.gridWidth / 2;
-      z = this.gridWidth / 2;
-      pos = new THREE.Vector3(x, y, z);
+      y = this.gridHeight / 2;
+      z = this.gridDepth / 2;
+      pos = new THREE.Vector3(3, 3, 3);
 
-      vx = (Math.random() * 2 - 1) * this.maxSpeed;
-      vy = (Math.random() * 2 - 1) * this.maxSpeed;
-      vz = (Math.random() * 2 - 1) * this.maxSpeed;
+      vx = (Math.random() * 2 - 1) * this.maxSpeedX;
+      vy = (Math.random() * 2 - 1) * this.maxSpeedY;
+      vz = (Math.random() * 2 - 1) * this.maxSpeedZ;
       vel = new THREE.Vector3(vx, vy, vz);
 
       radius = Math.random() * (this.maxRadius - this.minRadius) + this.minRadius;
-
-      var ball = new Metaball(pos, radius, vel, this.gridWidth, VISUAL_DEBUG);
+      var neg = 1;
+      if (Math.random()>0.75) neg = -1;
+      var ball = new Metaball(pos, radius, vel, neg, this.gridWidth, this.gridHeight, this.gridDepth, VISUAL_DEBUG);
       balls.push(ball);
 
-      if (VISUAL_DEBUG) {
-        this.scene.add(ball.mesh);
-      }
+      // if (VISUAL_DEBUG) {
+      //   this.scene.add(ball.mesh);
+      // }
     }
     this.balls = balls;
   }
@@ -254,7 +245,7 @@ export default class MarchingCubes {
   makeMesh() {
     // @TODO
     var geo = new THREE.Geometry();
-    this.mesh = new THREE.Mesh(geo, LIT_SPHERE);
+    this.mesh = new THREE.Mesh(geo, LAVA_MAT);
     this.mesh.geometry.dynamic = true;
     this.scene.add(this.mesh);
   }
@@ -285,6 +276,7 @@ export default class MarchingCubes {
     this.mesh.geometry.normalsNeedUpdate = true;
     this.mesh.geometry.elementsNeedUpdate = true;
     this.mesh.geometry.computeFaceNormals();
+    //console.log(this.mesh);
   }
 };
 
@@ -292,13 +284,15 @@ export default class MarchingCubes {
 
 class Voxel {
 
-  constructor(position, gridCellWidth) {
-    this.init(position, gridCellWidth);
+  constructor(position, gridCellWidth, gridCellHeight, gridCellDepth) {
+    this.init(position, gridCellWidth, gridCellHeight, gridCellDepth);
   }
 
-  init(position, gridCellWidth) {
+  init(position, gridCellWidth, gridCellHeight, gridCellDepth) {
     this.pos = position;
     this.gridCellWidth = gridCellWidth;
+    this.gridCellHeight = gridCellHeight;
+    this.gridCellDepth = gridCellDepth;
     this.corners = [];
 
     if (VISUAL_DEBUG) {
@@ -310,19 +304,21 @@ class Voxel {
 
   makeMesh() {
     var halfGridCellWidth = this.gridCellWidth / 2.0;
+    var halfGridCellHeight = this.gridCellHeight / 2.0;
+    var halfGridCellDepth = this.gridCellDepth / 2.0;
 
     var positions = new Float32Array([
       // Front face
-      halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth,
-      halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth,
-      -halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth,
-      -halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth,
+      halfGridCellWidth, halfGridCellHeight,  halfGridCellDepth,
+      halfGridCellWidth, -halfGridCellHeight, halfGridCellDepth,
+      -halfGridCellWidth, -halfGridCellHeight, halfGridCellDepth,
+      -halfGridCellWidth, halfGridCellHeight,  halfGridCellDepth,
 
       // Back face
-      -halfGridCellWidth,  halfGridCellWidth, -halfGridCellWidth,
-      -halfGridCellWidth, -halfGridCellWidth, -halfGridCellWidth,
-      halfGridCellWidth, -halfGridCellWidth, -halfGridCellWidth,
-      halfGridCellWidth,  halfGridCellWidth, -halfGridCellWidth,
+      -halfGridCellWidth,  halfGridCellHeight, -halfGridCellDepth,
+      -halfGridCellWidth, -halfGridCellHeight, -halfGridCellDepth,
+      halfGridCellWidth, -halfGridCellHeight, -halfGridCellDepth,
+      halfGridCellWidth,  halfGridCellHeight, -halfGridCellDepth,
     ]);
 
     var indices = new Uint16Array([
@@ -350,7 +346,9 @@ class Voxel {
   }
 
   makeInspectPoints() {
-    var h = this.gridCellWidth / 2.0;
+    var w = this.gridCellWidth / 2.0;
+    var h = this.gridCellHeight / 2.0;
+    var d = this.gridCellDepth / 2.0;
     var x = this.pos.x;
     var y = this.pos.y;
     var z = this.pos.z;
@@ -358,14 +356,14 @@ class Voxel {
 
     // Center dot
     this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG);
-    this.corners.push(new InspectPoint(new THREE.Vector3(x-h, y-h, z-h), 0, VISUAL_DEBUG));
-    this.corners.push(new InspectPoint(new THREE.Vector3(x+h, y-h, z-h), 0, VISUAL_DEBUG));
-    this.corners.push(new InspectPoint(new THREE.Vector3(x+h, y-h, z+h), 0, VISUAL_DEBUG));
-    this.corners.push(new InspectPoint(new THREE.Vector3(x-h, y-h, z+h), 0, VISUAL_DEBUG));
-    this.corners.push(new InspectPoint(new THREE.Vector3(x-h, y+h, z-h), 0, VISUAL_DEBUG));
-    this.corners.push(new InspectPoint(new THREE.Vector3(x+h, y+h, z-h), 0, VISUAL_DEBUG));
-    this.corners.push(new InspectPoint(new THREE.Vector3(x+h, y+h, z+h), 0, VISUAL_DEBUG));
-    this.corners.push(new InspectPoint(new THREE.Vector3(x-h, y+h, z+h), 0, VISUAL_DEBUG));
+    this.corners.push(new InspectPoint(new THREE.Vector3(x-w, y-h, z-d), 0, VISUAL_DEBUG));
+    this.corners.push(new InspectPoint(new THREE.Vector3(x+w, y-h, z-d), 0, VISUAL_DEBUG));
+    this.corners.push(new InspectPoint(new THREE.Vector3(x+w, y-h, z+d), 0, VISUAL_DEBUG));
+    this.corners.push(new InspectPoint(new THREE.Vector3(x-w, y-h, z+d), 0, VISUAL_DEBUG));
+    this.corners.push(new InspectPoint(new THREE.Vector3(x-w, y+h, z-d), 0, VISUAL_DEBUG));
+    this.corners.push(new InspectPoint(new THREE.Vector3(x+w, y+h, z-d), 0, VISUAL_DEBUG));
+    this.corners.push(new InspectPoint(new THREE.Vector3(x+w, y+h, z+d), 0, VISUAL_DEBUG));
+    this.corners.push(new InspectPoint(new THREE.Vector3(x-w, y+h, z+d), 0, VISUAL_DEBUG));
   }
 
   show() {

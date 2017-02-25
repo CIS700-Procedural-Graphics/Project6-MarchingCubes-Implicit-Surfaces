@@ -5,6 +5,8 @@ require('file-loader?name=[name].[ext]!../index.html');
 // http://paulbourke.net/geometry/polygonise/
 
 const THREE = require('three'); // older modules are imported like this. You shouldn't have to worry about this much
+const OBJLoader = require('three-obj-loader');
+OBJLoader(THREE)
 
 import Framework from './framework'
 import LUT from './marching_cube_LUT.js'
@@ -13,11 +15,43 @@ import MarchingCubes from './marching_cubes.js'
 const DEFAULT_VISUAL_DEBUG = false;
 const DEFAULT_ISO_LEVEL = 1.0;
 const DEFAULT_GRID_RES = 30;
-const DEFAULT_GRID_WIDTH = 10;
+const DEFAULT_GRID_WIDTH = 6;
+const DEFAULT_GRID_HEIGHT = 15;
+const DEFAULT_GRID_DEPTH = 6;
 const DEFAULT_NUM_METABALLS = 10;
 const DEFAULT_MIN_RADIUS = 0.5;
 const DEFAULT_MAX_RADIUS = 1;
-const DEFAULT_MAX_SPEED = 0.01;
+const DEFAULT_MAX_SPEEDX = 0.005;
+const DEFAULT_MAX_SPEEDY = 0.03;
+
+var options = {lightColor: '#ffffff',lightIntensity: 1,ambient: '#111111', albedo: '#110000'}
+
+// glass, emissive, iridescent
+var g_mat = {
+  uniforms: {
+    u_albedo: {type: 'v3', value: new THREE.Color(options.albedo)},
+    u_ambient: {type: 'v3',value: new THREE.Color(options.ambient)},
+    u_lightCol: {type: 'v3',value: new THREE.Color(options.lightColor)},
+    u_lightIntensity: {type: 'f',value: options.lightIntensity}
+  },
+  vertexShader: require('./shaders/glass-vert.glsl'),
+  fragmentShader: require('./shaders/glass-frag.glsl')
+};
+
+// metal
+var m_mat = {
+  uniforms: {
+    u_ambient: {type: 'v3',value: new THREE.Color(options.ambient)},
+    u_lightCol: {type: 'v3',value: new THREE.Color(options.lightColor)},
+    u_lightIntensity: {type: 'f',value: options.lightIntensity}
+  },
+  vertexShader: require('./shaders/metal-vert.glsl'),
+  fragmentShader: require('./shaders/metal-frag.glsl')
+};
+
+//const GLASS_MAT = new THREE.ShaderMaterial(g_mat);
+const GLASS_MAT = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xff0000, transparent: true, opacity: 0.3});
+const METAL_MAT = new THREE.MeshPhongMaterial({ color: 0xffffff});
 
 var App = {
   //
@@ -37,9 +71,15 @@ var App = {
     // Total width of grid
     gridWidth:      DEFAULT_GRID_WIDTH,
 
+    gridHeight:     DEFAULT_GRID_HEIGHT,
+
+    gridDepth:      DEFAULT_GRID_DEPTH,
+
     // Width of each voxel
-     // Ideally, we want the voxel to be small (higher resolution)
+    // Ideally, we want the voxel to be small (higher resolution)
     gridCellWidth:  DEFAULT_GRID_WIDTH / DEFAULT_GRID_RES,
+    gridCellHeight: DEFAULT_GRID_HEIGHT / DEFAULT_GRID_RES,
+    gridCellDepth:  DEFAULT_GRID_DEPTH / DEFAULT_GRID_RES,
 
     // Number of metaballs
     numMetaballs:   DEFAULT_NUM_METABALLS,
@@ -51,7 +91,9 @@ var App = {
     maxRadius:      DEFAULT_MAX_RADIUS,
 
     // Maximum speed of a metaball
-    maxSpeed:       DEFAULT_MAX_SPEED
+    maxSpeedX:       DEFAULT_MAX_SPEEDX,
+    maxSpeedY:       DEFAULT_MAX_SPEEDY,
+    maxSpeedZ:       DEFAULT_MAX_SPEEDX,          
   },
 
   // Scene's framework objects
@@ -60,7 +102,8 @@ var App = {
   renderer:         undefined,
 
   // Play/pause control for the simulation
-  isPaused:         false
+  isPaused:         false,
+  color:            0xffffff
 };
 
 // called after the scene loads
@@ -71,8 +114,25 @@ function onLoad(framework) {
   App.camera = camera;
   App.renderer = renderer;
 
-  renderer.setClearColor( 0xbfd1e5 );
-  //scene.add(new THREE.AxisHelper(20));
+  renderer.setClearColor( 0x111111 );
+  scene.add(new THREE.AxisHelper(20));
+
+  var objLoader = new THREE.OBJLoader();
+  var obj = objLoader.load('glass.obj', function(obj) {
+    var glassGeo = obj.children[0].geometry;
+    var glass = new THREE.Mesh(glassGeo, GLASS_MAT);
+    glass.translateX(-1.5);
+    glass.translateZ(-1.5);
+    App.scene.add(glass);
+  });
+
+  var obj = objLoader.load('lamp.obj', function(obj) {
+    var lampGeo = obj.children[0].geometry;
+    var lamp = new THREE.Mesh(lampGeo, METAL_MAT);
+    lamp.translateX(-1.5);
+    lamp.translateZ(-1.5);
+    App.scene.add(lamp);
+  });
 
   setupCamera(App.camera);
   setupLights(App.scene);
@@ -90,7 +150,7 @@ function onUpdate(framework) {
 
 function setupCamera(camera) {
   // set camera position
-  camera.position.set(5, 5, 30);
+  camera.position.set(-5, 5, -30);
   camera.lookAt(new THREE.Vector3(0,0,0));
 }
 
@@ -115,6 +175,15 @@ function setupGUI(gui) {
   // more information here: https://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
 
   // --- CONFIG ---
+  gui.addColor(App, 'color').onChange(function(value) {
+    App.isPaused = value;
+    if (value) {
+      App.marchingCubes.pause();
+    } else {
+      App.marchingCubes.play();
+    }
+  });
+
   gui.add(App, 'isPaused').onChange(function(value) {
     App.isPaused = value;
     if (value) {
