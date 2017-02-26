@@ -1,5 +1,6 @@
 require('file-loader?name=[name].[ext]!../index.html');
-
+import {silverTexture} from './textures'
+//import {quote} from './quote'
 // Credit:
 // http://jamie-wong.com/2014/08/19/metaballs-and-marching-squares/
 // http://paulbourke.net/geometry/polygonise/
@@ -56,7 +57,7 @@ var m_mat = {
 
 //const GLASS_MAT = new THREE.ShaderMaterial(g_mat);
 var GLASS_MAT = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xff0000, transparent: true, opacity: 0.3});
-var METAL_MAT = new THREE.MeshPhongMaterial({ color: 0xffffff});
+var METAL_MAT = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0x111111});
 
 var App = {
   //
@@ -167,8 +168,8 @@ function onUpdate(framework) {
 
 function setupCamera(camera) {
   // set camera position
-  camera.position.set(-5, 5, -30);
-  camera.lookAt(new THREE.Vector3(0,0,0));
+  camera.position.set(25, 10, 25);
+  camera.lookAt(new THREE.Vector3(8,0,-5));
 }
 
 function setupLights(scene) {
@@ -190,45 +191,46 @@ function setupGUI(gui) {
 
   // more information here: https://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
 
-  gui.add(App, 'isPaused').onChange(function(value) {
-    App.isPaused = value;
-    if (value) {
-      App.marchingCubes.pause();
-    } else {
-      App.marchingCubes.play();
-    }
-  });
 
-  gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
-    App.config.numMetaballs = value;
-    App.marchingCubes.init(App);
-  });
+  // gui.add(App, 'isPaused').onChange(function(value) {
+  //   App.isPaused = value;
+  //   if (value) {
+  //     App.marchingCubes.pause();
+  //   } else {
+  //     App.marchingCubes.play();
+  //   }
+  // });
+
+  // gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
+  //   App.config.numMetaballs = value;
+  //   App.marchingCubes.init(App);
+  // });
 
   // --- DEBUG ---
 
-  var debugFolder = gui.addFolder('Debug');
-  debugFolder.add(App.marchingCubes, 'showGrid').onChange(function(value) {
-    App.marchingCubes.showGrid = value;
-    if (value) {
-      App.marchingCubes.show();
-    } else {
-      App.marchingCubes.hide();
-    }
-  });
+  // var debugFolder = gui.addFolder('Debug');
+  // debugFolder.add(App.marchingCubes, 'showGrid').onChange(function(value) {
+  //   App.marchingCubes.showGrid = value;
+  //   if (value) {
+  //     App.marchingCubes.show();
+  //   } else {
+  //     App.marchingCubes.hide();
+  //   }
+  // });
 
-  debugFolder.add(App.marchingCubes, 'showSpheres').onChange(function(value) {
-    App.marchingCubes.showSpheres = value;
-    if (value) {
-      for (var i = 0; i < App.config.numMetaballs; i++) {
-        App.marchingCubes.balls[i].show();
-      }
-    } else {
-      for (var i = 0; i < App.config.numMetaballs; i++) {
-        App.marchingCubes.balls[i].hide();
-      }
-    }
-  });
-  debugFolder.open();
+  // debugFolder.add(App.marchingCubes, 'showSpheres').onChange(function(value) {
+  //   App.marchingCubes.showSpheres = value;
+  //   if (value) {
+  //     for (var i = 0; i < App.config.numMetaballs; i++) {
+  //       App.marchingCubes.balls[i].show();
+  //     }
+  //   } else {
+  //     for (var i = 0; i < App.config.numMetaballs; i++) {
+  //       App.marchingCubes.balls[i].hide();
+  //     }
+  //   }
+  // });
+  // debugFolder.open();
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
