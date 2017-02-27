@@ -41,6 +41,31 @@ export default class Metaball {
   };
 
   update() {
-    // @TODO
+    // @TODO // @DONE
+      
+      ///Check IF the meatball has reached the boundary of the grid
+      ///   IF reached the boundary negate the velocity
+      ///   ELSE update velocity   
+      
+      var x_bound = ( this.mesh.position.x + this.radius >= 2 ) && ( this.mesh.position.x + this.radius <= 8  );
+      var y_bound = ( this.mesh.position.y + this.radius >= 2 ) && ( this.mesh.position.y + this.radius <= 8  );
+      var z_bound = ( this.mesh.position.z + this.radius >= 2 ) && ( this.mesh.position.z + this.radius <= 8  );
+      
+      
+      if( x_bound && y_bound && z_bound ){
+          //updating the velocity
+          this.mesh.position.set(this.mesh.position.x + this.vel.x, this.mesh.position.y + this.vel.y, this.mesh.position.z + this.vel.z);
+      }
+      else{
+          //negating the velocity
+          this.vel.x = -this.vel.x;
+          this.vel.y = -this.vel.y;
+          this.vel.z = -this.vel.z;
+        
+          //updating the velocity
+          this.mesh.position.set(this.mesh.position.x + this.vel.x, this.mesh.position.y + this.vel.y, this.mesh.position.z + this.vel.z);
+          
+      }
+      
   }
 }
