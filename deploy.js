@@ -1,6 +1,6 @@
-var colors = require('colors');
-var path = require('path');
-var git = require('simple-git')(__dirname);
+let colors = require('colors');
+let path = require('path');
+let git = require('simple-git')(__dirname);
 
 git.status(function(err, status) {
   if (err) throw err;
