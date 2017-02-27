@@ -433,6 +433,9 @@ class Voxel {
       // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
     }
 
+    // stores list of vertices but not of them in triangle format
+    var vertexLocations = [];
+
     // c = col, r = row = which face
     // c = (i) % 4;
     // r = floor(i+1 / 4)
@@ -450,7 +453,7 @@ class Voxel {
         var idx = r * 4 + c;
 
         // lerp vertices in this configuration based on isovals at each point for each face in found cell configuration 
-        vertexPositions[i] = this.interp(this.positions[idx],
+        vertexLocations[i] = this.interp(this.positions[idx],
                                          this.positions[idx+1],
                                          this.samples[idx],
                                          this.samples[idx + 1]);
@@ -458,11 +461,22 @@ class Voxel {
     }//end: forLoop over 12bits
 
     // now have vertex locations for all edge intersections - ie what our final geo will be built with
-    // need to fill out final vertexPositions for the triangle based on that?
+    // need to make triangles out of these now
+    var currTri = 0;
+    // iterate through the current tri_table row and fill out triangles until you reach -1 which means there are no longer
+    //    triangles to be filled for this orientation
+    for (var i = 0; this.TRI_TABLE[pickCube][i] != -1; i += 3) {
+        vertexList[currTri] = THREE.Vector3f(vertexLocations[this.TRI_TABLE[pickCube][i]],
+                                             vertexLocations[this.TRI_TABLE[pickCube][i]],
+                                             vertexLocations[this.TRI_TABLE[pickCube][i]] );
+        currTri += 1;
+    }
 
     // calculating normals
     // for each vertex - find average of the normals of all attached faces but calculate the overall normal for the point
     //    such that the weighting used for each normals addition to the calculation is based on 1/SA of the associated face
+    // since for the assignment not focused on implementation speed
+    //    make listing of which vertices touch which faces and just calculate for each vertex then put in
     
 
 
