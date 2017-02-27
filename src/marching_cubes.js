@@ -274,6 +274,60 @@ export default class MarchingCubes {
 
 // ------------------------------------------- //
 
+// -HB: defining type for normals and polygonization
+function vertexHolder() {
+    loc: new THREE.Vector3f(0.0, 0.0, 0.0); // curr vertex
+    touchingFaces: new Array(); // listing of touching faces
+    numFaces: 0;
+
+    this.addItem = function(item) {
+      this.touchingFaces.push(item);
+      numFaces += 1;
+    }
+}
+
+function allVerticesHolder() {
+    allVertexHolders: new Array(); // listing of touching faces
+    numVertices: 0;
+
+    this.addVertexHolder = function(item) {
+      this.allVertexHolders.push(item);
+      numVertices += 1;
+    }
+
+    this.addFaceToVertex = function(face, vertex) {
+      // face is a Vector3f of Vector3f
+      // vertex is a Vector3f
+      var added = false;
+      for (var i = 0; i < numVertices; i++) {
+        var loc = allVertexHolders[i].loc;
+        if (loc.x == vertex.x && loc.y == vertex.y && loc.z == vertex.z) {
+          allVertexHolders[i].touchingFaces.push(face);
+          added = true;
+        }
+      }
+
+      if (!added) {
+        var vH = new vertexHolder();
+        vH.addItem(face);
+        numVertices += 1;
+        allVertexHolders.push(vH);
+      }
+    }
+
+    this.getAssociatedFaces = function(vertex) {
+      for (var i = 0; i < numVertices; i++) {
+        var loc = allVertexHolders[i].loc;
+        if (loc.x == vertex.x && loc.y == vertex.y && loc.z == vertex.z) {
+          return allVertexHolders[i].touchingFaces;
+        }
+      }
+
+      console.log("MISSING ASSOCIATED FACES FOR A VERTEX");
+      return;
+    }
+}
+
 class Voxel {
 
   constructor(position, gridCellWidth) {
@@ -408,11 +462,18 @@ class Voxel {
 
   //  http://paulbourke.net/geometry/polygonise/
   polygonize(isolevel) {
+    /********************************************************************************************************/
+    // compute the vertex positions based on intersected edges and isovals. from these created polygons
+    // compute the associated normals as well.
+    /********************************************************************************************************/
 
-    // @TODO
-    var vertexList = [];
-    var normalList = [];
-
+    // stores list of vertices but not in triangle format
+    var vertexLocations = [];
+    // stores list of normals but again not in triangle format
+    var normalVals = [];
+    // array to hold listing of vertex to attached faces to later find weighting of associated 
+    //    faces based on inverse of their areas
+    var verticesHolder = new allVerticesHolder();
 
     // figure out cell configuration based isoVals versus isoLevel
     var pickCube = 0;
@@ -432,9 +493,6 @@ class Voxel {
       // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
       // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
     }
-
-    // stores list of vertices but not of them in triangle format
-    var vertexLocations = [];
 
     // c = col, r = row = which face
     // c = (i) % 4;
@@ -465,11 +523,24 @@ class Voxel {
     var currTri = 0;
     // iterate through the current tri_table row and fill out triangles until you reach -1 which means there are no longer
     //    triangles to be filled for this orientation
+    // gets which vertex nums are used for this triangle based on tri table but uses vertex locations for actual positions of 
+    //    intersection location for the triangles that are created
+    // also filling in vertexPositions appropriately
     for (var i = 0; this.TRI_TABLE[pickCube][i] != -1; i += 3) {
-        vertexList[currTri] = THREE.Vector3f(vertexLocations[this.TRI_TABLE[pickCube][i]],
-                                             vertexLocations[this.TRI_TABLE[pickCube][i]],
-                                             vertexLocations[this.TRI_TABLE[pickCube][i]] );
-        currTri += 1;
+      var loc1 = vertexLocations[this.TRI_TABLE[pickCube][i]];
+      var loc2 = vertexLocations[this.TRI_TABLE[pickCube][i+1]];
+      var loc3 = vertexLocations[this.TRI_TABLE[pickCube][i+2]];
+      var currFace = new THREE.Vector3f(loc1, loc2, loc3);
+      vertPositions.push(loc1);
+      vertPositions.push(loc2);
+      vertPositions.push(loc3);
+
+      // now matching vertices with additional faces
+      verticesHolder.addFaceToVertex(currFace, loc1);
+      verticesHolder.addFaceToVertex(currFace, loc2);
+      verticesHolder.addFaceToVertex(currFace, loc3);
+
+      currTri += 1;
     }
 
     // calculating normals
@@ -477,12 +548,40 @@ class Voxel {
     //    such that the weighting used for each normals addition to the calculation is based on 1/SA of the associated face
     // since for the assignment not focused on implementation speed
     //    make listing of which vertices touch which faces and just calculate for each vertex then put in
-    
+    for (var i = 0; i < vertexLocations.length; i++) {
+      // face's normal: (A-B)x(C-B).normalize
+      // area of face: based on cross product = length of cross product / 2;
 
+      if (vertexLocations[i] != null) {
+        var currNormal = THREE.Vector3f(0.0);
+        var faces = getAssociatedFaces(vertexLocations[i]);
 
-    
+        for (var j = 0; j< faces.length; j++) {
+          var A = faces[i].x;
+          var B = faces[i].y;
+          var C = faces[i].z;
+          var cross = (A-B).cross(C-B);
+          var areaOfFace = cross.length/2.0;
+          var normOfFace = cross.normalize();
+          currNormal += normOfFace / areaOfFace;
+        }
 
+        currNormal.normalize();
+        normalVals.push(currNormal);
+      }
+    }
     
+    // filling in vertexNormals appropriately based on which vertices are actually used for which faces
+    for (var i = 0; this.TRI_TABLE[pickCube][i] != -1; i += 3) {
+      var loc1 = normalVals[this.TRI_TABLE[pickCube][i]];
+      var loc2 = normalVals[this.TRI_TABLE[pickCube][i+1]];
+      var loc3 = normalVals[this.TRI_TABLE[pickCube][i+2]];
+      vertNormals.push(loc1);
+      vertNormals.push(loc2);
+      vertNormals.push(loc3);
+    }
+
+    console.log("UPDATED POSITIONS AND NORMALS");   
 
     return {
       vertPositions: vertPositions,
