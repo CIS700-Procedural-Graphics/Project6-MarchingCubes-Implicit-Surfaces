@@ -4,13 +4,14 @@ const POINT_MATERIAL = new THREE.PointsMaterial( { color: 0xee1111, size: 10, si
 
 export default class InspectPoint {
 
-  constructor(pos, isovalue, visualDebug) {
-    this.init(pos, isovalue, visualDebug);
+  constructor(pos, isovalue, isonormal, visualDebug) {
+    this.init(pos, isovalue, isonormal, visualDebug);
   }
 
-  init(pos, isovalue, visualDebug) {
+  init(pos, isovalue, isonormal, visualDebug) {
     this.pos = pos;
     this.isovalue = isovalue;
+    this.isonormal = isonormal;
     this.label = null;
 
     if (visualDebug) {
@@ -28,7 +29,7 @@ export default class InspectPoint {
     this.label.style.cursor = 'default';
     this.label.style.fontSize = '0.3em';
     this.label.style.pointerEvents = 'none';
-    document.body.appendChild(this.label);    
+    document.body.appendChild(this.label);
   };
 
   updateLabel(camera) {
@@ -40,7 +41,7 @@ export default class InspectPoint {
       this.label.style.top = screenPos.y + 'px';
       this.label.style.left = screenPos.x + 'px';
       this.label.innerHTML = this.isovalue.toFixed(2);
-      this.label.style.opacity = this.isovalue - 0.5;      
+      this.label.style.opacity = this.isovalue - 0.5;
     }
   };
 

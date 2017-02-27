@@ -12,12 +12,12 @@ const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth:
 
 export default class MarchingCubes {
 
-  constructor(App) {      
+  constructor(App) {
     this.init(App);
   }
 
   init(App) {
-    this.isPaused = false;    
+    this.isPaused = false;
     VISUAL_DEBUG = App.config.visualDebug;
 
     // Initializing member variables.
@@ -95,9 +95,11 @@ export default class MarchingCubes {
 
     // Allocate voxels based on our grid resolution
     this.voxels = [];
-    for (var i = 0; i < this.res3; i++) {
+    for (var i = 0; i < this.res3; i++)
+    {
       var i3 = this.i1toi3(i);
       var {x, y, z} = this.i3toPos(i3);
+
       var voxel = new Voxel(new THREE.Vector3(x, y, z), this.gridCellWidth);
       this.voxels.push(voxel);
 
@@ -105,7 +107,7 @@ export default class MarchingCubes {
         this.scene.add(voxel.wireframe);
         this.scene.add(voxel.mesh);
       }
-    }    
+    }
   }
 
   setupMetaballs() {
@@ -119,21 +121,21 @@ export default class MarchingCubes {
 
     // Randomly generate metaballs with different sizes and velocities
     for (var i = 0; i < this.numMetaballs; i++) {
-      x = this.gridWidth / 2;    
-      y = this.gridWidth / 2;    
-      z = this.gridWidth / 2;    
+      x = this.gridWidth / 2;
+      y = this.gridWidth / 2;
+      z = this.gridWidth / 2;
       pos = new THREE.Vector3(x, y, z);
-      
+
       vx = (Math.random() * 2 - 1) * this.maxSpeed;
       vy = (Math.random() * 2 - 1) * this.maxSpeed;
       vz = (Math.random() * 2 - 1) * this.maxSpeed;
       vel = new THREE.Vector3(vx, vy, vz);
-      
+
       radius = Math.random() * (this.maxRadius - this.minRadius) + this.minRadius;
-  
+
       var ball = new Metaball(pos, radius, vel, this.gridWidth, VISUAL_DEBUG);
       this.balls.push(ball);
-      
+
       if (VISUAL_DEBUG) {
         this.scene.add(ball.mesh);
       }
@@ -143,43 +145,111 @@ export default class MarchingCubes {
   // This function samples a point from the metaball's density function
   // Implement a function that returns the value of the all metaballs influence to a given point.
   // Please follow the resources given in the write-up for details.
-  sample(point) {
-    // @TODO
-    var isovalue = 1.1;
+  sample(point)
+  {
+    var isovalue = 0.0;
+
+    for (var i = 0; i < this.numMetaballs; i++)
+    {
+      var dist = this.balls[i].pos.distanceTo(point);
+      isovalue += this.balls[i].radius2/(dist*dist);
+    }
+
     return isovalue;
   }
 
-  update() {
+  sampleNormal(point)
+  {
+    var isonormal = THREE.Vector3(0.0, 0.0, 0.0);
 
-    if (this.isPaused) {
+    for (var i = 0; i < this.numMetaballs; i++)
+    {
+      var distdx = this.balls[i].pos.distanceTo(point + new THREE.Vector3(0.00001, 0.0, 0.0)) -
+                   this.balls[i].pos.distanceTo(point - new THREE.Vector3(0.00001, 0.0, 0.0));
+      var distdy = this.balls[i].pos.distanceTo(point + new THREE.Vector3(0.00001, 0.0, 0.0)) -
+                   this.balls[i].pos.distanceTo(point - new THREE.Vector3(0.00001, 0.0, 0.0));
+      var distdz = this.balls[i].pos.distanceTo(point + new THREE.Vector3(0.00001, 0.0, 0.0)) -
+                   this.balls[i].pos.distanceTo(point - new THREE.Vector3(0.00001, 0.0, 0.0));
+      isonormal += (new THREE.Vector3( distdx, distdy, distdz)).normalize();
+    }
+    isonormal /= this.numMetaballs;
+
+    return isonormal;
+  }
+
+  update()
+  {
+    if (this.isPaused)
+    {
       return;
     }
 
     // This should move the metaballs
-    this.balls.forEach(function(ball) {
+    this.balls.forEach(function(ball)
+    {
       ball.update();
     });
 
-    for (var c = 0; c < this.res3; c++) {
-
+    for (var c = 0; c < this.res3; c++)
+    {
       // Sampling the center point
       this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
 
+      //Sampling at the vertices of the voxel instead
+      //created 8 corner points inside the makeInspectPoints in voxel class
+      this.voxels[c].corner0.isovalue = this.sample(this.voxels[c].corner0.pos);
+      this.voxels[c].corner1.isovalue = this.sample(this.voxels[c].corner1.pos);
+      this.voxels[c].corner2.isovalue = this.sample(this.voxels[c].corner2.pos);
+      this.voxels[c].corner3.isovalue = this.sample(this.voxels[c].corner3.pos);
+      this.voxels[c].corner4.isovalue = this.sample(this.voxels[c].corner4.pos);
+      this.voxels[c].corner5.isovalue = this.sample(this.voxels[c].corner5.pos);
+      this.voxels[c].corner6.isovalue = this.sample(this.voxels[c].corner6.pos);
+      this.voxels[c].corner7.isovalue = this.sample(this.voxels[c].corner7.pos);
+
+      this.voxels[c].corner0.isonormal = this.sampleNormal(this.voxels[c].corner0.pos);
+      this.voxels[c].corner1.isonormal = this.sampleNormal(this.voxels[c].corner1.pos);
+      this.voxels[c].corner2.isonormal = this.sampleNormal(this.voxels[c].corner2.pos);
+      this.voxels[c].corner3.isonormal = this.sampleNormal(this.voxels[c].corner3.pos);
+      this.voxels[c].corner4.isonormal = this.sampleNormal(this.voxels[c].corner4.pos);
+      this.voxels[c].corner5.isonormal = this.sampleNormal(this.voxels[c].corner5.pos);
+      this.voxels[c].corner6.isonormal = this.sampleNormal(this.voxels[c].corner6.pos);
+      this.voxels[c].corner7.isonormal = this.sampleNormal(this.voxels[c].corner7.pos);
+
       // Visualizing grid
-      if (VISUAL_DEBUG && this.showGrid) {
-        
+      if (VISUAL_DEBUG && this.showGrid)
+      {
         // Toggle voxels on or off
-        if (this.voxels[c].center.isovalue > this.isolevel) {
-          this.voxels[c].show();
-        } else {
-          this.voxels[c].hide();
-        }
-        this.voxels[c].center.updateLabel(this.camera);
-      } else {
-        this.voxels[c].center.clearLabel();
+          if (this.voxels[c].center.isovalue > this.isolevel) {
+            this.voxels[c].show();
+          } else {
+            this.voxels[c].hide();
+          }
+        //   this.voxels[c].center.updateLabel(this.camera);
+        // } else {
+        //   this.voxels[c].center.clearLabel();
+        // }
+
+        this.voxels[c].corner0.updateLabel(this.camera);
+        this.voxels[c].corner1.updateLabel(this.camera);
+        this.voxels[c].corner2.updateLabel(this.camera);
+        this.voxels[c].corner3.updateLabel(this.camera);
+        this.voxels[c].corner4.updateLabel(this.camera);
+        this.voxels[c].corner5.updateLabel(this.camera);
+        this.voxels[c].corner6.updateLabel(this.camera);
+        this.voxels[c].corner7.updateLabel(this.camera);
+      }
+      else
+      {
+        this.voxels[c].corner0.clearLabel();
+        this.voxels[c].corner1.clearLabel();
+        this.voxels[c].corner2.clearLabel();
+        this.voxels[c].corner3.clearLabel();
+        this.voxels[c].corner4.clearLabel();
+        this.voxels[c].corner5.clearLabel();
+        this.voxels[c].corner6.clearLabel();
+        this.voxels[c].corner7.clearLabel();
       }
     }
-
     this.updateMesh();
   }
 
@@ -211,26 +281,28 @@ export default class MarchingCubes {
 
   updateMesh() {
     // @TODO
-  }  
+  }
 };
 
 // ------------------------------------------- //
 
-class Voxel {
-
-  constructor(position, gridCellWidth) {
+class Voxel
+{
+  constructor(position, gridCellWidth)
+  {
     this.init(position, gridCellWidth);
   }
 
-  init(position, gridCellWidth) {
+  init(position, gridCellWidth)
+  {
     this.pos = position;
     this.gridCellWidth = gridCellWidth;
 
     if (VISUAL_DEBUG) {
       this.makeMesh();
     }
-    
-    this.makeInspectPoints();      
+
+    this.makeInspectPoints();
   }
 
   makeMesh() {
@@ -274,7 +346,8 @@ class Voxel {
     this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
   }
 
-  makeInspectPoints() {
+  makeInspectPoints()
+  {
     var halfGridCellWidth = this.gridCellWidth / 2.0;
     var x = this.pos.x;
     var y = this.pos.y;
@@ -282,7 +355,25 @@ class Voxel {
     var red = 0xff0000;
 
     // Center dot
-    this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG); 
+    this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+
+    //Paul Brooke's vertex indexing scheme
+    this.corner0 = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth),
+                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+    this.corner1 = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth),
+                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+    this.corner2 = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth),
+                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+    this.corner3 = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth),
+                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+    this.corner4 = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth),
+                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+    this.corner5 = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth),
+                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+    this.corner6 = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth),
+                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+    this.corner7 = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth),
+                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
   }
 
   show() {
@@ -308,22 +399,183 @@ class Voxel {
     }
   }
 
-  vertexInterpolation(isolevel, posA, posB) {
+  vertexInterpolation(isolevel, vertA, vertB)
+  {
+    var lerpPos = new THREE.Vector3(0.0, 0.0, 0.0);
+    var interpolatedIsolevel = (isolevel - vertA.isovalue)/(vertB.isovalue - vertA.isovalue);
 
-    // @TODO
-    var lerpPos;
+    if ( Math.abs(isolevel - vertA.isolevel) < 0.00001 )
+    {
+      lerpPos.x = VertA.pos.x;
+      lerpPos.y = VertA.pos.y;
+      lerpPos.z = VertA.pos.z;
+      return lerpPos;
+    }
+    if ( Math.abs(isolevel - vertB.isolevel) < 0.00001 )
+    {
+      lerpPos.x = VertB.pos.x;
+      lerpPos.y = VertB.pos.y;
+      lerpPos.z = VertB.pos.z;
+      return lerpPos;
+    }
+    if ( Math.abs(vertA.isolevel - vertB.isolevel) < 0.00001 )
+    {
+      lerpPos.x = VertA.pos.x;
+      lerpPos.y = VertA.pos.y;
+      lerpPos.z = VertA.pos.z;
+      return lerpPos;
+    }
+
+    lerpPos.x = vertA.pos.x + interpolatedIsolevel*(vertB.pos.x - vertA.pos.x);
+    lerpPos.y = vertA.pos.y + interpolatedIsolevel*(vertB.pos.y - vertA.pos.y);
+    lerpPos.z = vertA.pos.z + interpolatedIsolevel*(vertB.pos.z - vertA.pos.z);
     return lerpPos;
   }
 
-  polygonize(isolevel) {
+  normalInterpolation(isolevel, vertA, vertB)
+  {
+    var lerpNor = new THREE.Vector3(0.0, 0.0, 1.0);
+    var interpolatedIsolevel = (isolevel - vertA.isovalue)/(vertB.isovalue - vertA.isovalue);
 
-    // @TODO
+    if ( Math.abs(isolevel - vertA.isolevel) < 0.00001 )
+    {
+      lerpNor.x = VertA.isonormal.x;
+      lerpNor.y = VertA.isonormal.y;
+      lerpNor.z = VertA.isonormal.z;
+      return lerpNor;
+    }
+    if ( Math.abs(isolevel - vertB.isolevel) < 0.00001 )
+    {
+      lerpNor.x = VertB.isonormal.x;
+      lerpNor.y = VertB.isonormal.y;
+      lerpNor.z = VertB.isonormal.z;
+      return lerpNor;
+    }
+    if ( Math.abs(vertA.isolevel - vertB.isolevel) < 0.00001 )
+    {
+      lerpNor.x = VertA.isonormal.x;
+      lerpNor.y = VertA.isonormal.y;
+      lerpNor.z = VertA.isonormal.z;
+      return lerpNor;
+    }
+
+    lerpNor.x = vertA.isonormal.x + interpolatedIsolevel*(vertB.isonormal.x - vertA.isonormal.x);
+    lerpNor.y = vertA.isonormal.y + interpolatedIsolevel*(vertB.isonormal.y - vertA.isonormal.y);
+    lerpNor.z = vertA.isonormal.z + interpolatedIsolevel*(vertB.isonormal.z - vertA.isonormal.z);
+    return lerpNor;
+  }
+
+  polygonize(isolevel) //called by a voxel
+  {
     var vertexList = [];
     var normalList = [];
 
+    var cubeindex = 0;
+    if (this.corner0.isovalue < this.isolevel) cubeindex |= 1;
+    if (this.corner1.isovalue < this.isolevel) cubeindex |= 2;
+    if (this.corner2.isovalue < this.isolevel) cubeindex |= 4;
+    if (this.corner3.isovalue < this.isolevel) cubeindex |= 8;
+    if (this.corner4.isovalue < this.isolevel) cubeindex |= 16;
+    if (this.corner5.isovalue < this.isolevel) cubeindex |= 32;
+    if (this.corner6.isovalue < this.isolevel) cubeindex |= 64;
+    if (this.corner7.isovalue < this.isolevel) cubeindex |= 128;
+
+    var edges = LUT.EDGE_TABLE[cubeindex]; // retruns a 12 bit number as a
+                                          // sort of bit switch for the edges
+                                          // which are being intersected
+
+    //Voxel is entirely in/out of the surface od the metaball
+    if (edges == 0)
+    {
+      return(0);
+    }
+
+    //Find the vertices(on the edges) where the metaball intersects the voxel
+    // var lerpedEdgePoints = [12];
+    var lerpedEdgePoints = new Array(12);
+    var lerpedEdgeNormals = new Array(12);
+    if (edges & 1)
+    {
+      lerpedEdgePoint[0] = vertexInterpolation(this.isolevel, this.corner0, this.corner1);
+      lerpedEdgeNormals[0] = normalInterpolation(this.isolevel, this.corner0, this.corner1);
+    }
+    if (edges & 2)
+    {
+      lerpedEdgePoint[1] = vertexInterpolation(this.isolevel, this.corner1, this.corner2);
+      lerpedEdgeNormals[1] = normalInterpolation(this.isolevel, this.corner1, this.corner2);
+    }
+    if (edges & 4)
+    {
+      lerpedEdgePoint[2] = vertexInterpolation(this.isolevel, this.corner2, this.corner3);
+      lerpedEdgeNormals[2] = normalInterpolation(this.isolevel, this.corner2, this.corner3);
+    }
+    if (edges & 8)
+    {
+      lerpedEdgePoint[3] = vertexInterpolation(this.isolevel, this.corner3, this.corner0);
+      lerpedEdgeNormals[3] = normalInterpolation(this.isolevel, this.corner3, this.corner0);
+    }
+    if (edges & 16)
+    {
+      lerpedEdgePoint[4] = vertexInterpolation(this.isolevel, this.corner4, this.corner5);
+      lerpedEdgeNormals[4] = normalInterpolation(this.isolevel, this.corner4, this.corner5);
+    }
+    if (edges & 32)
+    {
+      lerpedEdgePoint[5] = vertexInterpolation(this.isolevel, this.corner5, this.corner6);
+      lerpedEdgeNormals[5] = normalInterpolation(this.isolevel, this.corner5, this.corner6);
+    }
+    if (edges & 64)
+    {
+      lerpedEdgePoint[6] = vertexInterpolation(this.isolevel, this.corner6, this.corner7);
+      lerpedEdgeNormals[6] = normalInterpolation(this.isolevel, this.corner6, this.corner7);
+    }
+    if (edges & 128)
+    {
+      lerpedEdgePoint[7] = vertexInterpolation(this.isolevel, this.corner7, this.corner4);
+      lerpedEdgeNormals[7] = normalInterpolation(this.isolevel, this.corner7, this.corner4);
+    }
+    if (edges & 256)
+    {
+      lerpedEdgePoint[8] = vertexInterpolation(this.isolevel, this.corner0, this.corner4);
+      lerpedEdgeNormals[8] = normalInterpolation(this.isolevel, this.corner0, this.corner4);
+    }
+    if (edges & 512)
+    {
+      lerpedEdgePoint[9] = vertexInterpolation(this.isolevel, this.corner1, this.corner5);
+      lerpedEdgeNormals[9] = normalInterpolation(this.isolevel, this.corner1, this.corner5);
+    }
+    if (edges & 1024)
+    {
+      lerpedEdgePoint[10] = vertexInterpolation(this.isolevel, this.corner2, this.corner6);
+      lerpedEdgeNormals[10] = normalInterpolation(this.isolevel, this.corner2, this.corner6);
+    }
+    if (edges & 2048)
+    {
+      lerpedEdgePoint[11] = vertexInterpolation(this.isolevel, this.corner3, this.corner7);
+      lerpedEdgeNormals[11] = normalInterpolation(this.isolevel, this.corner3, this.corner7);
+    }
+
+    //Create the triangle(s) (upto 5 triangles) andstore those vertices into the vertexList
+    var triangles = LUT.TRI_TABLE[cubeindex];
+    var ntriang = 0;
+    //for loop stops at -1 because we've made the last int stored in every row of the in the TRI_TABLE == -1
+    //the other values can be up to 15 vertices for the triangles
+    for(var i=0; traingles[i]!=-1; i=i+3)
+    {
+      vertexList[ntriang] = lerpedEdgePoints[triangles[i]];
+      vertexList[ntriang + 1] = lerpedEdgePoints[triangles[i+1]];
+      vertexList[ntriang + 2] = lerpedEdgePoints[triangles[i+2]];
+
+      normalList[ntriang] = lerpedEdgeNormals[triangles[i]];
+      normalList[ntriang + 1] = lerpedEdgeNormals[triangles[i+1]];
+      normalList[ntriang + 2] = lerpedEdgeNormals[triangles[i+2]];
+
+      ntriang++;
+    }
+
     return {
-      vertPositions: vertPositions,
-      vertNormals: vertNormals
+      vertPositions: vertexList,
+      vertNormals: normalList
     };
   };
 }
