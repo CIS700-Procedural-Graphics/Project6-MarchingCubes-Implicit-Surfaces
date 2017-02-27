@@ -8,15 +8,17 @@ var VISUAL_DEBUG = true;
 const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparent: true, opacity: 0.5 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
+const LAMBERT_BLUE = new THREE.MeshLambertMaterial( { color: 0x2194ce } );
 
-
-export default class MarchingCubes {
-
-  constructor(App) {
+export default class MarchingCubes
+{
+  constructor(App)
+  {
     this.init(App);
   }
 
-  init(App) {
+  init(App)
+  {
     this.isPaused = false;
     VISUAL_DEBUG = App.config.visualDebug;
 
@@ -253,34 +255,115 @@ export default class MarchingCubes {
     this.updateMesh();
   }
 
-  pause() {
+  pause()
+  {
     this.isPaused = true;
   }
 
-  play() {
+  play()
+  {
     this.isPaused = false;
   }
 
-  show() {
-    for (var i = 0; i < this.res3; i++) {
+  show()
+  {
+    for (var i = 0; i < this.res3; i++)
+    {
       this.voxels[i].show();
     }
     this.showGrid = true;
   };
 
-  hide() {
-    for (var i = 0; i < this.res3; i++) {
+  hide()
+  {
+    for (var i = 0; i < this.res3; i++)
+    {
       this.voxels[i].hide();
     }
     this.showGrid = false;
   };
 
-  makeMesh() {
-    // @TODO
+  makeMesh()
+  {
+    //create 5 triangles for every voxel
+    //then just updata the vertex positions in the updateMesh function
+    //this way you don't have to keep reallocating and deallocating memory.
+
+    this.voxelTriangleMeshes = []; //list of all triangles for all voxels
+    for (var c = 0; c < this.res3; c++)
+    {
+      // this.cellTriangles[c]
+      var halfGridCellWidth = this.gridCellWidth / 2.0;
+      //triangles have arbitrary positions right now
+      var triangleVertexPositions = new Float32Array([
+        //Triangle 1
+        halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth,
+        halfGridCellWidth, halfGridCellWidth, -halfGridCellWidth,
+        halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth,
+        //Triangle 2
+        halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth,
+        halfGridCellWidth, halfGridCellWidth, -halfGridCellWidth,
+        halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth,
+        //Triangle 3
+        halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth,
+        halfGridCellWidth, halfGridCellWidth, -halfGridCellWidth,
+        halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth,
+        //Triangle 4
+        halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth,
+        halfGridCellWidth, halfGridCellWidth, -halfGridCellWidth,
+        halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth,
+        //Triangle 5
+        halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth,
+        halfGridCellWidth, halfGridCellWidth, -halfGridCellWidth,
+        halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth
+      ]);
+
+      var triangleVertexNormals = new Float32Array([
+        //Triangle 1
+        0.0, 0.0, 1.0,
+        0.0, 0.0, 1.0,
+        0.0, 0.0, 1.0,
+        //Triangle 2
+        0.0, 0.0, 1.0,
+        0.0, 0.0, 1.0,
+        0.0, 0.0, 1.0,
+        //Triangle 3
+        0.0, 0.0, 1.0,
+        0.0, 0.0, 1.0,
+        0.0, 0.0, 1.0,
+        //Triangle 4
+        0.0, 0.0, 1.0,
+        0.0, 0.0, 1.0,
+        0.0, 0.0, 1.0,
+        //Triangle 5
+        0.0, 0.0, 1.0,
+        0.0, 0.0, 1.0,
+        0.0, 0.0, 1.0
+      ]);
+
+      var trigeo = new THREE.BufferGeometry();
+      trigeo.dynamic = true;
+      trigeo.addAttribute( 'position', new THREE.BufferAttribute( triangleVertexPositions, 3 ) );
+      trigeo.addAttribute( 'normal', new THREE.BufferAttribute( triangleVertexPositions, 3 ) );
+      this.voxelTriangleMeshes.push(new THREE.Mesh( trigeo, LAMBERT_BLUE ));
+      this.scene.add(this.voxelTriangleMeshes[c]);
+    }
   }
 
-  updateMesh() {
-    // @TODO
+  updateMesh()
+  {
+    //now that all the triangles exist as a mesh, update them every frame via this function
+    this.vertexData = [];
+
+    for (var c = 0; c < this.res3; c++)
+    {
+      this.vertexData[c] = this.voxels[c].polygonize(this.isolevel);
+      this.voxelTriangleMeshes[c].geometry.verticesNeedUpdate = true;
+      // this.voxelTriangleMeshes[c].geometry.verticesNeedUpdate = true;
+      this.voxelTriangleMeshes[c].geometry.vertices = this.vertexData[c].vertPositions;
+      this.voxelTriangleMeshes[c].geometry.normals = this.vertexData[c].vertNormals;
+      this.voxelTriangleMeshes[c].position = this.voxels[c].pos;
+    }
   }
 };
 
