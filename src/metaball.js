@@ -17,7 +17,7 @@ export default class Metaball {
     this.radius2 = radius * radius;
     this.mesh = null;
 
-    if (visualDebug) {      
+    if (visualDebug) {
       this.makeMesh();
     }
   }
@@ -42,5 +42,34 @@ export default class Metaball {
 
   update() {
     // @TODO
+    var newvel = new THREE.Vector3(0,0,0);
+    newvel.addVectors(this.pos, this.vel);
+
+    if(newvel.x-this.radius > 0 && newvel.x+this.radius < this.gridWidth) {
+        this.pos.x += this.vel.x;
+    }
+    else {
+        this.vel.x = -this.vel.x;
+        this.pos.x += this.vel.x;
+    }
+
+    if(newvel.y-this.radius > 0 && newvel.y+this.radius < this.gridWidth) {
+        this.pos.y += this.vel.y;
+    }
+    else {
+        this.vel.y = -this.vel.y;
+        this.pos.y += this.vel.y;
+    }
+
+    if(newvel.z-this.radius > 0 && newvel.z+this.radius < this.gridWidth) {
+        this.pos.z += this.vel.z;
+    }
+    else {
+        this.vel.z = -this.vel.z;
+        this.pos.z += this.vel.z;
+    }
+
+    this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
+
   }
 }
