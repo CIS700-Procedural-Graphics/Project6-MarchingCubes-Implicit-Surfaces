@@ -296,8 +296,7 @@ class Voxel {
     for (var i = 0; i < 8; i++) {
       this.samples.push(0.0);
     } 
-    // this.calcSamplesAtCorners(); // to actually fill with approp values
-    // console.log("samples[0] changed to: " + this.samples[0]);     
+    // ^ samples is filled with approp values in update in MarchingCubes  
   }
 
   makeMesh() {
@@ -375,18 +374,101 @@ class Voxel {
     }
   }
 
-  vertexInterpolation(isolevel, posA, posB) {
+  // -HB : for lerping
+  vertexInterpolation(isolevel, posA, ip1, ip2, posB) {
+    /********************************************************************************************************/
+    // compute the linearly interpolated vertex position on the edge according to the isovalue at each
+    // end corner of the edge.
+    /********************************************************************************************************/
+    var checkWith = 0.00001;
 
-    // @TODO
-    var lerpPos;
-    return lerpPos;
+    // just p1
+    if (Math.abs(isoLevel - iv1) < checkWith) {
+      return p1;
+    }
+    // just p2
+    if (Math.abs(isoLevel - iv2) < checkWith) {
+      return p2;
+    }
+    // based on diff between isovals of the points, if too close then just return one of them
+    // bc almost as if the same
+    if (Math.abs(iv1 - iv2) < checkWith) {
+      return p1;
+    }
+
+    var p = Vector3f(0.0, 0.0, 0.0, 0.0);
+    var weight = (isoLevel - iv1) / (iv2 - iv1);
+    p.x = p1.x + weight * (p2.x - p1.x);
+    p.y = p1.y + weight * (p2.y - p1.y);
+    p.z = p1.z + weight * (p2.z - p1.z);
+
+    return p;
   }
 
+
+  //  http://paulbourke.net/geometry/polygonise/
   polygonize(isolevel) {
 
     // @TODO
     var vertexList = [];
     var normalList = [];
+
+
+    // figure out cell configuration based isoVals versus isoLevel
+    var pickCube = 0;
+    for (var i = 0; i < 8; i++) {
+      if (this.samples[i] < isoLevel) {
+        pickCube += Math.pow(2, i);
+      }
+    }
+
+    // finding vertices where cube intersects
+    // if cube index is 0 then no vertices returned [cube entirely in/out of the visual area so not shown]
+    if (pickCube == 0) {
+      return 0; // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
+      // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
+      // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
+      // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
+      // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
+      // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
+    }
+
+    // c = col, r = row = which face
+    // c = (i) % 4;
+    // r = floor(i+1 / 4)
+
+    // i goes from [0, 11] bc going through all poss bits
+    var twelveBits = this.EDGE_TABLE[pickCube];
+    for (var i = 0; i < 12; i++) {
+      // based on if the bit config returned by the cubeTable for pickCube, if there's a bit for a loc, then 
+      // there's an intersection on that edge so we need to interp the vertex location and add it to the verPositions
+      // output array
+      if (twelveBits & Math.pow(2, i)) {
+        // to get proper index for this interp: 
+        var c = i % 4;
+        var r = Math.floor((i+1) / 4);
+        var idx = r * 4 + c;
+
+        // lerp vertices in this configuration based on isovals at each point for each face in found cell configuration 
+        vertexPositions[i] = this.interp(this.positions[idx],
+                                         this.positions[idx+1],
+                                         this.samples[idx],
+                                         this.samples[idx + 1]);
+      }
+    }//end: forLoop over 12bits
+
+    // now have vertex locations for all edge intersections - ie what our final geo will be built with
+    // need to fill out final vertexPositions for the triangle based on that?
+
+    // calculating normals
+    // for each vertex - find average of the normals of all attached faces but calculate the overall normal for the point
+    //    such that the weighting used for each normals addition to the calculation is based on 1/SA of the associated face
+    
+
+
+    
+
+    
 
     return {
       vertPositions: vertPositions,
