@@ -19,7 +19,7 @@ const DEFAULT_GRID_RES = 30;
 const DEFAULT_GRID_WIDTH = 6;
 const DEFAULT_GRID_HEIGHT = 17;
 const DEFAULT_GRID_DEPTH = 6;
-const DEFAULT_NUM_METABALLS = 10;
+const DEFAULT_NUM_METABALLS = 7;
 const DEFAULT_MIN_RADIUS = 0.5;
 const DEFAULT_MAX_RADIUS = 1;
 const DEFAULT_MAX_SPEEDX = 0.005;
@@ -124,7 +124,7 @@ function onLoad(framework) {
   //scene.add(new THREE.AxisHelper(20));
 
   var objLoader = new THREE.OBJLoader();
-  var obj = objLoader.load('glass.obj', function(obj) {
+  var obj = objLoader.load(require('./assets/glass.obj'), function(obj) {
     glassGeo = obj.children[0].geometry;
     var glass = new THREE.Mesh(glassGeo, GLASS_MAT);
     glass.translateX(-1.5);
@@ -133,7 +133,7 @@ function onLoad(framework) {
     loaded = true;
   });
 
-  var obj = objLoader.load('lamp.obj', function(obj) {
+  var obj = objLoader.load(require('./assets/lamp.obj'), function(obj) {
     lampGeo = obj.children[0].geometry;
     var lamp = new THREE.Mesh(lampGeo, METAL_MAT);
     lamp.translateX(-1.5);
