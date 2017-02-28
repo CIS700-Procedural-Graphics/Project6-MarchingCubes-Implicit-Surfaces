@@ -194,7 +194,7 @@ export default class MarchingCubes {
       var i = (ball.radius * ball.radius) / (d * d);
       isovalue += i;
 
-      var n = new THREE.Vector3((point.x - ball.pos.x), (point.y - ball.pos.y), (point.z - ball.pos.z));
+      var n = new THREE.Vector3(-(point.x - ball.pos.x), -(point.y - ball.pos.y), -(point.z - ball.pos.z));
       normal.add(n.multiplyScalar(2 * i * i));
     });
     return {
@@ -312,7 +312,7 @@ export default class MarchingCubes {
         face.vertexNormals[1] = n1.normalize();
         face.vertexNormals[2] = n2.normalize();
         triangleGeo.faces.push(face);
-        
+
         var triangleMesh = new THREE.Mesh(triangleGeo);
         triangleMesh.updateMatrix();
         geometry.merge(triangleMesh.geometry, triangleMesh.matrix);
