@@ -237,8 +237,9 @@ export default class MarchingCubes {
 
     // -HB : added to calc samples at corners
     this.calcAllVoxelSamples();
-
+    console.log("calculated all voxel samples");
     this.updateMesh();
+    console.log("updated mesh based on polygonized values");
   }
 
   pause() {
@@ -268,7 +269,42 @@ export default class MarchingCubes {
   }
 
   updateMesh() {
-    // @TODO
+    // for each voxel - call polygonize(this.isolevel);
+    // update their vertex positions and normals?
+    // use normals for coloring the mesh based on material
+
+    for (var i = 0; i < this.voxels.length; i++){
+      // positions, normals = voxels[i].polygonize(this.isolevel);
+
+      var currVoxel = this.voxels[i];
+      var obj = currVoxel.polygonize(this.isolevel);
+      
+      var updatedPositions = obj.vertPositions;
+      var updatedNormals = obj.vertNormals;
+
+      //var geo = new THREE.BufferGeometry();
+      //geo.setIndex( new THREE.BufferAttribute( indices, 1 ) );
+      //geo.addAttribute( 'position', new THREE.BufferAttribute( updatedPositions, 3 ) );
+
+      var geo = currVoxel.mesh.geometry;
+      geo.vertices = updatedPositions;
+      geo.faces = new Array();
+
+      for (var j =0; j < updatedNormals.length; j += 3) {
+        var face = new THREE.Face3(j, j+1, j+2, new THREE.Vector3(0.0, 0.0, 1.0), 0xff0000, 0);
+        face.vertexNormals[0] = updatedNormals[j];
+        face.vertexNormals[1] = updatedNormals[j+1];
+        face.vertexNormals[2] = updatedNormals[j+2];
+        geo.faces.push(face);
+      }
+
+      // update for new geometry
+      geo.verticesNeedUpdate = true;
+      geo.dynamic = true;
+      geo.elementsNeedUpdate = true;
+    }
+
+    // note: since geo is updated - green mesh and white wireframe should both update.
   }  
 };
 
@@ -276,33 +312,33 @@ export default class MarchingCubes {
 
 // -HB: defining type for normals and polygonization
 function vertexHolder() {
-    loc: new THREE.Vector3f(0.0, 0.0, 0.0); // curr vertex
-    touchingFaces: new Array(); // listing of touching faces
-    numFaces: 0;
+    this.loc = new THREE.Vector3(0.0, 0.0, 0.0); // curr vertex
+    this.touchingFaces = new Array(); // listing of touching faces
+    this.numFaces = 0;
 
     this.addItem = function(item) {
       this.touchingFaces.push(item);
-      numFaces += 1;
+      this.numFaces += 1;
     }
 }
 
 function allVerticesHolder() {
-    allVertexHolders: new Array(); // listing of touching faces
-    numVertices: 0;
+    this.allVertexHolders = new Array(); // listing of touching faces
+    this.numVertices = 0;
 
     this.addVertexHolder = function(item) {
       this.allVertexHolders.push(item);
-      numVertices += 1;
+      this.numVertices += 1;
     }
 
     this.addFaceToVertex = function(face, vertex) {
       // face is a Vector3f of Vector3f
       // vertex is a Vector3f
       var added = false;
-      for (var i = 0; i < numVertices; i++) {
-        var loc = allVertexHolders[i].loc;
+      for (var i = 0; i < this.numVertices; i++) {
+        var loc = this.allVertexHolders[i].loc;
         if (loc.x == vertex.x && loc.y == vertex.y && loc.z == vertex.z) {
-          allVertexHolders[i].touchingFaces.push(face);
+          this.allVertexHolders[i].addItem(face);
           added = true;
         }
       }
@@ -310,16 +346,20 @@ function allVerticesHolder() {
       if (!added) {
         var vH = new vertexHolder();
         vH.addItem(face);
-        numVertices += 1;
-        allVertexHolders.push(vH);
+        vH.loc = vertex;
+
+        this.numVertices += 1;
+        this.allVertexHolders.push(vH);
       }
     }
 
     this.getAssociatedFaces = function(vertex) {
-      for (var i = 0; i < numVertices; i++) {
-        var loc = allVertexHolders[i].loc;
-        if (loc.x == vertex.x && loc.y == vertex.y && loc.z == vertex.z) {
-          return allVertexHolders[i].touchingFaces;
+      var margin = .05;
+      for (var i = 0; i < this.numVertices; i++) {
+        var loc = this.allVertexHolders[i].loc;
+        
+        if (Math.abs(loc.x - vertex.x) < margin && Math.abs(loc.y - vertex.y) < margin && Math.abs(loc.z - vertex.z) < margin) {
+          return this.allVertexHolders[i].touchingFaces;
         }
       }
 
@@ -429,7 +469,7 @@ class Voxel {
   }
 
   // -HB : for lerping
-  vertexInterpolation(isolevel, posA, ip1, ip2, posB) {
+  vertexInterpolation(isolevel, posA, posB, ip1, ip2) {
     /********************************************************************************************************/
     // compute the linearly interpolated vertex position on the edge according to the isovalue at each
     // end corner of the edge.
@@ -437,31 +477,31 @@ class Voxel {
     var checkWith = 0.00001;
 
     // just p1
-    if (Math.abs(isoLevel - iv1) < checkWith) {
-      return p1;
+    if (Math.abs(isolevel - ip1) < checkWith) {
+      return posA;
     }
     // just p2
-    if (Math.abs(isoLevel - iv2) < checkWith) {
-      return p2;
+    if (Math.abs(isolevel - ip2) < checkWith) {
+      return posB;
     }
     // based on diff between isovals of the points, if too close then just return one of them
     // bc almost as if the same
-    if (Math.abs(iv1 - iv2) < checkWith) {
-      return p1;
+    if (Math.abs(ip1 - ip2) < checkWith) {
+      return posA;
     }
 
-    var p = Vector3f(0.0, 0.0, 0.0, 0.0);
-    var weight = (isoLevel - iv1) / (iv2 - iv1);
-    p.x = p1.x + weight * (p2.x - p1.x);
-    p.y = p1.y + weight * (p2.y - p1.y);
-    p.z = p1.z + weight * (p2.z - p1.z);
+    var p = new THREE.Vector3(0.0, 0.0, 0.0);
+    var weight = (isolevel - ip1) / (ip2 - ip1);
+    p.x = posA.x + weight * (posB.x - posA.x);
+    p.y = posA.y + weight * (posB.y - posA.y);
+    p.z = posA.z + weight * (posB.z - posA.z);
 
     return p;
   }
 
 
   //  http://paulbourke.net/geometry/polygonise/
-  polygonize(isolevel) {
+  polygonize(isoLevel) {
     /********************************************************************************************************/
     // compute the vertex positions based on intersected edges and isovals. from these created polygons
     // compute the associated normals as well.
@@ -478,59 +518,88 @@ class Voxel {
     // figure out cell configuration based isoVals versus isoLevel
     var pickCube = 0;
     for (var i = 0; i < 8; i++) {
-      if (this.samples[i] < isoLevel) {
+      if (this.samples[i] > isoLevel) {
         pickCube += Math.pow(2, i);
       }
     }
 
+    var vertPositions = []; //to be returned
+    var vertNormals = []; //to be returned
+
     // finding vertices where cube intersects
     // if cube index is 0 then no vertices returned [cube entirely in/out of the visual area so not shown]
     if (pickCube == 0) {
-      return 0; // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
-      // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
-      // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
-      // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
-      // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
-      // NOT SURE HOW TO PROPERLY HANDLE THIS CASE????
+      return {
+        vertPositions: vertPositions,
+        vertNormals: vertNormals
+      };
     }
 
-    // c = col, r = row = which face
-    // c = (i) % 4;
-    // r = floor(i+1 / 4)
+    // GIVEN POSITIONS
+    var c = new THREE.Vector3(0.0, 0.0, 0.0);
+    c = this.pos;
+    var hW = this.gridCellWidth / 2.0;
+
+    var allPoints = new Array();
+
+    var cx = c.x;
+    var cy = c.y;
+    var cz = c.z;
+    allPoints.push( new THREE.Vector3(cx-hW, cy-hW, cz+hW), // bottom face: 0, 1, 2, 3
+                    new THREE.Vector3(cx+hW, cy-hW, cz+hW),
+                    new THREE.Vector3(cx+hW, cy-hW, cz-hW),
+                    new THREE.Vector3(cx-hW, cy-hW, cz-hW),
+                    new THREE.Vector3(cx-hW, cy+hW, cz+hW), // top face: 4, 5, 6, 7
+                    new THREE.Vector3(cx+hW, cy+hW, cz+hW),
+                    new THREE.Vector3(cx+hW, cy+hW, cz-hW),
+                    new THREE.Vector3(cx-hW, cy+hW, cz-hW));
+
+    var indexLocs = [
+      0, 1, 1, 2, 
+      2, 3, 3, 0, 
+      4, 5, 5, 6,  
+      6, 7, 7, 4,
+      0, 4, 1, 5,
+      2, 6, 3, 7 ];
 
     // i goes from [0, 11] bc going through all poss bits
-    var twelveBits = this.EDGE_TABLE[pickCube];
-    for (var i = 0; i < 12; i++) {
-      // based on if the bit config returned by the cubeTable for pickCube, if there's a bit for a loc, then 
-      // there's an intersection on that edge so we need to interp the vertex location and add it to the verPositions
-      // output array
-      if (twelveBits & Math.pow(2, i)) {
-        // to get proper index for this interp: 
-        var c = i % 4;
-        var r = Math.floor((i+1) / 4);
-        var idx = r * 4 + c;
+    var twelveBits = LUT.EDGE_TABLE[pickCube];
 
-        // lerp vertices in this configuration based on isovals at each point for each face in found cell configuration 
-        vertexLocations[i] = this.interp(this.positions[idx],
-                                         this.positions[idx+1],
-                                         this.samples[idx],
-                                         this.samples[idx + 1]);
+    var j = 0;
+    for (var i = 0; i < 12; i++) {
+      if (twelveBits & Math.pow(2, i)) {
+        var i_curr = indexLocs[j];
+        var i_next = indexLocs[j+1];
+
+        // console.log(isoLevel);
+        // console.log("idx curr : " + i_curr);
+        // console.log("idx next : " + i_next);
+        // console.log("allPoints[idx]: " + allPoints[i_curr] + ", allPoints[idx+1]" + allPoints[i_next] );
+        // console.log("this.samples[idx]: " + this.samples[i_curr] + ", this.samples[idx + 1]" + this.samples[i_next] );
+        vertexLocations[i] = this.vertexInterpolation(isoLevel,
+                                                      allPoints[i_curr],
+                                                      allPoints[i_next],
+                                                      this.samples[i_curr],
+                                                      this.samples[i_next]);
       }
+
+      j += 2;
     }//end: forLoop over 12bits
 
     // now have vertex locations for all edge intersections - ie what our final geo will be built with
     // need to make triangles out of these now
-    var currTri = 0;
+    // var currTri = 0;
     // iterate through the current tri_table row and fill out triangles until you reach -1 which means there are no longer
     //    triangles to be filled for this orientation
     // gets which vertex nums are used for this triangle based on tri table but uses vertex locations for actual positions of 
     //    intersection location for the triangles that are created
     // also filling in vertexPositions appropriately
-    for (var i = 0; this.TRI_TABLE[pickCube][i] != -1; i += 3) {
-      var loc1 = vertexLocations[this.TRI_TABLE[pickCube][i]];
-      var loc2 = vertexLocations[this.TRI_TABLE[pickCube][i+1]];
-      var loc3 = vertexLocations[this.TRI_TABLE[pickCube][i+2]];
-      var currFace = new THREE.Vector3f(loc1, loc2, loc3);
+    // console.log("pickCube: " + pickCube);
+    for (var i = 0; LUT.TRI_TABLE[pickCube * 16 + i] != -1; /*i += 3*/) {
+      var loc1 = vertexLocations[LUT.TRI_TABLE[pickCube * 16 + i]];
+      var loc2 = vertexLocations[LUT.TRI_TABLE[pickCube * 16 + i+1]];
+      var loc3 = vertexLocations[LUT.TRI_TABLE[pickCube * 16 + i+2]];
+      var currFace = new THREE.Vector3(loc1, loc2, loc3);
       vertPositions.push(loc1);
       vertPositions.push(loc2);
       vertPositions.push(loc3);
@@ -540,7 +609,8 @@ class Voxel {
       verticesHolder.addFaceToVertex(currFace, loc2);
       verticesHolder.addFaceToVertex(currFace, loc3);
 
-      currTri += 1;
+      i += 3;
+      // currTri += 1;
     }
 
     // calculating normals
@@ -553,16 +623,21 @@ class Voxel {
       // area of face: based on cross product = length of cross product / 2;
 
       if (vertexLocations[i] != null) {
-        var currNormal = THREE.Vector3f(0.0);
-        var faces = getAssociatedFaces(vertexLocations[i]);
+        var currNormal = new THREE.Vector3(0.0);
+        var faces = verticesHolder.getAssociatedFaces(vertexLocations[i]);
+
+        //current problem: faces being returned as a vec3 and not as a vector of faces
 
         for (var j = 0; j< faces.length; j++) {
-          var A = faces[i].x;
-          var B = faces[i].y;
-          var C = faces[i].z;
-          var cross = (A-B).cross(C-B);
-          var areaOfFace = cross.length/2.0;
-          var normOfFace = cross.normalize();
+          var A = faces[j].x;
+          var B = faces[j].y;
+          var C = faces[j].z;
+
+          var aAndb = new THREE.Vector3(A.x-B.x, A.y - B.y, A.z - B.z);
+          var cAndb = new THREE.Vector3(C.x-B.x, C.y - B.y, C.z - B.z);
+          var crossVal = (aAndb).cross(cAndb);
+          var areaOfFace = crossVal.length/2.0;
+          var normOfFace = crossVal.normalize();
           currNormal += normOfFace / areaOfFace;
         }
 
@@ -572,10 +647,10 @@ class Voxel {
     }
     
     // filling in vertexNormals appropriately based on which vertices are actually used for which faces
-    for (var i = 0; this.TRI_TABLE[pickCube][i] != -1; i += 3) {
-      var loc1 = normalVals[this.TRI_TABLE[pickCube][i]];
-      var loc2 = normalVals[this.TRI_TABLE[pickCube][i+1]];
-      var loc3 = normalVals[this.TRI_TABLE[pickCube][i+2]];
+    for (var i = 0; LUT.TRI_TABLE[pickCube * 16 + i] != -1; i += 3) {
+      var loc1 = normalVals[LUT.TRI_TABLE[pickCube * 16 + i]];
+      var loc2 = normalVals[LUT.TRI_TABLE[pickCube * 16 + i+1]];
+      var loc3 = normalVals[LUT.TRI_TABLE[pickCube * 16 + i+2]];
       vertNormals.push(loc1);
       vertNormals.push(loc2);
       vertNormals.push(loc3);
