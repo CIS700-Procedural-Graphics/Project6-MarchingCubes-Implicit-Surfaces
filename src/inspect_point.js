@@ -27,7 +27,7 @@ export default class InspectPoint {
     this.label.style.height = 100;
     this.label.style.userSelect = 'none';
     this.label.style.cursor = 'default';
-    this.label.style.fontSize = '0.3em';
+    this.label.style.fontSize = '0.7em';
     this.label.style.pointerEvents = 'none';
     document.body.appendChild(this.label);
   };
@@ -41,7 +41,7 @@ export default class InspectPoint {
       this.label.style.top = screenPos.y + 'px';
       this.label.style.left = screenPos.x + 'px';
       this.label.innerHTML = this.isovalue.toFixed(2);
-      this.label.style.opacity = this.isovalue - 0.5;
+      // this.label.style.opacity = this.isovalue - 0.5;
     }
   };
 
