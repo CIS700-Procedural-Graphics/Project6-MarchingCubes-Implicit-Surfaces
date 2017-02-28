@@ -143,9 +143,24 @@ export default class MarchingCubes {
   // This function samples a point from the metaball's density function
   // Implement a function that returns the value of the all metaballs influence to a given point.
   // Please follow the resources given in the write-up for details.
+  influence(ball, point){
+    var rSquared = Math.pow(ball.radius, 2.0);
+    var xDiffSquared = Math.pow(point.x - ball.pos.x, 2.0);
+    var yDiffSquared = Math.pow(point.y - ball.pos.y, 2.0);
+    var zDiffSquared = Math.pow(point.z - ball.pos.z, 2.0);
+    return (rSquared/(xDiffSquared + yDiffSquared + zDiffSquared));
+  };
+
   sample(point) {
     // @TODO
-    var isovalue = 1.1;
+    var isovalue = 0.0;
+
+    // var i = this.influence(this.balls[0], point);
+
+    for (var i = 0; i < this.length; i++){
+      isovalue += this.influence(balls[i], point);
+    }
+
     return isovalue;
   }
 

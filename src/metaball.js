@@ -11,7 +11,13 @@ export default class Metaball {
   init(pos, radius, vel, gridWidth, visualDebug) {
     this.gridWidth = gridWidth;
     this.pos = pos;
+    
+    //start position for boundary calc
+    this.startPos = this.pos.clone();
+
     this.vel = vel;
+
+    // console.log(this.pos);
 
     this.radius = radius;
     this.radius2 = radius * radius;
@@ -42,5 +48,15 @@ export default class Metaball {
 
   update() {
     // @TODO
+    var padding = 0.25;
+
+    //reverse velocity if outside radius from center
+    if (Math.abs(this.startPos.distanceTo(this.pos)) > (this.gridWidth/2.0 - padding)){
+      this.vel.multiplyScalar(-1.0);
+    }
+
+    var newPos = this.pos.add(this.vel);;
+    // this.pos.add(v);
+    this.mesh.position.set(newPos.x, newPos.y, newPos.z);
   }
 }
