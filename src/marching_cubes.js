@@ -5,9 +5,52 @@ import InspectPoint from './inspect_point.js'
 import LUT from './marching_cube_LUT.js';
 var VISUAL_DEBUG = true;
 
+var options = {
+    lightColor: '#ffffff',
+    lightIntensity: 2,
+    albedo: '#ffffff',
+    ambient: '#111111',
+    useTexture: false
+}
+
 const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x55ee55, transparent: true, opacity: 0.2 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
+const CUSTOM_LAMBERT = new THREE.ShaderMaterial({
+    side: THREE.DoubleSide,
+    uniforms: {
+        texture: {
+            type: "t",
+            value: null
+        },
+        u_useTexture: {
+            type: 'i',
+            value: options.useTexture
+        },
+        u_albedo: {
+            type: 'v3',
+            value: new THREE.Color(options.albedo)
+        },
+        u_ambient: {
+            type: 'v3',
+            value: new THREE.Color(options.ambient)
+        },
+        u_lightPos: {
+            type: 'v3',
+            value: new THREE.Vector3(30, 50, 40)
+        },
+        u_lightCol: {
+            type: 'v3',
+            value: new THREE.Color(options.lightColor)
+        },
+        u_lightIntensity: {
+            type: 'f',
+            value: options.lightIntensity
+        }
+    },
+    vertexShader: require('./shaders/lambert-vert.glsl'),
+    fragmentShader: require('./shaders/lambert-frag.glsl')
+  });
 
 
 export default class MarchingCubes {
@@ -231,7 +274,7 @@ export default class MarchingCubes {
 
   makeMesh() {
     var geometry = new THREE.Geometry();
-    var material = new THREE.MeshLambertMaterial( {color: 0xff0000} );
+    var material = new THREE.MeshLambertMaterial( {color: 0xff0000, side: THREE.DoubleSide} );
     this.mesh = new THREE.Mesh( geometry, material );
     this.mesh.name = "surface";
     this.scene.add(this.mesh);
@@ -264,8 +307,10 @@ export default class MarchingCubes {
         var n2 = p.vertNormals[LUT.TRI_TABLE[cubeindex * 16 + j + 1]];
         var n3 = p.vertNormals[LUT.TRI_TABLE[cubeindex * 16 + j + 2]];
         var normal = n1.lerp(n2.lerp(n3, 0.5), 0.5).normalize();
-        triangleGeo.faces.push(new THREE.Face3(0, 1, 2, new THREE.Vector3(-normal.x, normal.y, -normal.z) ));
+        normal = new THREE.Vector3(normal.x, -normal.y, normal.z);
+        triangleGeo.faces.push(new THREE.Face3(0, 1, 2, normal));
         // triangleGeo.computeVertexNormals();
+        // triangleGeo.computeFaceNormals();
 
         var triangleMesh = new THREE.Mesh(triangleGeo);
         triangleMesh.updateMatrix();

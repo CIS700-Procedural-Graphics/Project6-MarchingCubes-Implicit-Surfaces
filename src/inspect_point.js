@@ -35,8 +35,8 @@ export default class InspectPoint {
   updateLabel(camera) {
     if (this.label) {
       var screenPos = this.pos.clone().project(camera);
-      screenPos.x = ( screenPos.x + 1 ) / 2 * window.innerWidth;;
-      screenPos.y = - ( screenPos.y - 1 ) / 2 *  window.innerHeight;;
+      screenPos.x = ( screenPos.x + 1 ) / 2 * window.innerWidth;
+      screenPos.y = - ( screenPos.y - 1 ) / 2 *  window.innerHeight;
 
       this.label.style.top = screenPos.y + 'px';
       this.label.style.left = screenPos.x + 'px';
