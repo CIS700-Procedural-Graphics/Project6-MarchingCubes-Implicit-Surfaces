@@ -303,15 +303,16 @@ export default class MarchingCubes {
         triangleGeo.vertices.push(v2);
         triangleGeo.vertices.push(v3);
 
-        var n1 = p.vertNormals[LUT.TRI_TABLE[cubeindex * 16 + j]];
-        var n2 = p.vertNormals[LUT.TRI_TABLE[cubeindex * 16 + j + 1]];
-        var n3 = p.vertNormals[LUT.TRI_TABLE[cubeindex * 16 + j + 2]];
-        var normal = n1.lerp(n2.lerp(n3, 0.5), 0.5).normalize();
-        normal = new THREE.Vector3(normal.x, -normal.y, normal.z);
-        triangleGeo.faces.push(new THREE.Face3(0, 1, 2, normal));
-        // triangleGeo.computeVertexNormals();
-        // triangleGeo.computeFaceNormals();
+        var n0 = p.vertNormals[LUT.TRI_TABLE[cubeindex * 16 + j]];
+        var n1 = p.vertNormals[LUT.TRI_TABLE[cubeindex * 16 + j + 1]];
+        var n2 = p.vertNormals[LUT.TRI_TABLE[cubeindex * 16 + j + 2]];
 
+        var face = new THREE.Face3(0, 1, 2);
+        face.vertexNormals[0] = n0.normalize();
+        face.vertexNormals[1] = n1.normalize();
+        face.vertexNormals[2] = n2.normalize();
+        triangleGeo.faces.push(face);
+        
         var triangleMesh = new THREE.Mesh(triangleGeo);
         triangleMesh.updateMatrix();
         geometry.merge(triangleMesh.geometry, triangleMesh.matrix);
