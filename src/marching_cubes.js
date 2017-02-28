@@ -8,7 +8,7 @@ var VISUAL_DEBUG = false;
 const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparent: true, opacity: 0.5 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
-const LAMBERT_BLUE = new THREE.MeshLambertMaterial( { color: 0x2194ce } );
+const LAMBERT_BLUE = new THREE.MeshLambertMaterial( { color: 0x2194ce, side: THREE.DoubleSide } );
 
 export default class MarchingCubes
 {
@@ -330,7 +330,7 @@ export default class MarchingCubes
     }
     // console.log("VertexPos");
     // console.log(this.vertexPos);
-
+    this.mesh.geometry = new THREE.Geometry();
     var geo = this.mesh.geometry;
     geo.vertices = this.vertexPos;
     // console.log("geoverts");
@@ -339,8 +339,12 @@ export default class MarchingCubes
     for(var i=0; i< this.vertexPos.length ;i=i+3)
     {
       geo.faces.push(new THREE.Face3(i, i+1, i+2))
+      // console.log([this.vertexNor[i], this.vertexNor[i+1], this.vertexNor[i+2]]);
       geo.faces[geo.faces.length - 1].vertexNormals = [this.vertexNor[i], this.vertexNor[i+1], this.vertexNor[i+2]];
     }
+
+    var helper = new THREE.FaceNormalsHelper( this.mesh, 2, 0x00ff00, 1 );
+    this.scene.add( helper );
 
     geo.computeFaceNormals();
     geo.computeVertexNormals();
