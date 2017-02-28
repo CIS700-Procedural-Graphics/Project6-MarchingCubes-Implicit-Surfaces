@@ -364,14 +364,15 @@ export default class MarchingCubes
     }
 
     var geo = this.mesh.geometry;
-    geo.vertices = [
-      new THREE.Vector3(0,0,0),
-      new THREE.Vector3(10,10,10),
-      new THREE.Vector3(10*Math.random(),0,0),
-    ];
-    geo.faces = [
-      new THREE.Face3(0, 1, 2, new THREE.Vector3(1,0,0))
-    ];
+    geo.vertices = this.vertexPos;
+    // geo.vertices = [
+    //   new THREE.Vector3(0,0,0),
+    //   new THREE.Vector3(10,10,10),
+    //   new THREE.Vector3(10*Math.random(),0,0),
+    // ];
+    // geo.faces = [
+    //   new THREE.Face3(0, 1, 2, new THREE.Vector3(1,0,0))
+    // ];
 
     geo.computeFaceNormals();
     geo.computeVertexNormals();
