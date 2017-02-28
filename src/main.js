@@ -12,19 +12,19 @@ import MarchingCubes from './marching_cubes.js'
 
 const DEFAULT_VISUAL_DEBUG = true;
 const DEFAULT_ISO_LEVEL = 1.0;
-const DEFAULT_GRID_RES = 4;
+const DEFAULT_GRID_RES = 30;
 const DEFAULT_GRID_WIDTH = 10;
-const DEFAULT_NUM_METABALLS = 10;
+const DEFAULT_NUM_METABALLS = 3;
 const DEFAULT_MIN_RADIUS = 0.5;
 const DEFAULT_MAX_RADIUS = 1;
-const DEFAULT_MAX_SPEED = 0.01;
+const DEFAULT_MAX_SPEED = 0.1;
 
 var App = {
-  // 
+  //
   marchingCubes:             undefined,
   config: {
-    // Global control of all visual debugging. 
-    // This can be set to false to disallow any memory allocation of visual debugging components. 
+    // Global control of all visual debugging.
+    // This can be set to false to disallow any memory allocation of visual debugging components.
     // **Note**: If your application experiences performance drop, disable this flag.
     visualDebug:    DEFAULT_VISUAL_DEBUG,
 
@@ -38,7 +38,7 @@ var App = {
     gridWidth:      DEFAULT_GRID_WIDTH,
 
     // Width of each voxel
-     // Ideally, we want the voxel to be small (higher resolution)
+    // Ideally, we want the voxel to be small (higher resolution)
     gridCellWidth:  DEFAULT_GRID_WIDTH / DEFAULT_GRID_RES,
 
     // Number of metaballs
@@ -113,7 +113,7 @@ function setupScene(scene) {
 function setupGUI(gui) {
 
   // more information here: https://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
-  
+
   // --- CONFIG ---
   gui.add(App, 'isPaused').onChange(function(value) {
     App.isPaused = value;
@@ -153,7 +153,7 @@ function setupGUI(gui) {
       }
     }
   });
-  debugFolder.open();  
+  debugFolder.open();
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
