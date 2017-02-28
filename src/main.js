@@ -8,50 +8,37 @@ const THREE = require('three'); // older modules are imported like this. You sho
 
 import Framework from './framework'
 import LUT from './marching_cube_LUT.js'
-import MarchingCubes from './marching_cubes.js'
+import MarchingCubes, {MATERIALS, SHADERS} from './marching_cubes.js'
 
-const DEFAULT_VISUAL_DEBUG = true;
-const DEFAULT_ISO_LEVEL = 1.0;
-const DEFAULT_GRID_RES = 4;
+
+
+const DEFAULT_VISUAL_DEBUG = false;
+const DEFAULT_ISO_LEVEL = 0.4;
+const DEFAULT_GRID_RES = 20;
 const DEFAULT_GRID_WIDTH = 10;
-const DEFAULT_NUM_METABALLS = 10;
+const DEFAULT_NUM_METABALLS = 4;
 const DEFAULT_MIN_RADIUS = 0.5;
 const DEFAULT_MAX_RADIUS = 1;
-const DEFAULT_MAX_SPEED = 0.01;
+const DEFAULT_MAX_SPEED = 0.07;
+const DEFAULT_SHADER = 'Lambert';
+const DEFAULT_MATERIAL = 'Tarnished';
 
-var App = {
-  // 
+
+let App = {
+  //
   marchingCubes:             undefined,
   config: {
-    // Global control of all visual debugging. 
-    // This can be set to false to disallow any memory allocation of visual debugging components. 
-    // **Note**: If your application experiences performance drop, disable this flag.
     visualDebug:    DEFAULT_VISUAL_DEBUG,
-
-    // The isolevel for marching cubes
     isolevel:       DEFAULT_ISO_LEVEL,
-
-    // Grid resolution in each dimension. If gridRes = 4, then we have a 4x4x4 grid
     gridRes:        DEFAULT_GRID_RES,
-
-    // Total width of grid
     gridWidth:      DEFAULT_GRID_WIDTH,
-
-    // Width of each voxel
-     // Ideally, we want the voxel to be small (higher resolution)
     gridCellWidth:  DEFAULT_GRID_WIDTH / DEFAULT_GRID_RES,
-
-    // Number of metaballs
     numMetaballs:   DEFAULT_NUM_METABALLS,
-
-    // Minimum radius of a metaball
     minRadius:      DEFAULT_MIN_RADIUS,
-
-    // Maxium radius of a metaball
     maxRadius:      DEFAULT_MAX_RADIUS,
-
-    // Maximum speed of a metaball
-    maxSpeed:       DEFAULT_MAX_SPEED
+    maxSpeed:       DEFAULT_MAX_SPEED,
+    shader:         DEFAULT_SHADER,
+    material:       DEFAULT_MATERIAL
   },
 
   // Scene's framework objects
@@ -66,23 +53,20 @@ var App = {
 // called after the scene loads
 function onLoad(framework) {
 
-  var {scene, camera, renderer, gui, stats} = framework;
+  let {scene, camera, renderer, gui, stats} = framework;
   App.scene = scene;
   App.camera = camera;
   App.renderer = renderer;
 
   renderer.setClearColor( 0xbfd1e5 );
   scene.add(new THREE.AxisHelper(20));
-
   setupCamera(App.camera);
-  setupLights(App.scene);
   setupScene(App.scene);
   setupGUI(gui);
 }
 
 // called on frame updates
 function onUpdate(framework) {
-
   if (App.marchingCubes) {
     App.marchingCubes.update();
   }
@@ -92,17 +76,7 @@ function setupCamera(camera) {
   // set camera position
   camera.position.set(5, 5, 30);
   camera.lookAt(new THREE.Vector3(0,0,0));
-}
-
-function setupLights(scene) {
-
-  // Directional light
-  var directionalLight = new THREE.DirectionalLight( 0xffffff, 1 );
-  directionalLight.color.setHSL(0.1, 1, 0.95);
-  directionalLight.position.set(1, 10, 2);
-  directionalLight.position.multiplyScalar(10);
-
-  scene.add(directionalLight);
+  window.viewPos = camera.position;
 }
 
 function setupScene(scene) {
@@ -112,10 +86,10 @@ function setupScene(scene) {
 
 function setupGUI(gui) {
 
-  // more information here: https://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
-  
+
+  let shaderFolder = gui.addFolder('ShaderOptions');
   // --- CONFIG ---
-  gui.add(App, 'isPaused').onChange(function(value) {
+  gui.add(App, 'isPaused').onChange(value => {
     App.isPaused = value;
     if (value) {
       App.marchingCubes.pause();
@@ -124,36 +98,47 @@ function setupGUI(gui) {
     }
   });
 
-  gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
-    App.config.numMetaballs = value;
+  gui.add(App.config, 'numMetaballs', 1, 10).step(1).onChange(value => {
     App.marchingCubes.init(App);
   });
 
-  // --- DEBUG ---
-
-  var debugFolder = gui.addFolder('Debug');
-  debugFolder.add(App.marchingCubes, 'showGrid').onChange(function(value) {
-    App.marchingCubes.showGrid = value;
-    if (value) {
-      App.marchingCubes.show();
-    } else {
-      App.marchingCubes.hide();
-    }
+  gui.add(App.config, 'maxSpeed', 0.01, 4).onChange(value => {
+    App.marchingCubes.updateBallSpeed(value);
   });
 
-  debugFolder.add(App.marchingCubes, 'showSpheres').onChange(function(value) {
-    App.marchingCubes.showSpheres = value;
-    if (value) {
-      for (var i = 0; i < App.config.numMetaballs; i++) {
-        App.marchingCubes.balls[i].show();
-      }
-    } else {
-      for (var i = 0; i < App.config.numMetaballs; i++) {
-        App.marchingCubes.balls[i].hide();
-      }
+  gui.add(App.config, 'isolevel', 0.0, 3).onChange(value => {
+    App.marchingCubes.init(App);
+  })
+
+  gui.add(App.config, 'gridWidth', 0.0, 30).step(1).onChange(value => {
+    App.marchingCubes.init(App);
+    App.config.gridCellWidth = App.config.gridWidth / App.config.gridRes;
+  })
+
+  gui.add(App.config, 'gridRes', 0, 64).step(1).onChange(value => {
+    App.marchingCubes.init(App);
+    App.config.gridCellWidth = App.config.gridWidth / App.config.gridRes;
+  })
+
+  gui.add(App.config, 'shader', Object.keys(SHADERS)).onChange(value => {
+    App.marchingCubes.init(App);
+    gui.removeFolder('ShaderOptions');
+    shaderFolder = gui.addFolder('ShaderOptions');
+    shaderFolder.open();
+    switch(value) {
+      case 'Lambert':
+        break;
+      case 'Lit Sphere':
+        shaderFolder.add(App.config, 'material', MATERIALS).onChange(value => {
+          App.marchingCubes.changeMat(value);
+        });
+        break;
+      case 'Toon':
+        SHADERS['Toon'].uniforms.u_viewPos.value = App.camera.position;
+        break;
     }
+
   });
-  debugFolder.open();  
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
