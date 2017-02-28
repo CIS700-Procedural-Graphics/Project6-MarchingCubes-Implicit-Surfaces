@@ -14,6 +14,8 @@ export default class Metaball {
     this.pos = pos;
     this.vel = vel;
 
+    this.visualDebug = visualDebug;
+
     this.radius = radius;
     this.radius2 = radius * radius;
     this.mesh = null;
@@ -44,22 +46,22 @@ export default class Metaball {
   update()
   {
     // console.log(this.gridWidth);
-    if((this.pos.x >= this.gridWidth - offset) || (this.pos.x <= offset))
-    {
-      this.vel.x = -this.vel.x;
-    }
-    if((this.pos.y >= this.gridWidth - offset) || (this.pos.y <= offset))
-    {
-      this.vel.y = -this.vel.y;
-    }
-    if((this.pos.z >= this.gridWidth - offset) || (this.pos.z <= offset))
-    {
-      this.vel.z = -this.vel.z;
-    }
+      if((this.pos.x >= this.gridWidth - offset) || (this.pos.x <= offset))
+      {
+        this.vel.x = -this.vel.x;
+      }
+      if((this.pos.y >= this.gridWidth - offset) || (this.pos.y <= offset))
+      {
+        this.vel.y = -this.vel.y;
+      }
+      if((this.pos.z >= this.gridWidth - offset) || (this.pos.z <= offset))
+      {
+        this.vel.z = -this.vel.z;
+      }
 
-    this.pos.x += this.vel.x;
-    this.pos.y += this.vel.y;
-    this.pos.z += this.vel.z;
-    this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
+      this.pos.x += this.vel.x;
+      this.pos.y += this.vel.y;
+      this.pos.z += this.vel.z;
+      this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
   }
 }
