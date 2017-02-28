@@ -23,7 +23,7 @@ const DEFAULT_NUM_METABALLS = 7;
 const DEFAULT_MIN_RADIUS = 0.5;
 const DEFAULT_MAX_RADIUS = 1;
 const DEFAULT_MAX_SPEEDX = 0.005;
-const DEFAULT_MAX_SPEEDY = 0.03;
+const DEFAULT_MAX_SPEEDY = 0.3;
 
 var options = {lightColor: '#ffffff',lightIntensity: 1,ambient: '#111111', albedo: '#110000'};
 var loaded = false;
@@ -191,46 +191,37 @@ function setupGUI(gui) {
 
   // more information here: https://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
 
+   gui.add(App.config, 'numMetaballs', 1, 10).step(1).onChange(function(value) {
+    App.marchingCubes.reset();
+    App.marchingCubes = new MarchingCubes(App);
+  });
 
-  // gui.add(App, 'isPaused').onChange(function(value) {
-  //   App.isPaused = value;
-  //   if (value) {
-  //     App.marchingCubes.pause();
-  //   } else {
-  //     App.marchingCubes.play();
-  //   }
-  // });
+  gui.add(App.config, 'minRadius', 0, 1).onChange(function(value) {
+    App.marchingCubes.reset();
+    App.marchingCubes = new MarchingCubes(App);
+  });
 
-  // gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
-  //   App.config.numMetaballs = value;
-  //   App.marchingCubes.init(App);
-  // });
+  gui.add(App.config, 'maxRadius', 1, 2).onChange(function(value) {
+    App.marchingCubes.reset();
+    App.marchingCubes = new MarchingCubes(App);
+  });
 
-  // --- DEBUG ---
+  gui.add(App.config, 'maxSpeedY', 0, 1).onChange(function(value) {
+    App.marchingCubes.reset();
+    App.marchingCubes = new MarchingCubes(App);
+  });
 
-  // var debugFolder = gui.addFolder('Debug');
-  // debugFolder.add(App.marchingCubes, 'showGrid').onChange(function(value) {
-  //   App.marchingCubes.showGrid = value;
-  //   if (value) {
-  //     App.marchingCubes.show();
-  //   } else {
-  //     App.marchingCubes.hide();
-  //   }
-  // });
+  gui.add(App.config, 'isolevel', 0, 2).onChange(function(value) {
+    App.marchingCubes.reset();
+    App.marchingCubes = new MarchingCubes(App);
+  });
 
-  // debugFolder.add(App.marchingCubes, 'showSpheres').onChange(function(value) {
-  //   App.marchingCubes.showSpheres = value;
-  //   if (value) {
-  //     for (var i = 0; i < App.config.numMetaballs; i++) {
-  //       App.marchingCubes.balls[i].show();
-  //     }
-  //   } else {
-  //     for (var i = 0; i < App.config.numMetaballs; i++) {
-  //       App.marchingCubes.balls[i].hide();
-  //     }
-  //   }
-  // });
-  // debugFolder.open();
+  gui.add(App.config, 'gridRes', 1, 40).step(1).onChange(function(value) {
+    App.marchingCubes.reset();
+    App.marchingCubes = new MarchingCubes(App);
+  });
+
+
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate

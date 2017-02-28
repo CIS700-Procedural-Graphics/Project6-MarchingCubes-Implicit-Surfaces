@@ -103,6 +103,11 @@ export default class MarchingCubes {
     this.makeMesh();
   };
 
+  reset() {
+  	this.scene.remove(this.mesh);
+  	this.balls = []; balls = [];
+  };
+
   // Convert from 1D index to 3D indices
   i1toi3(i1) {
 
@@ -166,7 +171,7 @@ export default class MarchingCubes {
       pos = new THREE.Vector3(3, 3, 3);
 
       vx = 0
-      vy = (Math.random() * 2 - 1) * this.maxSpeedY;
+      vy = (Math.random() * 2 - 1) * this.maxSpeedY/10;
       vz = 0
       vel = new THREE.Vector3(vx, vy, vz);
 
