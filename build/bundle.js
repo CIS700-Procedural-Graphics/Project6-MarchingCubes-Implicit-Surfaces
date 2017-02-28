@@ -233,7 +233,7 @@
 	function setupCamera(camera) {
 	  // set camera position
 	  camera.position.set(25, 10, 25);
-	  camera.lookAt(new THREE.Vector3(8, 0, -5));
+	  camera.lookAt(new THREE.Vector3(1, 0, 1));
 	}
 	
 	function setupLights(scene) {
