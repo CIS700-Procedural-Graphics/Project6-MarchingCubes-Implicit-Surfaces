@@ -79,11 +79,11 @@
 	var DEFAULT_GRID_WIDTH = 6;
 	var DEFAULT_GRID_HEIGHT = 17;
 	var DEFAULT_GRID_DEPTH = 6;
-	var DEFAULT_NUM_METABALLS = 10;
+	var DEFAULT_NUM_METABALLS = 7;
 	var DEFAULT_MIN_RADIUS = 0.5;
 	var DEFAULT_MAX_RADIUS = 1;
 	var DEFAULT_MAX_SPEEDX = 0.005;
-	var DEFAULT_MAX_SPEEDY = 0.03;
+	var DEFAULT_MAX_SPEEDY = 0.3;
 	
 	var options = { lightColor: '#ffffff', lightIntensity: 1, ambient: '#111111', albedo: '#110000' };
 	var loaded = false;
@@ -188,7 +188,7 @@
 	  //scene.add(new THREE.AxisHelper(20));
 	
 	  var objLoader = new THREE.OBJLoader();
-	  var obj = objLoader.load('glass.obj', function (obj) {
+	  var obj = objLoader.load(__webpack_require__(22), function (obj) {
 	    glassGeo = obj.children[0].geometry;
 	    var glass = new THREE.Mesh(glassGeo, GLASS_MAT);
 	    glass.translateX(-1.5);
@@ -197,7 +197,7 @@
 	    loaded = true;
 	  });
 	
-	  var obj = objLoader.load('lamp.obj', function (obj) {
+	  var obj = objLoader.load(__webpack_require__(23), function (obj) {
 	    lampGeo = obj.children[0].geometry;
 	    var lamp = new THREE.Mesh(lampGeo, METAL_MAT);
 	    lamp.translateX(-1.5);
@@ -251,51 +251,40 @@
 	  App.marchingCubes = new _marching_cubes2.default(App);
 	}
 	
-	function setupGUI(gui) {}
+	function setupGUI(gui) {
 	
-	// more information here: https://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
+	  // more information here: https://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
 	
+	  gui.add(App.config, 'numMetaballs', 1, 10).step(1).onChange(function (value) {
+	    App.marchingCubes.reset();
+	    App.marchingCubes = new _marching_cubes2.default(App);
+	  });
 	
-	// gui.add(App, 'isPaused').onChange(function(value) {
-	//   App.isPaused = value;
-	//   if (value) {
-	//     App.marchingCubes.pause();
-	//   } else {
-	//     App.marchingCubes.play();
-	//   }
-	// });
+	  gui.add(App.config, 'minRadius', 0, 1).onChange(function (value) {
+	    App.marchingCubes.reset();
+	    App.marchingCubes = new _marching_cubes2.default(App);
+	  });
 	
-	// gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
-	//   App.config.numMetaballs = value;
-	//   App.marchingCubes.init(App);
-	// });
+	  gui.add(App.config, 'maxRadius', 1, 2).onChange(function (value) {
+	    App.marchingCubes.reset();
+	    App.marchingCubes = new _marching_cubes2.default(App);
+	  });
 	
-	// --- DEBUG ---
+	  gui.add(App.config, 'maxSpeedY', 0, 1).onChange(function (value) {
+	    App.marchingCubes.reset();
+	    App.marchingCubes = new _marching_cubes2.default(App);
+	  });
 	
-	// var debugFolder = gui.addFolder('Debug');
-	// debugFolder.add(App.marchingCubes, 'showGrid').onChange(function(value) {
-	//   App.marchingCubes.showGrid = value;
-	//   if (value) {
-	//     App.marchingCubes.show();
-	//   } else {
-	//     App.marchingCubes.hide();
-	//   }
-	// });
+	  gui.add(App.config, 'isolevel', 0, 2).onChange(function (value) {
+	    App.marchingCubes.reset();
+	    App.marchingCubes = new _marching_cubes2.default(App);
+	  });
 	
-	// debugFolder.add(App.marchingCubes, 'showSpheres').onChange(function(value) {
-	//   App.marchingCubes.showSpheres = value;
-	//   if (value) {
-	//     for (var i = 0; i < App.config.numMetaballs; i++) {
-	//       App.marchingCubes.balls[i].show();
-	//     }
-	//   } else {
-	//     for (var i = 0; i < App.config.numMetaballs; i++) {
-	//       App.marchingCubes.balls[i].hide();
-	//     }
-	//   }
-	// });
-	// debugFolder.open();
-	
+	  gui.add(App.config, 'gridRes', 1, 40).step(1).onChange(function (value) {
+	    App.marchingCubes.reset();
+	    App.marchingCubes = new _marching_cubes2.default(App);
+	  });
+	}
 	
 	// when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
 	_framework2.default.init(onLoad, onUpdate);
@@ -42663,7 +42652,7 @@
 	  stats.domElement.style.top = '0px';
 	  document.body.appendChild(stats.domElement);
 	
-	  var gui = new _datGui2.default.GUI({ autoPlace: false });
+	  var gui = new _datGui2.default.GUI();
 	
 	  var framework = {
 	    gui: gui,
@@ -48354,6 +48343,12 @@
 	      this.makeMesh();
 	    }
 	  }, {
+	    key: 'reset',
+	    value: function reset() {
+	      this.scene.remove(this.mesh);
+	      this.balls = [];balls = [];
+	    }
+	  }, {
 	    key: 'i1toi3',
 	
 	
@@ -48425,7 +48420,7 @@
 	        pos = new THREE.Vector3(3, 3, 3);
 	
 	        vx = 0;
-	        vy = (Math.random() * 2 - 1) * this.maxSpeedY;
+	        vy = (Math.random() * 2 - 1) * this.maxSpeedY / 10;
 	        vz = 0;
 	        vel = new THREE.Vector3(vx, vy, vz);
 	
@@ -49278,6 +49273,18 @@
 /***/ function(module, exports) {
 
 	module.exports = "uniform vec3 u_lightPos;\r\nuniform vec3 u_lightCol;\r\nuniform float u_lightIntensity;\r\n\r\nvarying vec3 f_position;\r\nvarying vec3 f_normal;\r\n\r\nvoid main() {\r\n    vec4 color = vec4(1.0, 1.0, 1.0, 1.0);\r\n    float d = clamp(dot(f_normal, normalize(u_lightPos - f_position)), 0.0, 1.0);\r\n    gl_FragColor = vec4(d * color.rgb * u_lightCol * u_lightIntensity, 1.0);\r\n}\r\n"
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__.p + "./assets/glass-5b14a7.obj";
+
+/***/ },
+/* 23 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__.p + "./assets/lamp-1bcc16.obj";
 
 /***/ }
 /******/ ]);
