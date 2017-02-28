@@ -234,15 +234,11 @@ export default class MarchingCubes
       if (VISUAL_DEBUG && this.showGrid)
       {
         // Toggle voxels on or off
-          // if (this.voxels[c].center.isovalue > this.isolevel) {
-          //   this.voxels[c].show();
-          // } else {
-          //   this.voxels[c].hide();
-          // }
-        //   this.voxels[c].center.updateLabel(this.camera);
-        // } else {
-        //   this.voxels[c].center.clearLabel();
-        // }
+          if (this.voxels[c].center.isovalue > this.isolevel) {
+            this.voxels[c].show();
+          } else {
+            this.voxels[c].hide();
+          }
 
         this.voxels[c].corner0.updateLabel(this.camera);
         this.voxels[c].corner1.updateLabel(this.camera);
@@ -302,35 +298,6 @@ export default class MarchingCubes
     //then just update the vertex positions in the updateMesh function
     //this way you don't have to keep re-allocating and de-allocating memory.
 
-    // for (var c = 0; c < this.res3; c++)
-    // {
-    //   /*
-    //   // this.cellTriangles[c]
-    //   // var halfGridCellWidth = this.gridCellWidth / 2.0;
-    //   //triangles have arbitrary positions right now
-    //   // var triangleVertexPositions = new Float32Array([
-    //   //   //Random Triangle 1
-    //   //   halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth,
-    //   //   halfGridCellWidth, halfGridCellWidth, -halfGridCellWidth,
-    //   //   halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth
-    //   // ]);
-    //   //
-    //   // var triangleVertexNormals = new Float32Array([
-    //   //   //Random Triangle 1
-    //   //   0.0, 0.0, 1.0,
-    //   //   0.0, 0.0, 1.0,
-    //   //   0.0, 0.0, 1.0,
-    //   // ]);
-    //   */
-    //   var trigeo = new THREE.Geometry();
-    //   this.mesh = new THREE.Mesh(trigeo, LAMBERT_BLUE);
-    //   this.mesh.geometry.dynamic = true;
-    //
-    //   //this.voxelTriangleMeshes[c].position.set(this.voxels[c].pos.x, this.voxels[c].pos.y, this.voxels[c].pos.z);
-    //
-    //   this.scene.add(this.mesh);
-    // }
-
     var trigeo = new THREE.Geometry();
     this.mesh = new THREE.Mesh(trigeo, LAMBERT_BLUE);
     this.mesh.geometry.dynamic = true;
@@ -347,24 +314,19 @@ export default class MarchingCubes
     for (var c = 0; c < this.res3; c++)
     {
       var VertexData = this.voxels[c].polygonize(this.isolevel);
-      this.vertexPos.push(VertexData.vertPositions);
-      this.vertexNor.push(VertexData.vertNormals);
-      // console.log("vertexData");
-      // console.log(this.vertexData[c]);
-
-      //var trigeo = new THREE.BufferGeometry();
-      //trigeo.addAttribute( 'position', new THREE.BufferAttribute( this.vertexData[c].vertPositions, 3 ) );
-      //trigeo.addAttribute( 'normal', new THREE.BufferAttribute( this.vertexData[c].vertNormals, 3 ) );
-      //this.voxelTriangleMeshes[c].geometry = trigeo;
-
-      // this.voxelTriangleMeshes[c].geometry.verticesNeedUpdate = true;
-      // this.voxelTriangleMeshes[c].geometry.vertices = this.vertexData[c].vertPositions;
-      // this.voxelTriangleMeshes[c].geometry.normals = this.vertexData[c].vertNormals;
-      // this.voxelTriangleMeshes[c].position.set(this.voxels[c].pos.x, this.voxels[c].pos.y, this.voxels[c].pos.z);
+      // console.log("VertexData.vertPositions");
+      // console.log(VertexData.vertPositions);
+      this.vertexPos.concat(VertexData.vertPositions);
+      this.vertexNor.concat(VertexData.vertNormals);
+      // console.log("VertexPos");
+      // console.log(this.vertexPos);
     }
 
     var geo = this.mesh.geometry;
     geo.vertices = this.vertexPos;
+    // console.log("geoverts");
+    // console.log(geo.vertices);
+
     // geo.vertices = [
     //   new THREE.Vector3(0,0,0),
     //   new THREE.Vector3(10,10,10),
@@ -373,11 +335,14 @@ export default class MarchingCubes
     // geo.faces = [
     //   new THREE.Face3(0, 1, 2, new THREE.Vector3(1,0,0))
     // ];
+    for(var i=0; i< this.vertexPos.length ;i=i+3)
+    {
+      geo.faces.push(new THREE.Face3(i, i+1, i+2))
+      geo.faces[geo.faces.length - 1].vertexNormals = [this.vertexNor[i], this.vertexNor[i+1], this.vertexNor[i+2]];
+    }
 
-    geo.computeFaceNormals();
-    geo.computeVertexNormals();
-
-    // debugger;
+    // geo.computeFaceNormals();
+    // geo.computeVertexNormals();
 
     geo.verticesNeedUpdate = true;
     geo.elementsNeedUpdate = true;
@@ -587,7 +552,10 @@ class Voxel
     //Voxel is entirely in/out of the surface od the metaball
     if (edges == 0)
     {
-      return(0);
+      return {
+        vertPositions: vertexList,
+        vertNormals: normalList
+      };
     }
 
     //Find the vertices(on the edges) where the metaball intersects the voxel
@@ -663,14 +631,25 @@ class Voxel
     var index = cubeindex;
     for(var i = index; LUT.TRI_TABLE[i]!=-1; i=i+3)
     {
-      // console.log("inside for loop");
-      // console.log(LUT.TRI_TABLE[i]);
-      // console.log(LUT.TRI_TABLE[i+1]);
-      // console.log(LUT.TRI_TABLE[i+2]);
+      // vertexList.push(new THREE.Vector3( lerpedEdgePoints[LUT.TRI_TABLE[i]],
+      //                                    lerpedEdgePoints[LUT.TRI_TABLE[i+1]],
+      //                                    lerpedEdgePoints[LUT.TRI_TABLE[i+2]] ));
+
+      console.log("LerpedEdgePoints");
+      console.log(LUT.TRI_TABLE[i]);
+      console.log(lerpedEdgePoints[LUT.TRI_TABLE[i]]);
+      console.log(LUT.TRI_TABLE[i+1]);
+      console.log(lerpedEdgePoints[LUT.TRI_TABLE[i+1]]);
+      console.log(LUT.TRI_TABLE[i+2]);
+      console.log(lerpedEdgePoints[LUT.TRI_TABLE[i+2]]);
 
       vertexList.push(lerpedEdgePoints[LUT.TRI_TABLE[i]]);
       vertexList.push(lerpedEdgePoints[LUT.TRI_TABLE[i+1]]);
       vertexList.push(lerpedEdgePoints[LUT.TRI_TABLE[i+2]]);
+
+      // normalList.push(new THREE.Vector3( lerpedEdgeNormals[LUT.TRI_TABLE[i]],
+      //                                    lerpedEdgeNormals[LUT.TRI_TABLE[i+1]],
+      //                                    lerpedEdgeNormals[LUT.TRI_TABLE[i+2]] ));
 
       normalList.push(lerpedEdgeNormals[LUT.TRI_TABLE[i]]);
       normalList.push(lerpedEdgeNormals[LUT.TRI_TABLE[i+1]]);
@@ -678,8 +657,8 @@ class Voxel
     }
 
     // console.log("vertexList");
-    // console.log(vertexList.length);
-    // console.log(normalList.length);
+    // console.log(vertexList);
+    // console.log(normalList);
 
     return {
       vertPositions: vertexList,
