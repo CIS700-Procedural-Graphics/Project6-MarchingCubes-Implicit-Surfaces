@@ -41,6 +41,15 @@ export default class Metaball {
   };
 
   update() {
-    // @TODO
+      //update position
+      this.pos = new THREE.Vector3(this.pos.x+this.vel.x, this.pos.y+this.vel.y, this.pos.z+this.vel.z);
+      if (this.visualDebug) {
+        this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
+      }
+      //if nearing edge of grid, multiply velocity by -1.0
+      if (this.pos.x > this.gridWidth - this.radius || this.pos.y > this.gridWidth - this.radius || this.pos.z > this.gridWidth - this.radius ||
+        this.pos.x < 0.0 + this.radius || this.pos.y < 0.0 + this.radius || this.pos.z < 0.0 + this.radius) {
+        this.vel.multiplyScalar(-1.0);
+      }
   }
 }
