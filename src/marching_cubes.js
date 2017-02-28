@@ -3,6 +3,9 @@ const THREE = require('three');
 import Metaball from './metaball.js';
 import InspectPoint from './inspect_point.js'
 import LUT from './marching_cube_LUT.js';
+
+import {iriMaterial} from './main.js';
+
 var VISUAL_DEBUG = true;
 
 const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
@@ -150,9 +153,11 @@ export default class MarchingCubes {
     for(var i=0; i<this.numMetaballs; i++)
     {
         var r = this.balls[i].radius;
-        var d = point.distanceTo(this.balls[i].pos);
+        var d = Math.max(point.distanceTo(this.balls[i].pos),0.00001);
         isovalue += r*r/d/d;
+        //debugger;
     }
+
     //debugger;
     //console.log(isovalue);
     return isovalue;
@@ -180,21 +185,41 @@ export default class MarchingCubes {
       {
           this.voxels[c].vertices[i].isovalue = this.sample(this.voxels[c].vertices[i].pos);
       }
+      //debugger;
       // @CHANGED - end
 
       // Visualizing grid
-      if (VISUAL_DEBUG && this.showGrid) {
-
-        // Toggle voxels on or off
-        if (this.voxels[c].center.isovalue > this.isolevel) {
-          this.voxels[c].show();
-        } else {
-          this.voxels[c].hide();
-        }
-        this.voxels[c].center.updateLabel(this.camera);
-      } else {
-        this.voxels[c].center.clearLabel();
-      }
+    //   for(var c=0; c < this.res3; c++)
+    //   {
+    //     for(var i=0; i<8; i++)
+    //     {
+            if (VISUAL_DEBUG && this.showGrid) {
+                // Toggle voxels on or off
+                if (this.voxels[c].center.isovalue > this.isolevel) {
+                  this.voxels[c].show();
+                }
+                else {
+                  this.voxels[c].hide();
+                }
+                this.voxels[c].center.updateLabel(this.camera);
+            }
+            else {
+                this.voxels[c].center.clearLabel();
+            }
+    //     }
+    //   }
+    //   if (VISUAL_DEBUG && this.showGrid) {
+      //
+    //     // Toggle voxels on or off
+    //     if (this.voxels[c].center.isovalue > this.isolevel) {
+    //       this.voxels[c].show();
+    //     } else {
+    //       this.voxels[c].hide();
+    //     }
+    //     this.voxels[c].center.updateLabel(this.camera);
+    //   } else {
+    //     this.voxels[c].center.clearLabel();
+    //   }
     }
 
     this.updateMesh();
@@ -229,44 +254,47 @@ export default class MarchingCubes {
     // this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
     //debugger;
     var geometry = new THREE.Geometry();
-    var mesh = new THREE.Mesh( geometry, LAMBERT_WHITE );
-    for (var c = 0; c < this.res3; c++)
-    {
-        var polyret = this.voxels[c].polygonize(1);
-        //var ntriang=0;
+    this.outmesh = new THREE.Mesh( geometry, iriMaterial );
+    this.outmesh.material.side = THREE.DoubleSide;
+    this.scene.add(this.outmesh);
+    // for (var c = 0; c < this.res3; c++)
+    // {
+    //     var polyret = this.voxels[c].polygonize(1);
+    //     //var ntriang=0;
+    //
+    //     for (var i=0; LUT.TRI_TABLE[polyret.cubeIndex*16+i]!=-1 && polyret!=0; i+=3)
+    //     {
+    //         // triangles[ntriang].p[0] = polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i]];
+    //         // triangles[ntriang].p[1] = polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+1]];
+    //         // triangles[ntriang].p[2] = polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+2]];
+    //         // ntriang++;
+    //
+    //         // geometry.vertices.push(
+    //         // 	polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i]],
+    //         // 	polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+1]],
+    //         // 	polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+2]]
+    //         // );
+    //         // geometry.faces.push( new THREE.Face3( i+0, i+1, i+2 ) );
+    //
+    //         // console.log(geometry.faces);
+    //         // debugger;
+    //         //debugger;
+    //         //geometry.computeBoundingSphere();
+    //         //this.scene.add(mesh);
+    //
+    //         // var geometry = new THREE.Geometry();
+    //         // var mesh = new THREE.Mesh( geometry, LAMBERT_WHITE );
+    //         // geometry.vertices.push(
+    //         // 	new THREE.Vector3( -10,  10, 0 ),
+    //         // 	new THREE.Vector3( -10, -10, 0 ),
+    //         // 	new THREE.Vector3(  10, -10, 0 )
+    //         // );
+    //         //
+    //         // geometry.faces.push( new THREE.Face3( 0, 1, 2 ) );
+    //         // geometry.computeBoundingSphere();
+    //     }
+    // }
 
-        for (var i=0; LUT.TRI_TABLE[polyret.cubeIndex*16+i]!=-1 && polyret!=0; i+=3)
-        {
-            // triangles[ntriang].p[0] = polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i]];
-            // triangles[ntriang].p[1] = polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+1]];
-            // triangles[ntriang].p[2] = polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+2]];
-            // ntriang++;
-
-            geometry.vertices.push(
-            	polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i]],
-            	polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+1]],
-            	polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+2]]
-            );
-            geometry.faces.push( new THREE.Face3( 0, 1, 2 ) );
-            //debugger;
-            //geometry.computeBoundingSphere();
-            //this.scene.add(mesh);
-
-            // var geometry = new THREE.Geometry();
-            // var mesh = new THREE.Mesh( geometry, LAMBERT_WHITE );
-            // geometry.vertices.push(
-            // 	new THREE.Vector3( -10,  10, 0 ),
-            // 	new THREE.Vector3( -10, -10, 0 ),
-            // 	new THREE.Vector3(  10, -10, 0 )
-            // );
-            //
-            // geometry.faces.push( new THREE.Face3( 0, 1, 2 ) );
-            // geometry.computeBoundingSphere();
-
-        }
-
-    }
-    this.scene.add(mesh);
 
   }
 
@@ -274,25 +302,61 @@ export default class MarchingCubes {
     // @TODO
     //this.scene.clear();
     var geometry = new THREE.Geometry();
-    var mesh = new THREE.Mesh( geometry, LAMBERT_WHITE );
+    //var mesh = new THREE.Mesh( geometry, LAMBERT_WHITE );
+    var v=0;
     for (var c = 0; c < this.res3; c++)
     {
-        var polyret = this.voxels[c].polygonize(1);
+        var polyret = this.voxels[c].polygonize(0.5);
         for (var i=0; LUT.TRI_TABLE[polyret.cubeIndex*16+i]!=-1 && polyret!=0; i+=3)
         {
-            geometry.vertices.push(
-            	polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i]],
-            	polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+1]],
-            	polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+2]]
-            );
-            geometry.faces.push( new THREE.Face3( 0, 1, 2 ) );
-            //debugger;
-            //geometry.computeBoundingSphere();
-        }
+            var norm = [];
+            var vert1 = new THREE.Vector3(0,0,0);
+            norm[0] = new THREE.Vector3(0,0,0);
+            vert1.copy(polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i]]);
+            norm[0].copy(this.calcNorm(vert1));
 
+            var vert2 = new THREE.Vector3(0,0,0);
+            norm[1] = new THREE.Vector3(0,0,0);
+            vert2.copy(polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+1]]);
+            norm[1].copy(this.calcNorm(vert2));
+
+            var vert3 = new THREE.Vector3(0,0,0);
+            norm[2] = new THREE.Vector3(0,0,0);
+            vert3.copy(polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+2]]);
+            norm[2].copy(this.calcNorm(vert3));
+
+            geometry.vertices.push(vert1, vert2, vert3);
+
+            geometry.faces.push( new THREE.Face3( v, v+1, v+2 , norm ) );
+            v+=3;
+            //debugger;
+            // geometry.computeBoundingSphere();
+            // geometry.computeFaceNormals();
+
+        }
     }
-    this.scene.add(mesh);
+    //debugger;
+    this.outmesh.geometry=geometry;
+    //this.scene.add(this.mesh);
   }
+
+  calcNorm(vert)
+  {
+      var eps = 0.01;
+      var norm = new THREE.Vector3(0,0,0);
+      norm.x = this.sample(new THREE.Vector3(vert.x+eps,vert.y,vert.z)) - this.sample(new THREE.Vector3(vert.x-eps,vert.y,vert.z));
+      norm.y = this.sample(new THREE.Vector3(vert.x,vert.y+eps,vert.z)) - this.sample(new THREE.Vector3(vert.x,vert.y-eps,vert.z));
+      norm.z = this.sample(new THREE.Vector3(vert.x,vert.y,vert.z+eps)) - this.sample(new THREE.Vector3(vert.x,vert.y,vert.z-eps));
+      norm = norm.normalize();
+    //   if(norm.dot(new THREE.Vector3(0,0,1))<0)
+    //     {
+    //         norm.x=-norm.x;
+    //         norm.y=-norm.y;
+    //         norm.z=-norm.z;
+    //     }
+      return norm;
+  }
+
 };
 
 // ------------------------------------------- //
@@ -389,7 +453,7 @@ class Voxel {
         var z = this.pos.z + positions[i][2];
         this.vertices[i] =  new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG);
     }
-
+    //debugger;
     // @CHANGED - end
   }
 
@@ -420,9 +484,70 @@ class Voxel {
 
     // @TODO
     var lerpPos = new THREE.Vector3(0,0,0);
-    var mu = (isolevel - posA.isovalue)/(posB.isovalue - posA.isovalue);
-    lerpPos = posA.pos + mu*posB.pos;
+    var p1 = new THREE.Vector3(0,0,0);
+    p1.x = posA.pos.x; p1.y = posA.pos.y; p1.z = posA.pos.z;
+    var p2 = new THREE.Vector3(0,0,0);
+    p2.x = posB.pos.x; p2.y = posB.pos.y; p2.z = posB.pos.z;
+    var val1 = 0;
+    val1 = posA.isovalue;
+    var val2 = 0;
+    val2 = posB.isovalue;
+
+    if(this.less(posB.pos,posA.pos))
+    {
+        p1.x = posB.pos.x; p1.y = posB.pos.y; p1.z = posB.pos.z;
+        p2.x = posA.pos.x; p2.y = posA.pos.y; p2.z = posA.pos.z;
+
+        val1 = posB.isovalue;
+        val2 = posA.isovalue;
+    }
+
+    if(Math.abs(val1-val2)>0.00001)
+    {
+        lerpPos.x = p1.x + (p2.x-p1.x)/(val2-val1)*(isolevel-val1);
+        lerpPos.y = p1.y + (p2.y-p1.y)/(val2-val1)*(isolevel-val1);
+        lerpPos.z = p1.z + (p2.z-p1.z)/(val2-val1)*(isolevel-val1);
+    }
+    else
+    {
+        lerpPos.x = p1.x;
+        lerpPos.y = p1.y;
+        lerpPos.z = p1.z;
+    }
+
+   //  if (Math.abs(isolevel-posA.isovalue) < 0.00001)
+   //    return(posA.pos);
+   //  if (Math.abs(isolevel-posB.isovalue) < 0.00001)
+   //    return(posB.pos);
+   //  if (Math.abs(posA.isovalue - posB.isovalue) < 0.00001)
+   //    return(posA.pos);
+   //
+   // var mu = (isolevel - posA.isovalue)/(posB.isovalue - posA.isovalue);
+   // lerpPos.x = (1-mu)*posA.pos.x + mu*posB.pos.x;
+   // lerpPos.y = (1-mu)*posA.pos.y + mu*posB.pos.y;
+   // lerpPos.z = (1-mu)*posA.pos.z + mu*posB.pos.z;
+
+    //debugger;
     return lerpPos;
+  }
+
+  less(A,B){
+        if (A.x < B.x)
+            return true;
+        else if (A.x > B.x)
+            return false;
+
+        if (A.y < B.y)
+            return true;
+        else if (A.y > B.y)
+            return false;
+
+        if (A.z < B.z)
+            return true;
+        else if (A.z > B.z)
+            return false;
+
+        return false;
   }
 
   polygonize(isolevel) {
@@ -437,79 +562,96 @@ class Voxel {
     // Determine the index into the edge table which
     // tells us which vertices are inside of the surface
 
-    if (grid[0].isovalue < isolevel) cubeindex |= 1;
-    if (grid[1].isovalue < isolevel) cubeindex |= 2;
-    if (grid[2].isovalue < isolevel) cubeindex |= 4;
-    if (grid[3].isovalue < isolevel) cubeindex |= 8;
-    if (grid[4].isovalue < isolevel) cubeindex |= 16;
-    if (grid[5].isovalue < isolevel) cubeindex |= 32;
-    if (grid[6].isovalue < isolevel) cubeindex |= 64;
-    if (grid[7].isovalue < isolevel) cubeindex |= 128;
+    if (grid[0].isovalue > isolevel) cubeindex |= 1;
+    if (grid[1].isovalue > isolevel) cubeindex |= 2;
+    if (grid[2].isovalue > isolevel) cubeindex |= 4;
+    if (grid[3].isovalue > isolevel) cubeindex |= 8;
+    if (grid[4].isovalue > isolevel) cubeindex |= 16;
+    if (grid[5].isovalue > isolevel) cubeindex |= 32;
+    if (grid[6].isovalue > isolevel) cubeindex |= 64;
+    if (grid[7].isovalue > isolevel) cubeindex |= 128;
+
+    // if (grid[0].isovalue < isolevel) cubeindex |= 1;
+    // if (grid[1].isovalue < isolevel) cubeindex |= 2;
+    // if (grid[2].isovalue < isolevel) cubeindex |= 4;
+    // if (grid[3].isovalue < isolevel) cubeindex |= 8;
+    // if (grid[4].isovalue < isolevel) cubeindex |= 16;
+    // if (grid[5].isovalue < isolevel) cubeindex |= 32;
+    // if (grid[6].isovalue < isolevel) cubeindex |= 64;
+    // if (grid[7].isovalue < isolevel) cubeindex |= 128;
 
     // Cube is entirely in/out of the surface
     if (LUT.EDGE_TABLE[cubeindex] == 0) return(0);
+    //debugger;
 
     // Find the vertices where the surface intersects the cube
     if (LUT.EDGE_TABLE[cubeindex] & 1)
     {
-        vertexList[0] = new THREE.Vector3(0,0,0);
+        //vertexList[0] = new THREE.Vector3(0,0,0);
         vertexList[0] = this.vertexInterpolation(isolevel,grid[0],grid[1]);
+        //console.log(vertexList[0]);
     }
     if (LUT.EDGE_TABLE[cubeindex] & 2)
     {
-        vertexList[1] = new THREE.Vector3(0,0,0);
+        //vertexList[1] = new THREE.Vector3(0,0,0);
         vertexList[1] = this.vertexInterpolation(isolevel,grid[1],grid[2]);
+        //console.log(vertexList[1]);
+        //console.log(temp);
     }
     if (LUT.EDGE_TABLE[cubeindex] & 4)
     {
-        vertexList[2] = new THREE.Vector3(0,0,0);
+        //vertexList[2] = new THREE.Vector3(0,0,0);
         vertexList[2] = this.vertexInterpolation(isolevel,grid[2],grid[3]);
+        //console.log(vertexList[2]);
     }
     if (LUT.EDGE_TABLE[cubeindex] & 8)
     {
-        vertexList[3] = new THREE.Vector3(0,0,0);
+        //vertexList[3] = new THREE.Vector3(0,0,0);
         vertexList[3] = this.vertexInterpolation(isolevel,grid[3],grid[0]);
+        //console.log(vertexList[3]);
     }
     if (LUT.EDGE_TABLE[cubeindex] & 16)
     {
-        vertexList[4] = new THREE.Vector3(0,0,0);
+        //vertexList[4] = new THREE.Vector3(0,0,0);
         vertexList[4] = this.vertexInterpolation(isolevel,grid[4],grid[5]);
+        //console.log(vertexList[4]);
     }
     if (LUT.EDGE_TABLE[cubeindex] & 32)
     {
-        vertexList[5] = new THREE.Vector3(0,0,0);
+        //vertexList[5] = new THREE.Vector3(0,0,0);
         vertexList[5] = this.vertexInterpolation(isolevel,grid[5],grid[6]);
     }
     if (LUT.EDGE_TABLE[cubeindex] & 64)
     {
-        vertexList[6] = new THREE.Vector3(0,0,0);
+        //vertexList[6] = new THREE.Vector3(0,0,0);
         vertexList[6] = this.vertexInterpolation(isolevel,grid[6],grid[7]);
     }
     if (LUT.EDGE_TABLE[cubeindex] & 128)
     {
-        vertexList[7] = new THREE.Vector3(0,0,0);
+        //vertexList[7] = new THREE.Vector3(0,0,0);
         vertexList[7] = this.vertexInterpolation(isolevel,grid[7],grid[4]);
     }
     if (LUT.EDGE_TABLE[cubeindex] & 256)
     {
-        vertexList[8] = new THREE.Vector3(0,0,0);
+        //vertexList[8] = new THREE.Vector3(0,0,0);
         vertexList[8] = this.vertexInterpolation(isolevel,grid[0],grid[4]);
     }
     if (LUT.EDGE_TABLE[cubeindex] & 512)
     {
-        vertexList[9] = new THREE.Vector3(0,0,0);
+        //vertexList[9] = new THREE.Vector3(0,0,0);
         vertexList[9] = this.vertexInterpolation(isolevel,grid[1],grid[5]);
     }
     if (LUT.EDGE_TABLE[cubeindex] & 1024)
     {
-        vertexList[10] = new THREE.Vector3(0,0,0);
+        //vertexList[10] = new THREE.Vector3(0,0,0);
         vertexList[10] = this.vertexInterpolation(isolevel,grid[2],grid[6]);
     }
     if (LUT.EDGE_TABLE[cubeindex] & 2048)
     {
-        vertexList[11] = new THREE.Vector3(0,0,0);
+        //vertexList[11] = new THREE.Vector3(0,0,0);
         vertexList[11] = this.vertexInterpolation(isolevel,grid[3],grid[7]);
     }
+
     //console.log(vertexList[3]);
     // var ntriang=0;
     // for (var i=0; LUT.TRI_TABLE[cubeindex*16+i]!=-1; i+=3)
@@ -519,10 +661,19 @@ class Voxel {
     //     triangles[ntriang].p[2] = vertexList[LUT.TRI_TABLE[cubeindex*16+i+2]];
     //     ntriang++;
     // }
+    // for(var i=0; i<12; i++)
+    // {
+    //     //console.log(vertexList[i]);
+    //     if(vertexList[i]===undefined)
+    //         debugger;
+    // }
 
+
+
+    //debugger;
     return {
       vertPositions: vertexList,//vertPositions,
-      vertNormals: normalList,//vertNormals
+      //vertNormals: normalList,//vertNormals
       cubeIndex: cubeindex
     };
   };
