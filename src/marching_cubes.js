@@ -144,8 +144,12 @@ export default class MarchingCubes {
   // Implement a function that returns the value of the all metaballs influence to a given point.
   // Please follow the resources given in the write-up for details.
   sample(point) {
-    // @TODO
     var isovalue = 1.1;
+    this.balls.forEach(function(ball) {
+      var dist = point.distanceTo(ball.pos);
+      var influence = (ball.radius * ball.radius) / (dist * dist);
+      isovalue += influence;
+    });
     return isovalue;
   }
 
@@ -165,6 +169,11 @@ export default class MarchingCubes {
       // Sampling the center point
       this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
 
+      // Sample corners
+      for (var i = 0; i < 8; i++) {
+        this.voxels[c].corners[i].isovalue = this.sample(this.voxels[c].corners[i].pos); 
+      }
+
       // Visualizing grid
       if (VISUAL_DEBUG && this.showGrid) {
         
@@ -174,9 +183,17 @@ export default class MarchingCubes {
         } else {
           this.voxels[c].hide();
         }
+
         this.voxels[c].center.updateLabel(this.camera);
+        this.voxels[c].corners.forEach((function(corner) {
+          corner.updateLabel(this.camera);
+        }).bind(this));
+
       } else {
         this.voxels[c].center.clearLabel();
+        this.voxels[c].corners.forEach(function(corner) {
+          corner.clearLabel();
+        });
       }
     }
 
@@ -206,7 +223,7 @@ export default class MarchingCubes {
   };
 
   makeMesh() {
-    // @TODO
+
   }
 
   updateMesh() {
@@ -283,6 +300,17 @@ class Voxel {
 
     // Center dot
     this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG); 
+
+    // Corners
+    this.corners = [];
+    for (var i = 0; i < 8; i++) {
+      var x = this.pos.x + Math.pow(-1, (i>>0)&1) * halfGridCellWidth;
+      var y = this.pos.y + Math.pow(-1, (i>>1)&1) * halfGridCellWidth;
+      var z = this.pos.z + Math.pow(-1, (i>>2)&1) * halfGridCellWidth;
+
+      this.corners[i] = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG);
+      console.log(this.corners[i]);
+    }
   }
 
   show() {
