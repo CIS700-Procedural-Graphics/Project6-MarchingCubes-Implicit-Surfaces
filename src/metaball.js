@@ -17,7 +17,7 @@ export default class Metaball {
     this.radius2 = radius * radius;
     this.mesh = null;
 
-    if (visualDebug) {      
+    if (visualDebug) {
       this.makeMesh();
     }
   }
@@ -41,6 +41,20 @@ export default class Metaball {
   };
 
   update() {
-    // @TODO
+    var margin = 0.1;
+    var pos = this.mesh.position.clone();
+
+    var min = margin + this.radius;
+    var max = this.gridWidth - margin - this.radius;
+
+    pos.add(this.vel);
+
+    if (pos.x >= max || pos.y >= max || pos.z >= max ||
+        pos.x <= min || pos.y <= min || pos.z <= min) {
+      this.vel.multiplyScalar(-1);
+    }
+
+    this.pos.add(this.vel);
+    this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
   }
 }

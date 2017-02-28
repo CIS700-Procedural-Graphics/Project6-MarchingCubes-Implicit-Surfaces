@@ -13,9 +13,11 @@ export default class InspectPoint {
     this.isovalue = isovalue;
     this.label = null;
 
-    if (visualDebug) {
-      this.makeLabel();
-    }
+    // TODO
+    // Uncomment for debugging labels
+    // if (visualDebug) {
+    //   this.makeLabel();
+    // }
   };
 
   // Create an HTML div for holding label
@@ -28,7 +30,7 @@ export default class InspectPoint {
     this.label.style.cursor = 'default';
     this.label.style.fontSize = '0.3em';
     this.label.style.pointerEvents = 'none';
-    document.body.appendChild(this.label);    
+    document.body.appendChild(this.label);
   };
 
   updateLabel(camera) {
@@ -40,7 +42,7 @@ export default class InspectPoint {
       this.label.style.top = screenPos.y + 'px';
       this.label.style.left = screenPos.x + 'px';
       this.label.innerHTML = this.isovalue.toFixed(2);
-      this.label.style.opacity = this.isovalue - 0.5;      
+      this.label.style.opacity = this.isovalue - 0.5;
     }
   };
 
