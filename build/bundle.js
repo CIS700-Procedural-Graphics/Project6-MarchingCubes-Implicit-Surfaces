@@ -48208,7 +48208,7 @@
 	
 	      this.materials = [];
 	      var tex_loader = new THREE.TextureLoader();
-	      var texture = tex_loader.load('../water.png');
+	      var texture = tex_loader.load('./water.png');
 	      this.materials['biology'] = new THREE.ShaderMaterial({
 	        side: THREE.DoubleSide,
 	        uniforms: {
