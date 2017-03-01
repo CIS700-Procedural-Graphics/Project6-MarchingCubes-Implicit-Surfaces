@@ -168,7 +168,7 @@ export default class MarchingCubes {
 
     for (var c = 0; c < this.res3; c++) {
       // Sampling the center point
-      this.voxels[c].center.isovalue = 1.1;
+      this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
       //Sampling the 8 corners 
       for (var j = 0; j < this.voxels[c].corners.length; j++) {
         this.voxels[c].corners[j].isovalue = this.sample(this.voxels[c].corners[j].pos);
@@ -302,7 +302,7 @@ class Voxel {
     var topLeftFront = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
     var topRightBack = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
     var topRightFront = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
-    this.corners = [bottomLeftBack, bottomLeftFront, bottomRightBack, bottomRightFront, topLeftBack, topLeftFront, topRightBack, topRightFront];
+    this.corners = [bottomLeftBack, bottomRightBack, bottomLeftFront, bottomRightFront, topLeftBack, topRightBack, topRightFront, topLeftFront];
   }
 
   show() {
@@ -329,17 +329,83 @@ class Voxel {
   }
 
   vertexInterpolation(isolevel, posA, posB) {
+    var p1 = posA.pos; 
+    var p2 = posB.pos;
+    var iv1 = posA.isovalue;
+    var iv2 = posB.isovalue;
 
-    // @TODO
+    if (Math.abs(isolevel - iv1) < 0.00001 || Math.abs(iv1-iv2) < 0.00001) {
+      return p1;
+    }
+    if (Math.abs(isolevel - iv2) < 0.00001) {
+      return p2;
+    }
+
+    var f = (isolevel - iv1)/(iv2 - iv1);
+
     var lerpPos;
+    lerpPos.x = p1.x + f * (p2.x - p1.x);
+    lerpPos.y = p1.y + f * (p2.y - p1.y);
+    lerpPos.z = p1.z + f * (p2.z - p1.z);
+
     return lerpPos;
   }
 
   polygonize(isolevel) {
+    var cubeIndex;
+    if (this.corners[0].isovalue < isolevel) cubeIndex |= 1;
+    if (this.corners[1].isovalue < isolevel) cubeIndex |= 2;
+    if (this.corners[2].isovalue < isolevel) cubeIndex |= 4;
+    if (this.corners[3].isovalue < isolevel) cubeIndex |= 8;
+    if (this.corners[4].isovalue < isolevel) cubeIndex |= 16;
+    if (this.corners[5].isovalue < isolevel) cubeIndex |= 32;
+    if (this.corners[6].isovalue < isolevel) cubeIndex |= 64;
+    if (this.corners[7].isovalue < isolevel) cubeIndex |= 128;
 
-    // @TODO
+    var edgeLookup = EDGE_TABLE[cubeIndex];
+    if (edgeLookup == 0) {
+      return { vertPositions: [], vertNormals: []};
+    } 
+    
     var vertexList = [];
     var normalList = [];
+
+    if (edgeLookup & 1) {
+      vertexList[0] = vertexInterpolation(isolevel, this.corners[0], this.corners[1]);
+    }
+    if (edgeLookup & 2) {
+      vertexList[1] = vertexInterpolation(isolevel, this.corners[1], this.corners[2]);
+    }
+    if (edgeLookup & 4) {
+      vertexList[2] = vertexInterpolation(isolevel, this.corners[2], this.corners[3]);
+    }
+    if (edgeLookup & 8) {
+      vertexList[3] = vertexInterpolation(isolevel, this.corners[3], this.corners[0]);
+    }
+    if (edgeLookup & 16) {
+      vertexList[4] = vertexInterpolation(isolevel, this.corners[4], this.corners[5]);
+    }
+    if (edgeLookup & 32) {
+      vertexList[5] = vertexInterpolation(isolevel, this.corners[5], this.corners[6]);
+    }
+    if (edgeLookup & 64) {
+      vertexList[6] = vertexInterpolation(isolevel, this.corners[6], this.corners[7]);
+    }
+    if (edgeLookup & 128) {
+      vertexList[7] = vertexInterpolation(isolevel, this.corners[7], this.corners[4]);
+    }
+    if (edgeLookup & 256) {
+      vertexList[8] = vertexInterpolation(isolevel, this.corners[0], this.corners[4]);
+    }
+    if (edgeLookup & 512) {
+      vertexList[9] = vertexInterpolation(isolevel, this.corners[1], this.corners[5]);
+    }
+    if (edgeLookup & 1024) {
+      vertexList[10] = vertexInterpolation(isolevel, this.corners[2], this.corners[6]);
+    }
+    if (edgeLookup & 2048) {
+      vertexList[11] = vertexInterpolation(isolevel, this.corners[3], this.corners[7]);
+    }
 
     return {
       vertPositions: vertPositions,
