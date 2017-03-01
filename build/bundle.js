@@ -176,7 +176,7 @@
 	  App.marchingCubes = new _marching_cubes2.default(App);
 	
 	  var loader = new THREE.TextureLoader();
-	  var texture = loader.load('images/fabric.jpg');
+	  var texture = loader.load('../images/fabric.jpg');
 	  scene.background = texture;
 	}
 	
@@ -48421,7 +48421,7 @@
 	    key: 'makeMesh',
 	    value: function makeMesh() {
 	
-	      var img = THREE.ImageUtils.loadTexture('images/metal.jpg');
+	      var img = THREE.ImageUtils.loadTexture('../images/metal.jpg');
 	
 	      var mat = new THREE.ShaderMaterial({
 	        uniforms: {
