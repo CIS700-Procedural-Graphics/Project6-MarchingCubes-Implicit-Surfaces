@@ -1,7 +1,7 @@
 const THREE = require('three')
 
 var SPHERE_GEO = new THREE.SphereBufferGeometry(1, 32, 32);
-var LAMBERT_WHITE = new THREE.MeshLambertMaterial( { color: 0x9EB3D8, transparent: true, opacity: 0.5 });
+var LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0x9EB3D8, transparent: true, opacity: 0.5 });
 
 export default class Metaball {
   constructor(pos, radius, vel, gridWidth, visualDebug) {
@@ -17,7 +17,7 @@ export default class Metaball {
     this.radius2 = radius * radius;
     this.mesh = null;
 
-    if (visualDebug) {      
+    if (visualDebug) {
       this.makeMesh();
     }
   }
@@ -40,7 +40,26 @@ export default class Metaball {
     }
   };
 
+  isOOB(pos) {
+    var margin = 2.0;
+    return pos.x < 0 + margin || pos.x > this.gridWidth - margin ||
+           pos.y < 0 + margin || pos.y > this.gridWidth - margin ||
+           pos.z < 0 + margin || pos.z > this.gridWidth - margin;
+  };
+
   update() {
-    // @TODO
+    var new_pos = new THREE.Vector3(this.pos.x + this.vel.x, this.pos.y + this.vel.y, this.pos.z + this.vel.z);
+    if (this.isOOB(new_pos)) {
+      this.vel = new THREE.Vector3(-this.vel.x, -this.vel.y, -this.vel.z);
+      new_pos = new THREE.Vector3(this.pos.x + this.vel.x, this.pos.y + this.vel.y, this.pos.z + this.vel.z);
+    }
+    this.pos = new_pos;
+    if (this.mesh) {
+      this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
+    }
+  }
+
+  density(r) {
+    return Math.exp(-r * r * 8);
   }
 }

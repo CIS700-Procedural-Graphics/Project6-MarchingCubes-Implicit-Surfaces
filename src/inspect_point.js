@@ -11,6 +11,7 @@ export default class InspectPoint {
   init(pos, isovalue, visualDebug) {
     this.pos = pos;
     this.isovalue = isovalue;
+    this.normal = new THREE.Vector3(0,0,0);
     this.label = null;
 
     if (visualDebug) {
@@ -28,19 +29,19 @@ export default class InspectPoint {
     this.label.style.cursor = 'default';
     this.label.style.fontSize = '0.3em';
     this.label.style.pointerEvents = 'none';
-    document.body.appendChild(this.label);    
+    document.body.appendChild(this.label);
   };
 
   updateLabel(camera) {
     if (this.label) {
       var screenPos = this.pos.clone().project(camera);
-      screenPos.x = ( screenPos.x + 1 ) / 2 * window.innerWidth;;
-      screenPos.y = - ( screenPos.y - 1 ) / 2 *  window.innerHeight;;
+      screenPos.x = ( screenPos.x + 1 ) / 2 * window.innerWidth;
+      screenPos.y = - ( screenPos.y - 1 ) / 2 *  window.innerHeight;
 
       this.label.style.top = screenPos.y + 'px';
       this.label.style.left = screenPos.x + 'px';
       this.label.innerHTML = this.isovalue.toFixed(2);
-      this.label.style.opacity = this.isovalue - 0.5;      
+      this.label.style.opacity = this.isovalue - 0.5;
     }
   };
 
