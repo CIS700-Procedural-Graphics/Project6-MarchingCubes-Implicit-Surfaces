@@ -10,21 +10,21 @@ import Framework from './framework'
 import LUT from './marching_cube_LUT.js'
 import MarchingCubes from './marching_cubes.js'
 
-const DEFAULT_VISUAL_DEBUG = true;
+const DEFAULT_VISUAL_DEBUG = false;
 const DEFAULT_ISO_LEVEL = 1.0;
-const DEFAULT_GRID_RES = 4;
+const DEFAULT_GRID_RES = 20;
 const DEFAULT_GRID_WIDTH = 10;
-const DEFAULT_NUM_METABALLS = 10;
-const DEFAULT_MIN_RADIUS = 0.5;
-const DEFAULT_MAX_RADIUS = 1;
-const DEFAULT_MAX_SPEED = 0.01;
+const DEFAULT_NUM_METABALLS = 3;
+const DEFAULT_MIN_RADIUS = 1.0;
+const DEFAULT_MAX_RADIUS = 1.5;
+const DEFAULT_MAX_SPEED = 0.05;
 
 var App = {
-  // 
+
   marchingCubes:             undefined,
   config: {
-    // Global control of all visual debugging. 
-    // This can be set to false to disallow any memory allocation of visual debugging components. 
+    // Global control of all visual debugging.
+    // This can be set to false to disallow any memory allocation of visual debugging components.
     // **Note**: If your application experiences performance drop, disable this flag.
     visualDebug:    DEFAULT_VISUAL_DEBUG,
 
@@ -52,6 +52,8 @@ var App = {
 
     // Maximum speed of a metaball
     maxSpeed:       DEFAULT_MAX_SPEED
+
+
   },
 
   // Scene's framework objects
@@ -59,13 +61,16 @@ var App = {
   scene:            undefined,
   renderer:         undefined,
 
+  lightPos: new THREE.Vector3(1.0, 10.0, 2.0),
+  // camPos: new THREE.Color(5.0, 5.0, 30.0)
+
   // Play/pause control for the simulation
   isPaused:         false
 };
 
 // called after the scene loads
-function onLoad(framework) {
-
+function onLoad(framework)
+{
   var {scene, camera, renderer, gui, stats} = framework;
   App.scene = scene;
   App.camera = camera;
@@ -81,27 +86,30 @@ function onLoad(framework) {
 }
 
 // called on frame updates
-function onUpdate(framework) {
-
-  if (App.marchingCubes) {
+function onUpdate(framework)
+{
+  if (App.marchingCubes)
+  {
     App.marchingCubes.update();
   }
 }
 
-function setupCamera(camera) {
+function setupCamera(camera)
+{
   // set camera position
-  camera.position.set(5, 5, 30);
+  camera.position.set(-1, 8, 20);
   camera.lookAt(new THREE.Vector3(0,0,0));
 }
 
-function setupLights(scene) {
-
+function setupLights(scene)
+{
   // Directional light
   var directionalLight = new THREE.DirectionalLight( 0xffffff, 1 );
   directionalLight.color.setHSL(0.1, 1, 0.95);
   directionalLight.position.set(1, 10, 2);
   directionalLight.position.multiplyScalar(10);
 
+  App.lightPos = directionalLight.position;
   scene.add(directionalLight);
 }
 
@@ -109,11 +117,8 @@ function setupScene(scene) {
   App.marchingCubes = new MarchingCubes(App);
 }
 
-
-function setupGUI(gui) {
-
-  // more information here: https://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
-  
+function setupGUI(gui)
+{
   // --- CONFIG ---
   gui.add(App, 'isPaused').onChange(function(value) {
     App.isPaused = value;
@@ -130,7 +135,6 @@ function setupGUI(gui) {
   });
 
   // --- DEBUG ---
-
   var debugFolder = gui.addFolder('Debug');
   debugFolder.add(App.marchingCubes, 'showGrid').onChange(function(value) {
     App.marchingCubes.showGrid = value;
@@ -153,7 +157,7 @@ function setupGUI(gui) {
       }
     }
   });
-  debugFolder.open();  
+  debugFolder.open();
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
