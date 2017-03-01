@@ -115,7 +115,7 @@ function setupScene(scene) {
   App.marchingCubes = new MarchingCubes(App);
   
   var loader = new THREE.TextureLoader();
-	var texture = loader.load( 'images/fabric.jpg');
+	var texture = loader.load( '../images/fabric.jpg');
   scene.background = texture;
   
 }

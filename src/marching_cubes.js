@@ -254,7 +254,7 @@ export default class MarchingCubes {
     
     
     var img = THREE.ImageUtils
-                      .loadTexture('images/metal.jpg');
+                      .loadTexture('../images/metal.jpg');
 
     var mat = new THREE.ShaderMaterial({
       uniforms: {
