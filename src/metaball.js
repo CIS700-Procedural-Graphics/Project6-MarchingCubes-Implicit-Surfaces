@@ -17,12 +17,11 @@ export default class Metaball {
     this.visualDebug = visualDebug;
 
     this.radius = radius;
+    offset = 1.5 * radius; //offset is more than radius because we can have influences from multiple spheres
     this.radius2 = radius * radius;
     this.mesh = null;
 
-    if (visualDebug) {
-      this.makeMesh();
-    }
+    this.makeMesh();
   }
 
   makeMesh() {
@@ -45,7 +44,6 @@ export default class Metaball {
 
   update()
   {
-    // console.log(this.gridWidth);
       if((this.pos.x >= this.gridWidth - offset) || (this.pos.x <= offset))
       {
         this.vel.x = -this.vel.x;
