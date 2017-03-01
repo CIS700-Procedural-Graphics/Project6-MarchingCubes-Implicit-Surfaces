@@ -11,6 +11,121 @@ const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth:
 
 const LAMBERT_NEW = new THREE.MeshBasicMaterial( { color: 0xee00ee });
 
+//shader texture
+
+var options = {
+    lightColor: '#ffffff',
+    lightIntensity: 2,
+    albedo: '#dddddd',
+    ambient: '#111111',
+    useTexture: true,
+    Red_a: 0.5,
+    Red_b: 0.5,
+    Red_c: 1.0,
+    Red_d: 0.0,
+    Green_a: 0.5,
+    Green_b: 0.5,
+    Green_c: 1.0,
+    Green_d: 0.33,
+    Blue_a: 0.5,
+    Blue_b: 0.5,
+    Blue_c: 1.0,
+    Blue_d: 0.67
+}
+
+var SM = new THREE.ShaderMaterial({
+     uniforms: {
+                texture: {
+                    type: "t", 
+                    value: null
+                },
+                u_useTexture: {
+                    type: 'i',
+                    value: options.useTexture
+                },
+                u_albedo: {
+                    type: 'v3',
+                    value: new THREE.Color(options.albedo)
+                },
+                u_ambient: {
+                    type: 'v3',
+                    value: new THREE.Color(options.ambient)
+                },
+                u_lightPos: {
+                    type: 'v3',
+                    value: new THREE.Vector3(30, 50, 40)
+                },
+                u_lightCol: {
+                    type: 'v3',
+                    value: new THREE.Color(options.lightColor)
+                },
+                u_lightIntensity: {
+                    type: 'f',
+                    value: options.lightIntensity
+                },
+                
+                //red
+                u_Red_a: {
+                    type: 'f',
+                    value: options.Red_a
+                },
+                u_Red_b: {
+                    type: 'f',
+                    value: options.Red_b
+                },
+                u_Red_c: {
+                    type: 'f',
+                    value: options.Red_c
+                },
+                u_Red_d: {
+                    type: 'f',
+                    value: options.Red_d
+                },
+                
+                //green
+                u_Green_a: {
+                    type: 'f',
+                    value: options.Green_a
+                },
+                u_Green_b: {
+                    type: 'f',
+                    value: options.Green_b
+                },
+                u_Green_c: {
+                    type: 'f',
+                    value: options.Green_c
+                },
+                u_Green_d: {
+                    type: 'f',
+                    value: options.Green_d
+                },
+                
+                //blue
+                u_Blue_a: {
+                    type: 'f',
+                    value: options.Blue_a
+                },
+                u_Blue_b: {
+                    type: 'f',
+                    value: options.Blue_b
+                },
+                u_Blue_c: {
+                    type: 'f',
+                    value: options.Blue_c
+                },
+                u_Blue_d: {
+                    type: 'f',
+                    value: options.Blue_d
+                }
+                
+                
+            },
+            vertexShader: require('./shaders/vert.glsl'),
+            fragmentShader: require('./shaders/frag.glsl')
+  });
+
+
+//Marching Cubes Class
 export default class MarchingCubes {
 
   constructor(App) {      
@@ -283,7 +398,7 @@ export default class MarchingCubes {
 //    geometry.vertices.push( new THREE.Vector3(  100,  100, 0 ) );     
 //      
       
-    this.Trismesh = new THREE.Mesh(geometry, LAMBERT_WHITE);
+    this.Trismesh = new THREE.Mesh(geometry, SM);
 //    this.Trismesh.geometry.dynamic = true;
 //    this.Trismesh.geometry.verticesNeedUpdate = true;
 //    this.Trismesh.geometry.elementsNeedUpdate = true;

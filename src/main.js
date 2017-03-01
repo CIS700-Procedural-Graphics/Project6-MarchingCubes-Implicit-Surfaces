@@ -126,7 +126,6 @@ function setupGUI(gui) {
 
   gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
     App.config.numMetaballs = value;
-    
     App.scene.children.forEach(function(object){App.scene.remove(object);});  
     
     setupLights(App.scene);
@@ -134,6 +133,25 @@ function setupGUI(gui) {
     App.marchingCubes.init(App);
   });
 
+  gui.add(App.config, 'gridRes', 1, 100).onChange(function(value) {
+    App.config.gridRes = value;
+    App.scene.children.forEach(function(object){App.scene.remove(object);});  
+    
+    setupLights(App.scene);
+    setupScene(App.scene);    
+    App.marchingCubes.init(App);  
+  });
+
+gui.add(App.config, 'maxSpeed', 0.001, 10).step(0.01).onChange(function(value) {
+    App.config.maxSpeed = value;
+    App.scene.children.forEach(function(object){App.scene.remove(object);});  
+    
+    setupLights(App.scene);
+    setupScene(App.scene);  
+    App.marchingCubes.init(App);
+  });
+
+    
   // --- DEBUG ---
 
 //  var debugFolder = gui.addFolder('Debug');
