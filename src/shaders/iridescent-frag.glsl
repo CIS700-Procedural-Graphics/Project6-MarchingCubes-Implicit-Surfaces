@@ -6,14 +6,14 @@ varying vec3 f_position;
 varying vec3 f_normal;
 varying vec2 f_uv;
 
+varying vec3 camP;
+
 void main()
 {
     vec4 color = vec4(metaball_color, 1.0);
 
-    float d = clamp(dot(f_normal, normalize(lightPos - f_position)), 0.0, 1.0);
-    float t = clamp(dot(f_normal, normalize(camPos - f_position)), 0.0, 1.0);
+    float t = clamp(dot(f_normal, normalize(camP - f_position)), 0.0, 1.0);
 
-    d = d*5.0;
     //color pallete
     float red = 0.5 + 0.5*(cos(6.28*(t)));
     float green = 0.5 + 0.5*(cos(6.28*(t+0.33)));
@@ -25,12 +25,5 @@ void main()
     vec3 lightIntensity = vec3(2.0, 2.0, 2.0);
     vec3 lightColor = vec3(1.0, 1.0, 1.0);
 
-    if(d<0.0)
-    {
-      gl_FragColor = color;
-    }
-    else
-    {
-      gl_FragColor = vec4(t * d * iridescent_color * lightColor * lightIntensity + ambient * metaball_color, 1.0);
-    }
+    gl_FragColor = vec4(t * iridescent_color * lightColor * lightIntensity + ambient * metaball_color, 1.0);
 }

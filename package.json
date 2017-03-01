@@ -1,14 +1,8 @@
 {
   "scripts": {
     "start": "webpack-dev-server --hot --inline",
-    "deploy": "node deploy.js",
+    "deploy": "npm run build && node deploy.js",
     "build": "webpack"
-  },
-  "gh-pages-deploy": {
-    "prep": [
-      "build"
-    ],
-    "noprompt": true
   },
   "dependencies": {
     "dat-gui": "^0.5.0",
