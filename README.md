@@ -38,3 +38,21 @@ The mesh for the metaball's isosurface should be created once. At each frame, I 
 I implemented irradiance here.
 
 ## Visuals of the project
+
+Note: used irradiance for shader implementation.
+
+</br>Image: 
+![Image][img]
+Low Resolution Visual: 
+![Low Res Visual][lowResVis]
+Low Res Debugging Visual [spheres and voxel cubes]: 
+![Debugging Visuals][debugVis]
+High Resolution Visual: 
+![High Res Visual][highResVis]
+
+
+
+[img]: https://github.com/hanbollar/Project6-MarchingCubes-Implicit-Surfaces/blob/master/forReadme/_img.png "Image"
+[lowResVis]: https://github.com/hanbollar/Project6-MarchingCubes-Implicit-Surfaces/blob/master/forReadme/_trim1.gif "Low Res Visual"
+[debugVis]: https://github.com/hanbollar/Project6-MarchingCubes-Implicit-Surfaces/blob/master/forReadme/_trim2.gif "Low Res Debugging Visual [spheres and voxel cubes]"
+[highResVis]: https://github.com/hanbollar/Project6-MarchingCubes-Implicit-Surfaces/blob/master/forReadme/_increasedRes.gif "High Res Visual"
