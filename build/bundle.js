@@ -48948,7 +48948,7 @@
 /* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__.p + "./assets/fabric-4dc7d7.bmp";
+	module.exports = __webpack_require__.p + "./assets/fabric-ca3857.bmp";
 
 /***/ }
 /******/ ]);
