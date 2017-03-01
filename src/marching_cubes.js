@@ -34,7 +34,6 @@ var color_Material = new THREE.ShaderMaterial({
 
 var balls = [];
 var numMetaballs;
-var count = 0.0;
 
 export default class MarchingCubes
 {
@@ -312,7 +311,7 @@ export default class MarchingCubes
       }
     }
 
-    var geo = this.mesh.geometry;
+    // var geo = this.mesh.geometry;
     this.mesh.geometry.vertices = this.vertexPos;
 
     for(var i=0; i< this.vertexPos.length ;i=i+3)
@@ -325,7 +324,7 @@ export default class MarchingCubes
     //To visualize the face normals as 3D geometry on-screen
     // var helper = new THREE.FaceNormalsHelper( this.mesh, 2, 0x00ff00, 1 );
     // this.scene.add( helper );
-    
+
     geo.computeVertexNormals();
 
     geo.verticesNeedUpdate = true;
