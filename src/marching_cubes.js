@@ -240,7 +240,22 @@ export default class MarchingCubes {
   };
 
   makeMesh() {
-    this.mesh = new THREE.Mesh(new THREE.Geometry(), new THREE.MeshLambertMaterial());
+    var material = new THREE.ShaderMaterial( {
+      uniforms: {
+        /*
+          // float initialized to 0
+          time: { type: "f", value: 0.0 },
+          // float initialized to 0
+          freq: { type: "f", value: 0.0 },
+          //float initialized to 25
+          amp: { type: "f", value: 10.0 }
+        */
+      },
+      vertexShader: require('./shaders/iridescence-vert.glsl'),
+      fragmentShader: require('./shaders/iridescence-frag.glsl')
+    });
+
+    this.mesh = new THREE.Mesh(new THREE.Geometry(), material);
     this.mesh.geometry.dynamic = true;
     this.scene.add(this.mesh);
   }
