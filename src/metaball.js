@@ -42,5 +42,21 @@ export default class Metaball {
 
   update() {
     // @TODO
+    this.mesh.position.x += this.vel.x;
+    this.mesh.position.y += this.vel.y;
+    this.mesh.position.z += this.vel.z;
+    this.pos = this.mesh.position;
+    var radius = this.radius;
+    if (this.mesh.position.x > this.gridWidth - radius || 
+        this.mesh.position.x <  radius ||
+        this.mesh.position.y > this.gridWidth - radius || 
+        this.mesh.position.y <  radius ||
+        this.mesh.position.z > this.gridWidth - radius || 
+        this.mesh.position.z <  radius) {
+      this.vel.x = -this.vel.x;
+      this.vel.y = -this.vel.y;
+      this.vel.z = -this.vel.z;
+    }
+    
   }
 }

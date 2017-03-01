@@ -4,11 +4,23 @@ import Metaball from './metaball.js';
 import InspectPoint from './inspect_point.js'
 import LUT from './marching_cube_LUT.js';
 var VISUAL_DEBUG = true;
-
 const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparent: true, opacity: 0.5 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
 
+var options = {
+    lightColor: '#ffffff',
+    lightIntensity: 2,
+    albedo: '#dddddd',
+    ambient: '#111111',
+    useTexture: true
+}
+
+var toonMaterial;
+var iriMaterial;
+
+const E = 1e-3;
+const v3 = (x, y, z) => {return new THREE.Vector3(x, y, z);};
 
 export default class MarchingCubes {
 
@@ -17,6 +29,7 @@ export default class MarchingCubes {
   }
 
   init(App) {
+    this.App = App;
     this.isPaused = false;    
     VISUAL_DEBUG = App.config.visualDebug;
 
@@ -49,10 +62,99 @@ export default class MarchingCubes {
     this.showSpheres = true;
     this.showGrid = true;
 
-    if (App.config.material) {
-      this.material = new THREE.MeshPhongMaterial({ color: 0xff6a1d});
-    } else {
-      this.material = App.config.material;
+
+    //
+
+    toonMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+         texture: {
+                    type: "t", 
+                    value: THREE.ImageUtils.loadTexture('./src/iridescent.bmp')
+                },
+                u_useTexture: {
+                    type: 'i',
+                    value: options.useTexture
+                },
+                u_albedo: {
+                    type: 'v3',
+                    value: new THREE.Color(options.albedo)
+                },
+                u_ambient: {
+                    type: 'v3',
+                    value: new THREE.Color(options.ambient)
+                },
+                u_lightPos: {
+                    type: 'v3',
+                    value: new THREE.Vector3(30, 50, 40)
+                },
+                u_lightCol: {
+                    type: 'v3',
+                    value: new THREE.Color(options.lightColor)
+                },
+                u_lightIntensity: {
+                    type: 'f',
+                    value: options.lightIntensity
+                },
+                u_camPos: {
+                    type: 'v3',
+                    value: this.camera.position
+                }
+      },
+      vertexShader: require('./glsl/toon-vert.glsl'),
+      fragmentShader: require('./glsl/toon-frag.glsl')
+    });
+
+    iriMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+         texture: {
+                    type: "t", 
+                    value: null
+                },
+                u_useTexture: {
+                    type: 'i',
+                    value: options.useTexture
+                },
+                u_albedo: {
+                    type: 'v3',
+                    value: new THREE.Color(options.albedo)
+                },
+                u_ambient: {
+                    type: 'v3',
+                    value: new THREE.Color(options.ambient)
+                },
+                u_lightPos: {
+                    type: 'v3',
+                    value: new THREE.Vector3(30, 50, 40)
+                },
+                u_lightCol: {
+                    type: 'v3',
+                    value: new THREE.Color(options.lightColor)
+                },
+                u_lightIntensity: {
+                    type: 'f',
+                    value: options.lightIntensity
+                },
+                u_camPos: {
+                    type: 'v3',
+                    value: this.camera.position
+                }
+      },
+      vertexShader: require('./glsl/iridescent-vert.glsl'),
+      fragmentShader: require('./glsl/iridescent-frag.glsl')
+    });
+
+    //
+    if (this.App.config.material == 'toon') {
+      this.material = toonMaterial;
+    } 
+    else if (this.App.config.material == 'lambert') {
+      this.material = LAMBERT_WHITE;
+    }
+    else if (this.App.config.material == 'iridescent') {
+      this.material = iriMaterial;
+    }
+    else {
+      this.material = this.App.config.material;
     }
 
     this.setupCells();
@@ -145,7 +247,15 @@ export default class MarchingCubes {
   // Please follow the resources given in the write-up for details.
   sample(point) {
     // @TODO
-    var isovalue = 1.1;
+    var isovalue = 0.0;
+    
+    for (var i = 0; i < this.balls.length; i++) {
+        var x = (point.x - this.balls[i].pos.x) * (point.x - this.balls[i].pos.x);
+        var y = (point.y - this.balls[i].pos.y) * (point.y - this.balls[i].pos.y);
+        var z = (point.z - this.balls[i].pos.z) * (point.z - this.balls[i].pos.z);
+        isovalue += this.balls[i].radius2 / (x + y + z);
+    }
+  
     return isovalue;
   }
 
@@ -164,6 +274,16 @@ export default class MarchingCubes {
 
       // Sampling the center point
       this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
+
+      // Sampling each of the corners
+      this.voxels[c].val[0].isovalue = this.sample(this.voxels[c].val[0].pos);
+      this.voxels[c].val[1].isovalue = this.sample(this.voxels[c].val[1].pos);
+      this.voxels[c].val[2].isovalue = this.sample(this.voxels[c].val[2].pos);
+      this.voxels[c].val[3].isovalue = this.sample(this.voxels[c].val[3].pos);
+      this.voxels[c].val[4].isovalue = this.sample(this.voxels[c].val[4].pos);
+      this.voxels[c].val[5].isovalue = this.sample(this.voxels[c].val[5].pos);
+      this.voxels[c].val[6].isovalue = this.sample(this.voxels[c].val[6].pos);
+      this.voxels[c].val[7].isovalue = this.sample(this.voxels[c].val[7].pos);
 
       // Visualizing grid
       if (VISUAL_DEBUG && this.showGrid) {
@@ -204,13 +324,47 @@ export default class MarchingCubes {
     }
     this.showGrid = false;
   };
+  updateMaterial() {
+    if (this.App.config.material == 'toon') {
+      this.material = toonMaterial;
+    } 
+    else if (this.App.config.material == 'lambert') {
+      this.material = LAMBERT_WHITE;
+    }
+    else if (this.App.config.material == 'iridescent') {
+      this.material = iriMaterial;
+    }
+    else {
+    }
+
+    this.mesh.material = this.material;
+  }
 
   makeMesh() {
-    // @TODO
+    var geom = new THREE.Geometry();
+    this.mesh = new THREE.Mesh(geom, this.material);
+    this.mesh.geometry.dynamic = true;
+    this.scene.add(this.mesh);
   }
 
   updateMesh() {
-    // @TODO
+    let vertices = [];
+    let faces = [];
+    for (var j = 0; j < this.voxels.length; j++) {
+      var v = this.voxels[j];
+      var {vPos, vNor} = v.polygonize(this.isolevel, this.sample.bind(this));
+      for (var i = 0; i < vPos.length / 3; i++) {
+        vertices.push(vPos[3*i], vPos[3*i+1], vPos[3*i+2]);
+        var normals = [vNor[3*i], vNor[3*i+1], vNor[3 * i + 2]];
+        var fl = faces.length;
+        faces.push(new THREE.Face3(fl * 3, fl * 3 + 1, fl * 3 + 2, normals));
+      }
+    }
+    this.mesh.geometry.vertices = vertices;
+    this.mesh.geometry.faces = faces;
+    this.mesh.geometry.verticesNeedUpdate = true;
+    this.mesh.geometry.elementsNeedUpdate = true;
+    this.mesh.geometry.computeFaceNormals();
   }  
 };
 
@@ -281,7 +435,17 @@ class Voxel {
     var z = this.pos.z;
     var red = 0xff0000;
 
+    this.val = [];
     // Center dot
+    this.val[0] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.val[1] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.val[2] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.val[3] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.val[4] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.val[5] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.val[6] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.val[7] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    
     this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG); 
   }
 
@@ -308,22 +472,92 @@ class Voxel {
     }
   }
 
-  vertexInterpolation(isolevel, posA, posB) {
-
-    // @TODO
-    var lerpPos;
-    return lerpPos;
+  VertexInterp(isolevel, posA, posB) {
+    
+    var lerpPos = THREE.Vector3(0, 0, 0);
+    if (Math.abs(isolevel - posA.isovalue) < 0.0001) {
+      return posA.pos;
+    }
+    if (Math.abs(isolevel - posB.isovalue) < 0.0001) {
+      return posB.pos;
+    }
+    if (Math.abs(posA.isovalue - posB.isovalue) < 0.0001) {
+      return posA.pos;
+    }
+    var mu = (isolevel - posA.isovalue) / (posB.isovalue - posA.isovalue);
+    var x = posA.pos.x + mu * (posB.pos.x - posA.pos.x);
+    var y = posA.pos.y + mu * (posB.pos.y - posA.pos.y);
+    var z = posA.pos.z + mu * (posB.pos.z - posA.pos.z);
+    return new THREE.Vector3(x, y, z);
   }
 
-  polygonize(isolevel) {
+  polygonize(isolevel, sample) {
 
     // @TODO
-    var vertexList = [];
-    var normalList = [];
+    
+    let vPos = [];
+    let vNor = [];
+    let vertexList = [];
+    var cubeIdx = 0;
+    if (this.val[0].isovalue < isolevel) cubeIdx |= 1;
+    if (this.val[1].isovalue < isolevel) cubeIdx |= 2;
+    if (this.val[2].isovalue < isolevel) cubeIdx |= 4;
+    if (this.val[3].isovalue < isolevel) cubeIdx |= 8;
+    if (this.val[4].isovalue < isolevel) cubeIdx |= 16;
+    if (this.val[5].isovalue < isolevel) cubeIdx |= 32;
+    if (this.val[6].isovalue < isolevel) cubeIdx |= 64;
+    if (this.val[7].isovalue < isolevel) cubeIdx |= 128;
 
-    return {
-      vertPositions: vertPositions,
-      vertNormals: vertNormals
-    };
+    var edges = LUT.EDGE_TABLE[cubeIdx];
+    if (edges == 0) {
+       return { vPos, vNor };
+    }
+
+   if (edges & 1)
+      vertexList[0] =
+         this.VertexInterp(isolevel, this.val[0], this.val[1]);
+   if (edges & 2)
+      vertexList[1] =
+         this.VertexInterp(isolevel, this.val[1], this.val[2]);
+   if (edges & 4)
+      vertexList[2] =
+         this.VertexInterp(isolevel, this.val[2], this.val[3]);
+   if (edges & 8)
+      vertexList[3] =
+         this.VertexInterp(isolevel, this.val[3], this.val[0]);
+   if (edges & 16)
+      vertexList[4] =
+         this.VertexInterp(isolevel, this.val[4], this.val[5]);
+   if (edges & 32)
+      vertexList[5] =
+         this.VertexInterp(isolevel, this.val[5], this.val[6]);
+   if (edges & 64)
+      vertexList[6] =
+         this.VertexInterp(isolevel, this.val[6], this.val[7]);
+   if (edges & 128)
+      vertexList[7] =
+         this.VertexInterp(isolevel, this.val[7], this.val[4]);
+   if (edges & 256)
+      vertexList[8] =
+         this.VertexInterp(isolevel, this.val[0], this.val[4]);
+   if (edges & 512)
+      vertexList[9] =
+         this.VertexInterp(isolevel, this.val[1], this.val[5]);
+   if (edges & 1024)
+      vertexList[10] =
+         this.VertexInterp(isolevel, this.val[2], this.val[6]);
+   if (edges & 2048)
+      vertexList[11] =
+         this.VertexInterp(isolevel, this.val[3], this.val[7]);
+    for (let i = 0; i < 16; i++) {
+      if (LUT.TRI_TABLE[16 * cubeIdx + i] < 0) break;
+      let point = vertexList[LUT.TRI_TABLE[16 * cubeIdx + i]];
+      let samp = sample(point);
+      let delta = v3(sample(v3(-E,0,0).add(point)), sample(v3(0,-E,0).add(point)), sample(v3(0,0,-E).add(point)));
+      let normal = delta.subScalar(samp).normalize();
+      vPos.push(point);
+      vNor.push(normal);
+    }
+    return { vPos, vNor };
   };
 }
