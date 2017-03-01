@@ -175,23 +175,6 @@
 	function setupScene(scene) {
 	  App.marchingCubes = new _marching_cubes2.default(App);
 	
-	  var loader = new THREE.CubeTextureLoader();
-	  var urlPrefix = 'images/mettle/';
-	
-	  /*var skymap = new THREE.CubeTextureLoader().load([
-	      urlPrefix + 'mettle_px.jpeg', urlPrefix + 'mettle_nx.jpeg',
-	      urlPrefix + 'mettle_py.jpeg', urlPrefix + 'mettle_ny.jpeg',
-	      urlPrefix + 'mettle_pz.jpeg', urlPrefix + 'mettle_nz.jpeg'
-	  ] );*/
-	
-	  /*var skymap = new THREE.CubeTextureLoader().load([
-	      urlPrefix + 'darkcity_rt.jpeg', urlPrefix + 'darkcity_lf.jpeg',
-	      urlPrefix + 'darkcity_up.jpeg', urlPrefix + 'darkcity_dn.jpeg',
-	      urlPrefix + 'darkcity_ft.jpeg', urlPrefix + 'darkcity_bk.jpeg'
-	  ] );*/
-	
-	  //scene.background = skymap;
-	
 	  var loader = new THREE.TextureLoader();
 	  var texture = loader.load('images/fabric.jpg');
 	  scene.background = texture;
@@ -48438,7 +48421,7 @@
 	    key: 'makeMesh',
 	    value: function makeMesh() {
 	
-	      var img = THREE.ImageUtils.loadTexture('./images/metal.jpg');
+	      var img = THREE.ImageUtils.loadTexture('images/metal.jpg');
 	
 	      var mat = new THREE.ShaderMaterial({
 	        uniforms: {
