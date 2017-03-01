@@ -10,14 +10,14 @@ import Framework from './framework'
 import LUT from './marching_cube_LUT.js'
 import MarchingCubes from './marching_cubes.js'
 
-const DEFAULT_VISUAL_DEBUG = true;
+const DEFAULT_VISUAL_DEBUG = false;
 const DEFAULT_ISO_LEVEL = 1.0;
-const DEFAULT_GRID_RES = 4;
-const DEFAULT_GRID_WIDTH = 10;
-const DEFAULT_NUM_METABALLS = 10;
-const DEFAULT_MIN_RADIUS = 0.5;
-const DEFAULT_MAX_RADIUS = 1;
-const DEFAULT_MAX_SPEED = 0.01;
+const DEFAULT_GRID_RES = 30; //20
+const DEFAULT_GRID_WIDTH = 20;
+const DEFAULT_NUM_METABALLS = 9; //20
+const DEFAULT_MIN_RADIUS = 1.0; 
+const DEFAULT_MAX_RADIUS = 1.0; //1
+const DEFAULT_MAX_SPEED = 0.7;
 
 var App = {
   // 
@@ -72,7 +72,7 @@ function onLoad(framework) {
   App.renderer = renderer;
 
   renderer.setClearColor( 0xbfd1e5 );
-  scene.add(new THREE.AxisHelper(20));
+  //scene.add(new THREE.AxisHelper(20));
 
   setupCamera(App.camera);
   setupLights(App.scene);
@@ -90,23 +90,53 @@ function onUpdate(framework) {
 
 function setupCamera(camera) {
   // set camera position
-  camera.position.set(5, 5, 30);
+  camera.position.set(10, 20, 50);
   camera.lookAt(new THREE.Vector3(0,0,0));
 }
 
 function setupLights(scene) {
 
   // Directional light
-  var directionalLight = new THREE.DirectionalLight( 0xffffff, 1 );
-  directionalLight.color.setHSL(0.1, 1, 0.95);
-  directionalLight.position.set(1, 10, 2);
+  /*var directionalLight = new THREE.PointLight(0xffffff, 0.7);
+  //directionalLight.color.setHSL(0.1, 1, 0.95);
+  directionalLight.position.set(-20, 100, -30);
   directionalLight.position.multiplyScalar(10);
 
-  scene.add(directionalLight);
+  scene.add(directionalLight);*/
+  
+  var directionalLight2 = new THREE.PointLight(0xffffff, 1);
+  directionalLight2.position.set(5, 0, 20);
+  //directionalLight2.position.multiplyScalar(10);
+
+  scene.add(directionalLight2);
 }
 
 function setupScene(scene) {
   App.marchingCubes = new MarchingCubes(App);
+  
+  
+  var loader = new THREE.CubeTextureLoader();
+  var urlPrefix = 'images/mettle/';
+
+  var skymap = new THREE.CubeTextureLoader().load([
+      urlPrefix + 'mettle_px.jpeg', urlPrefix + 'mettle_nx.jpeg',
+      urlPrefix + 'mettle_py.jpeg', urlPrefix + 'mettle_ny.jpeg',
+      urlPrefix + 'mettle_pz.jpeg', urlPrefix + 'mettle_nz.jpeg'
+  ] );
+  
+  
+  /*var skymap = new THREE.CubeTextureLoader().load([
+      urlPrefix + 'darkcity_rt.jpeg', urlPrefix + 'darkcity_lf.jpeg',
+      urlPrefix + 'darkcity_up.jpeg', urlPrefix + 'darkcity_dn.jpeg',
+      urlPrefix + 'darkcity_ft.jpeg', urlPrefix + 'darkcity_bk.jpeg'
+  ] );*/
+
+  //scene.background = skymap;
+  
+  var loader = new THREE.TextureLoader();
+	var texture = loader.load( 'images/fabric.jpg');
+  scene.background = texture;
+  
 }
 
 
