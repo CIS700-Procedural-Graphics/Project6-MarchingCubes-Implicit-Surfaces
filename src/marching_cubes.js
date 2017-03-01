@@ -144,8 +144,15 @@ export default class MarchingCubes {
   // Implement a function that returns the value of the all metaballs influence to a given point.
   // Please follow the resources given in the write-up for details.
   sample(point) {
-    // @TODO
-    var isovalue = 1.1;
+    var isovalue = 0;
+    for (var i = 0; i < this.balls.length; i++) {
+      var ri_squared = Math.pow(this.balls[i].radius, 2);
+      var x = Math.pow(point.x - this.balls[i].pos.x, 2);  
+      var y = Math.pow(point.y - this.balls[i].pos.y, 2);  
+      var z = Math.pow(point.z - this.balls[i].pos.z, 2); 
+      isovalue += (ri_squared / (x + y + z)); 
+    }
+
     return isovalue;
   }
 
@@ -153,14 +160,13 @@ export default class MarchingCubes {
     if (this.isPaused) {
       return;
     }
-    
+
     // This should move the metaballs
     this.balls.forEach(function(ball) {
       ball.update();
     });
 
     for (var c = 0; c < this.res3; c++) {
-
       // Sampling the center point
       this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
 

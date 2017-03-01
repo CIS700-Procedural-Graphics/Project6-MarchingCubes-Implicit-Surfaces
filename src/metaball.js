@@ -41,7 +41,6 @@ export default class Metaball {
   };
 
   update() {
-    // @TODO
     this.pos.x += this.vel.x; 
       if (this.pos.x >= 9 || this.pos.x <= 1) {
         this.vel.x *= -1; 
