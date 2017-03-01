@@ -42,5 +42,31 @@ export default class Metaball {
 
   update() {
     // @TODO
+    
+    // If we are at the edge of the grid, bounce off the wall by inverting the direction
+    // Account for the radius of the sphere
+    // Add a small buffer amount for boundary checks because metaballs are not well-defined at the borders
+    
+    var buffer = 0.5;
+    
+    // Check the upper and lower bounds of the grid along each axis
+    if(this.pos.x - this.radius - buffer < 0 || this.pos.x + this.radius + buffer > this.gridWidth) {
+      this.vel.x *= -1;
+    }
+    if(this.pos.y - this.radius - buffer < 0 || this.pos.y + this.radius + buffer > this.gridWidth) {
+      this.vel.y *= -1;
+    }
+    if(this.pos.z - this.radius - buffer < 0 || this.pos.z + this.radius + buffer > this.gridWidth) {
+      this.vel.z *= -1;
+    }
+    this.pos.x += this.vel.x;
+    this.pos.y += this.vel.y;
+    this.pos.z += this.vel.z;
+    
+    if(this.mesh) {
+      this.mesh.position.x += this.vel.x;
+      this.mesh.position.y += this.vel.y;
+      this.mesh.position.z += this.vel.z;
+    }
   }
 }
