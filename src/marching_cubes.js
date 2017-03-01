@@ -9,7 +9,7 @@ var options = {
     lightColor: '#ffffff',
     lightIntensity: 2,
     albedo: '#00ffff',
-    ambient: '#111111',
+    ambient: '#55eeff',
     useTexture: true
 }
 
