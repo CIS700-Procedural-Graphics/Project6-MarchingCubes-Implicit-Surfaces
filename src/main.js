@@ -90,8 +90,8 @@ function onUpdate(framework) {
 
 function setupCamera(camera) {
   // set camera position
-  camera.position.set(10, 20, 50);
-  camera.lookAt(new THREE.Vector3(0,0,0));
+  camera.position.set(10, 10, 40);
+  camera.lookAt(new THREE.Vector3(10,10,0));
 }
 
 function setupLights(scene) {
@@ -118,11 +118,11 @@ function setupScene(scene) {
   var loader = new THREE.CubeTextureLoader();
   var urlPrefix = 'images/mettle/';
 
-  var skymap = new THREE.CubeTextureLoader().load([
+  /*var skymap = new THREE.CubeTextureLoader().load([
       urlPrefix + 'mettle_px.jpeg', urlPrefix + 'mettle_nx.jpeg',
       urlPrefix + 'mettle_py.jpeg', urlPrefix + 'mettle_ny.jpeg',
       urlPrefix + 'mettle_pz.jpeg', urlPrefix + 'mettle_nz.jpeg'
-  ] );
+  ] );*/
   
   
   /*var skymap = new THREE.CubeTextureLoader().load([
@@ -154,14 +154,14 @@ function setupGUI(gui) {
     }
   });
 
-  gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
+  /*gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
     App.config.numMetaballs = value;
     App.marchingCubes.init(App);
-  });
+  });*/
 
   // --- DEBUG ---
 
-  var debugFolder = gui.addFolder('Debug');
+ /* var debugFolder = gui.addFolder('Debug');
   debugFolder.add(App.marchingCubes, 'showGrid').onChange(function(value) {
     App.marchingCubes.showGrid = value;
     if (value) {
@@ -183,7 +183,7 @@ function setupGUI(gui) {
       }
     }
   });
-  debugFolder.open();  
+  debugFolder.open();  */
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate

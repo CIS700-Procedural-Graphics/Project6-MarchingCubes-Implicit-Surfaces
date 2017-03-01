@@ -251,6 +251,27 @@ export default class MarchingCubes {
   };
 
   makeMesh() {
+    
+    
+    var img = THREE.ImageUtils
+                      .loadTexture('./images/metal.jpg');
+
+    var mat = new THREE.ShaderMaterial({
+      uniforms: {
+                  texture: {
+                      type: "t", 
+                      value: img
+                  },
+                  u_albedo: {
+                      type: 'v3',
+                      value: new THREE.Color(0xff0000)
+                  }
+              },
+      vertexShader: require('./glsl/litsphere-vert.glsl'),
+      fragmentShader: require('./glsl/litsphere-frag.glsl')
+    });
+    
+    this.mesh.material = mat;
     this.scene.add(this.mesh);  
   }
 
@@ -263,7 +284,6 @@ export default class MarchingCubes {
       var object = this.voxels[i].polygonize(this.isolevel, this.sample2, this.balls);
       if (object.vertPositions.length > 0) {
         
-        //console.log(object);
         var offset = vertices.length;
         
         for (var j= 0; j < object.vertPositions.length; j += 3) {
