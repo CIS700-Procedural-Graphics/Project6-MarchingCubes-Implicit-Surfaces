@@ -82,7 +82,6 @@ function onLoad(framework) {
 
 // called on frame updates
 function onUpdate(framework) {
-
   if (App.marchingCubes) {
     App.marchingCubes.update();
   }

@@ -150,11 +150,10 @@ export default class MarchingCubes {
   }
 
   update() {
-
     if (this.isPaused) {
       return;
     }
-
+    
     // This should move the metaballs
     this.balls.forEach(function(ball) {
       ball.update();

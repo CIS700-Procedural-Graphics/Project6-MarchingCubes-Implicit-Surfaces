@@ -42,5 +42,21 @@ export default class Metaball {
 
   update() {
     // @TODO
+    this.pos.x += this.vel.x; 
+      if (this.pos.x >= 9 || this.pos.x <= 1) {
+        this.vel.x *= -1; 
+      }
+    this.pos.y += this.vel.y; 
+    if (this.pos.y >= 9 || this.pos.y <= 1) {
+        this.vel.y *= -1; 
+      }
+    this.pos.z += this.vel.z; 
+    if (this.pos.z >= 8 || this.pos.z <= 1) {
+        this.vel.z *= -1; 
+      }
+
+
+
+    this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
   }
 }
