@@ -9,6 +9,25 @@ const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparent: true, opacity: 0.5 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
 
+var options = {
+    albedo: '#dddddd'
+}
+
+const IRIDESCENCE = new THREE.ShaderMaterial({
+  uniforms: {
+    texture: {
+        type: "t",
+        value: null
+    },
+    u_albedo: {
+        type: 'v3',
+        value: new THREE.Color(options.albedo)
+    }
+  },
+
+  vertexShader: require('./glsl/iridescent-vert.glsl'),
+  fragmentShader: require('./glsl/iridescent-frag.glsl')
+});
 
 export default class MarchingCubes {
 
@@ -48,9 +67,10 @@ export default class MarchingCubes {
 
 
     //CREATING MESH OBJECT
-    var geom = new THREE.Geometry();
-    var object = new THREE.Mesh( geom, new THREE.MeshNormalMaterial() );
-    this.meshGeom = object;
+    //var geom = new THREE.Geometry();
+    //var object = new THREE.Mesh( new THREE.Geometry(), IRIDESCENCE);//new THREE.MeshNormalMaterial() );
+    //this.meshGeom = object;
+    this.meshGeom = new THREE.Mesh( new THREE.Geometry(), IRIDESCENCE);
 
 
 
@@ -281,10 +301,9 @@ export default class MarchingCubes {
 
   makeMesh() {
     // @TODO
-    // var geom = new THREE.Geometry();
-    // var object = new THREE.Mesh( geom, new THREE.MeshNormalMaterial() );
-    // this.meshGeom = geom;
 
+    this.meshGeom = new THREE.Mesh( new THREE.Geometry(), IRIDESCENCE );
+    this.meshGeom.verticesNeedUpdate = true;
     this.meshGeom.dynamic = true;
     this.scene.add(this.meshGeom);
   }//end makeMesh
@@ -293,8 +312,8 @@ export default class MarchingCubes {
     // @TODO
 
     //set the geometry to these new lists
-    var newVerticesList = new Array();//[];
-    var newFacesList = new Array();//[];
+    var newVerticesList = []; //use new Array();???
+    var newFacesList = [];
 
     //iterate through the vertices list
     for (var c = 0; c < this.voxels.length; c++) {
@@ -314,21 +333,21 @@ export default class MarchingCubes {
       if(vertList.length != 0)
       {
         var _len = newVerticesList.length;
-        for(var j = 0; j < vertList.length; j += 3)
+        for(var i = 0; i < vertList.length; i += 3)
         {
           //var newVert = new THREE.Vector3(vertList[i].x, vertList[i].y, vertList[i].z);
-          var v1 = vertList[j];
-          var v2 = vertList[j + 1];
-          var v3 = vertList[j + 2];
+          var v1 = vertList[i];
+          var v2 = vertList[i + 1];
+          var v3 = vertList[i + 2];
           newVerticesList.push(v1);
           newVerticesList.push(v2);
           newVerticesList.push(v3);
 
-          var newFace = new THREE.Face3(_len + j, _len + j + 1, _len + j + 2);
+          var newFace = new THREE.Face3(_len + i, _len + i + 1, _len + i + 2);
 
-          newFace.vertexNormals[0] = normList[j];
-          newFace.vertexNormals[1] = normList[j + 1];
-          newFace.vertexNormals[2] = normList[j + 2];
+          newFace.vertexNormals[0] = normList[i];
+          newFace.vertexNormals[1] = normList[i + 1];
+          newFace.vertexNormals[2] = normList[i + 2];
 
           newFacesList.push(newFace);
         }//end for every vert
@@ -340,16 +359,16 @@ export default class MarchingCubes {
       this.scene.remove(this.meshGeom);
     }
 
-    var geom = new THREE.Geometry();
-    geom.vertices = newVerticesList;
-    geom.faces = newFacesList;
-    var object = new THREE.Mesh( geom, new THREE.MeshNormalMaterial() );
-    this.meshGeom = object;
-
-    this.meshGeom.dynamic = true;
-    this.meshGeom.elementsNeedUpdate = true;
-    this.meshGeom.verticesNeedUpdate = true;
-    this.scene.add(this.meshGeom);
+    // var geom = new THREE.Geometry();
+    // geom.vertices = newVerticesList;
+    // geom.faces = newFacesList;
+    // var object = new THREE.Mesh( geom, IRIDESCENCE );
+    // this.meshGeom = object;
+    //
+    // this.meshGeom.dynamic = true;
+    // this.meshGeom.elementsNeedUpdate = true;
+    // this.meshGeom.verticesNeedUpdate = true;
+    // this.scene.add(this.meshGeom);
 
 
     //WHY IS THIS NOT WORKING?!?!?!
@@ -359,6 +378,19 @@ export default class MarchingCubes {
     // // //this.meshGeom.computeFaceNormals();
     // this.meshGeom.elementsNeedUpdate = true;
     // this.meshGeom.verticesNeedUpdate = true;
+    // this.scene.add(this.meshGeom);
+
+
+    //WILL THIS WORK??
+    this.meshGeom.dynamic = true;
+    var geom = new THREE.Geometry();
+    geom.vertices = newVerticesList;
+    geom.faces = newFacesList;
+    this.meshGeom.geometry = geom;
+
+    this.meshGeom.elementsNeedUpdate = true;
+    this.meshGeom.verticesNeedUpdate = true;
+    this.scene.add(this.meshGeom);
 
 
   }//end updateMesh
