@@ -251,26 +251,34 @@ export default class MarchingCubes {
   };
 
   makeMesh() {
-    
-    
-    var img = THREE.ImageUtils
-                      .loadTexture('../images/metal.jpg');
 
-    var mat = new THREE.ShaderMaterial({
-      uniforms: {
-                  texture: {
-                      type: "t", 
-                      value: img
-                  },
-                  u_albedo: {
-                      type: 'v3',
-                      value: new THREE.Color(0xff0000)
-                  }
-              },
-      vertexShader: require('./glsl/litsphere-vert.glsl'),
-      fragmentShader: require('./glsl/litsphere-frag.glsl')
-    });
+  var mat = new THREE.ShaderMaterial({
+    uniforms: {
+                texture: {
+                    type: "t", 
+                    value: null
+                },
+                u_albedo: {
+                    type: 'v3',
+                    value: new THREE.Color(0xff0000)
+                }
+            },
+    vertexShader: require('./glsl/litsphere-vert.glsl'),
+    fragmentShader: require('./glsl/litsphere-frag.glsl')
+  });
     
+    
+  var textureLoaded = new Promise((resolve, reject) => {
+     (new THREE.TextureLoader()).load(require('./images/metal.bmp'), function(texture) {
+          resolve(texture);
+      })
+  })
+
+  textureLoaded.then(function(texture) {
+      mat.uniforms.texture.value = texture;
+  });
+
+
     this.mesh.material = mat;
     this.scene.add(this.mesh);  
   }

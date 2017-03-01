@@ -113,11 +113,17 @@ function setupLights(scene) {
 
 function setupScene(scene) {
   App.marchingCubes = new MarchingCubes(App);
+    
+  var textureLoaded = new Promise((resolve, reject) => {
+      (new THREE.TextureLoader()).load(require('./images/fabric.bmp'), function(texture) {
+          resolve(texture);
+      })
+  })
   
-  var loader = new THREE.TextureLoader();
-	var texture = loader.load( '../images/fabric.jpg');
-  scene.background = texture;
-  
+  textureLoaded.then(function(texture) {
+      scene.background = texture;
+  });
+
 }
 
 
