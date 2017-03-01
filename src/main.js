@@ -10,14 +10,14 @@ import Framework from './framework'
 import LUT from './marching_cube_LUT.js'
 import MarchingCubes from './marching_cubes.js'
 
-const DEFAULT_VISUAL_DEBUG = true;
-const DEFAULT_ISO_LEVEL = 1.0;
-const DEFAULT_GRID_RES = 4;
-const DEFAULT_GRID_WIDTH = 10;
-const DEFAULT_NUM_METABALLS = 10;
-const DEFAULT_MIN_RADIUS = 0.5;
-const DEFAULT_MAX_RADIUS = 1;
-const DEFAULT_MAX_SPEED = 0.01;
+const DEFAULT_VISUAL_DEBUG = false;
+const DEFAULT_ISO_LEVEL = 1.0;//1.0
+const DEFAULT_GRID_RES = 30;//4
+const DEFAULT_GRID_WIDTH = 10;//10
+const DEFAULT_NUM_METABALLS = 10;//10
+const DEFAULT_MIN_RADIUS = 0.5;//0.5
+const DEFAULT_MAX_RADIUS = 1;//1
+const DEFAULT_MAX_SPEED = 0.01;//0.01
 
 var App = {
   // 
@@ -126,34 +126,57 @@ function setupGUI(gui) {
 
   gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
     App.config.numMetaballs = value;
+    App.scene.children.forEach(function(object){App.scene.remove(object);});  
+    
+    setupLights(App.scene);
+    setupScene(App.scene);  
     App.marchingCubes.init(App);
   });
 
+  gui.add(App.config, 'gridRes', 1, 100).onChange(function(value) {
+    App.config.gridRes = value;
+    App.scene.children.forEach(function(object){App.scene.remove(object);});  
+    
+    setupLights(App.scene);
+    setupScene(App.scene);    
+    App.marchingCubes.init(App);  
+  });
+
+gui.add(App.config, 'maxSpeed', 0.001, 10).step(0.01).onChange(function(value) {
+    App.config.maxSpeed = value;
+    App.scene.children.forEach(function(object){App.scene.remove(object);});  
+    
+    setupLights(App.scene);
+    setupScene(App.scene);  
+    App.marchingCubes.init(App);
+  });
+
+    
   // --- DEBUG ---
 
-  var debugFolder = gui.addFolder('Debug');
-  debugFolder.add(App.marchingCubes, 'showGrid').onChange(function(value) {
-    App.marchingCubes.showGrid = value;
-    if (value) {
-      App.marchingCubes.show();
-    } else {
-      App.marchingCubes.hide();
-    }
-  });
-
-  debugFolder.add(App.marchingCubes, 'showSpheres').onChange(function(value) {
-    App.marchingCubes.showSpheres = value;
-    if (value) {
-      for (var i = 0; i < App.config.numMetaballs; i++) {
-        App.marchingCubes.balls[i].show();
-      }
-    } else {
-      for (var i = 0; i < App.config.numMetaballs; i++) {
-        App.marchingCubes.balls[i].hide();
-      }
-    }
-  });
-  debugFolder.open();  
+//  var debugFolder = gui.addFolder('Debug');
+//  debugFolder.add(App.marchingCubes, 'showGrid').onChange(function(value) {
+//    App.marchingCubes.showGrid = value;
+//    if (value) {
+//      App.marchingCubes.show();
+//    } else {
+//      App.marchingCubes.hide();
+//    }
+//  });
+//
+//  debugFolder.add(App.marchingCubes, 'showSpheres').onChange(function(value) {
+//    App.marchingCubes.showSpheres = value;
+//    if (value) {
+//      for (var i = 0; i < App.config.numMetaballs; i++) {
+//        App.marchingCubes.balls[i].show();
+//      }
+//    } else {
+//      for (var i = 0; i < App.config.numMetaballs; i++) {
+//        App.marchingCubes.balls[i].hide();
+//      }
+//    }
+//  });
+//  debugFolder.open();  
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate

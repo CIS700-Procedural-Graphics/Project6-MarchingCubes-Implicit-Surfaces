@@ -1,4 +1,15 @@
 # Project 6: Implicit surfaces - Marching cubes
+__Name: Rudraksha Shah__
+
+__Penn ID: rdimple__
+
+##Documentation
+
+Implemented Marching Cubes and shaded the surface with iridescent shading.
+
+BUG: Have one issue regarding the disappearence of certain triangles on the metaballs mesh where the triangles don't appear at certain places in the mesh. Working on fixing this issue.
+
+---------------------------------------------------------------
 
 **Goal:** Implement an isosurface created from metaballs using the marching cubes algorithm. 
 
