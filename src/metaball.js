@@ -50,7 +50,7 @@ export default class Metaball {
   update() {
     var new_pos = new THREE.Vector3(this.pos.x + this.vel.x, this.pos.y + this.vel.y, this.pos.z + this.vel.z);
     if (this.isOOB(new_pos)) {
-      this.vel = new THREE.Vector3(-this.vel.x, -this.vel.y, -this.vel.z)
+      this.vel = new THREE.Vector3(-this.vel.x, -this.vel.y, -this.vel.z);
       new_pos = new THREE.Vector3(this.pos.x + this.vel.x, this.pos.y + this.vel.y, this.pos.z + this.vel.z);
     }
     this.pos = new_pos;

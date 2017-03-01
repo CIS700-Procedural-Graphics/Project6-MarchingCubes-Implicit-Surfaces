@@ -8,50 +8,14 @@ var VISUAL_DEBUG = true;
 var options = {
     lightColor: '#ffffff',
     lightIntensity: 2,
-    albedo: '#ffffff',
+    albedo: '#00ffff',
     ambient: '#111111',
-    useTexture: false
+    useTexture: true
 }
 
 const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x55ee55, transparent: true, opacity: 0.2 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
-const CUSTOM_LAMBERT = new THREE.ShaderMaterial({
-    side: THREE.DoubleSide,
-    uniforms: {
-        texture: {
-            type: "t",
-            value: null
-        },
-        u_useTexture: {
-            type: 'i',
-            value: options.useTexture
-        },
-        u_albedo: {
-            type: 'v3',
-            value: new THREE.Color(options.albedo)
-        },
-        u_ambient: {
-            type: 'v3',
-            value: new THREE.Color(options.ambient)
-        },
-        u_lightPos: {
-            type: 'v3',
-            value: new THREE.Vector3(30, 50, 40)
-        },
-        u_lightCol: {
-            type: 'v3',
-            value: new THREE.Color(options.lightColor)
-        },
-        u_lightIntensity: {
-            type: 'f',
-            value: options.lightIntensity
-        }
-    },
-    vertexShader: require('./shaders/lambert-vert.glsl'),
-    fragmentShader: require('./shaders/lambert-frag.glsl')
-  });
-
 
 export default class MarchingCubes {
 
@@ -97,6 +61,45 @@ export default class MarchingCubes {
     } else {
       this.material = App.config.material;
     }
+
+    this.materials = [];
+    var tex_loader = new THREE.TextureLoader();
+    var texture = tex_loader.load('./aqua2.png');
+    this.materials['biology'] = new THREE.ShaderMaterial({
+        side: THREE.DoubleSide,
+        uniforms: {
+            texture: {
+                type: "t",
+                value: texture
+            },
+            u_useTexture: {
+                type: 'i',
+                value: options.useTexture
+            },
+            u_albedo: {
+                type: 'v3',
+                value: new THREE.Color(options.albedo)
+            },
+            u_ambient: {
+                type: 'v3',
+                value: new THREE.Color(options.ambient)
+            },
+            u_lightPos: {
+                type: 'v3',
+                value: new THREE.Vector3(30, 50, 40)
+            },
+            u_lightCol: {
+                type: 'v3',
+                value: new THREE.Color(options.lightColor)
+            },
+            u_lightIntensity: {
+                type: 'f',
+                value: options.lightIntensity
+            }
+        },
+        vertexShader: require('./shaders/bio-vert.glsl'),
+        fragmentShader: require('./shaders/bio-frag.glsl')
+      });
 
     this.setupCells();
     this.setupMetaballs();
@@ -194,7 +197,8 @@ export default class MarchingCubes {
       var i = (ball.radius * ball.radius) / (d * d);
       isovalue += i;
 
-      var n = new THREE.Vector3(-(point.x - ball.pos.x), -(point.y - ball.pos.y), -(point.z - ball.pos.z));
+      // formula for normals: http://blackpawn.com/texts/metanormals/ (gradient)
+      var n = new THREE.Vector3((point.x - ball.pos.x), (point.y - ball.pos.y), (point.z - ball.pos.z));
       normal.add(n.multiplyScalar(2 * i * i));
     });
     return {
@@ -274,7 +278,7 @@ export default class MarchingCubes {
 
   makeMesh() {
     var geometry = new THREE.Geometry();
-    var material = new THREE.MeshLambertMaterial( {color: 0xff0000, side: THREE.DoubleSide} );
+    var material = this.materials['biology'];//CUSTOM_BIO;//new THREE.MeshLambertMaterial( {color: 0xff0000, side: THREE.DoubleSide} );
     this.mesh = new THREE.Mesh( geometry, material );
     this.mesh.name = "surface";
     this.scene.add(this.mesh);
