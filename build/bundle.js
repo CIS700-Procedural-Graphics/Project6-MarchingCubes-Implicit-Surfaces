@@ -60,7 +60,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	__webpack_require__(14);
+	__webpack_require__(15);
 	
 	// Credit:
 	// http://jamie-wong.com/2014/08/19/metaballs-and-marching-squares/
@@ -175,9 +175,15 @@
 	function setupScene(scene) {
 	  App.marchingCubes = new _marching_cubes2.default(App);
 	
-	  var loader = new THREE.TextureLoader();
-	  var texture = loader.load('../images/fabric.jpg');
-	  scene.background = texture;
+	  var textureLoaded = new Promise(function (resolve, reject) {
+	    new THREE.TextureLoader().load(__webpack_require__(16), function (texture) {
+	      resolve(texture);
+	    });
+	  });
+	
+	  textureLoaded.then(function (texture) {
+	    scene.background = texture;
+	  });
 	}
 	
 	function setupGUI(gui) {
@@ -48421,13 +48427,11 @@
 	    key: 'makeMesh',
 	    value: function makeMesh() {
 	
-	      var img = THREE.ImageUtils.loadTexture('../images/metal.jpg');
-	
 	      var mat = new THREE.ShaderMaterial({
 	        uniforms: {
 	          texture: {
 	            type: "t",
-	            value: img
+	            value: null
 	          },
 	          u_albedo: {
 	            type: 'v3',
@@ -48436,6 +48440,16 @@
 	        },
 	        vertexShader: __webpack_require__(12),
 	        fragmentShader: __webpack_require__(13)
+	      });
+	
+	      var textureLoaded = new Promise(function (resolve, reject) {
+	        new THREE.TextureLoader().load(__webpack_require__(14), function (texture) {
+	          resolve(texture);
+	        });
+	      });
+	
+	      textureLoaded.then(function (texture) {
+	        mat.uniforms.texture.value = texture;
 	      });
 	
 	      this.mesh.material = mat;
@@ -48922,7 +48936,19 @@
 /* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
+	module.exports = __webpack_require__.p + "./assets/metal-4ca5fb.bmp";
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
 	module.exports = __webpack_require__.p + "index.html";
+
+/***/ },
+/* 16 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__.p + "./assets/fabric-4dc7d7.bmp";
 
 /***/ }
 /******/ ]);
