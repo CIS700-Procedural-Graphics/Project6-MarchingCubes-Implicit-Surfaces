@@ -5,6 +5,7 @@ import InspectPoint from './inspect_point.js'
 import LUT from './marching_cube_LUT.js';
 
 import {iriMaterial} from './main.js';
+import {matselect} from './main.js';
 
 var VISUAL_DEBUG = true;
 
@@ -149,17 +150,12 @@ export default class MarchingCubes {
   sample(point) {
     // @TODO
     var isovalue=0;// = 1.1;
-
     for(var i=0; i<this.numMetaballs; i++)
     {
         var r = this.balls[i].radius;
         var d = Math.max(point.distanceTo(this.balls[i].pos),0.00001);
         isovalue += r*r/d/d;
-        //debugger;
     }
-
-    //debugger;
-    //console.log(isovalue);
     return isovalue;
   }
 
@@ -177,7 +173,7 @@ export default class MarchingCubes {
     for (var c = 0; c < this.res3; c++) {
 
       // Sampling the center point
-      //this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
+      this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
 
       // @CHANGED - start
       // Sampling the vertices
@@ -301,29 +297,38 @@ export default class MarchingCubes {
   updateMesh() {
     // @TODO
     //this.scene.clear();
+    if(matselect)
+    {
+        this.outmesh.material = iriMaterial;
+    }
+    else {
+        this.outmesh.material = LAMBERT_WHITE;
+    }
+    this.outmesh.material.side = THREE.DoubleSide;
+
     var geometry = new THREE.Geometry();
     //var mesh = new THREE.Mesh( geometry, LAMBERT_WHITE );
     var v=0;
     for (var c = 0; c < this.res3; c++)
     {
-        var polyret = this.voxels[c].polygonize(0.5);
+        var polyret = this.voxels[c].polygonize(this.isolevel);
         for (var i=0; LUT.TRI_TABLE[polyret.cubeIndex*16+i]!=-1 && polyret!=0; i+=3)
         {
             var norm = [];
             var vert1 = new THREE.Vector3(0,0,0);
             norm[0] = new THREE.Vector3(0,0,0);
             vert1.copy(polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i]]);
-            norm[0].copy(this.calcNorm(vert1));
+            norm[0].copy(this.calcNorm(vert1,1));
 
             var vert2 = new THREE.Vector3(0,0,0);
             norm[1] = new THREE.Vector3(0,0,0);
             vert2.copy(polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+1]]);
-            norm[1].copy(this.calcNorm(vert2));
+            norm[1].copy(this.calcNorm(vert2,1));
 
             var vert3 = new THREE.Vector3(0,0,0);
             norm[2] = new THREE.Vector3(0,0,0);
             vert3.copy(polyret.vertPositions[LUT.TRI_TABLE[polyret.cubeIndex*16+i+2]]);
-            norm[2].copy(this.calcNorm(vert3));
+            norm[2].copy(this.calcNorm(vert3,1));
 
             geometry.vertices.push(vert1, vert2, vert3);
 
@@ -332,21 +337,22 @@ export default class MarchingCubes {
             //debugger;
             // geometry.computeBoundingSphere();
             // geometry.computeFaceNormals();
-
         }
     }
     //debugger;
     this.outmesh.geometry=geometry;
+    this.outmesh.geometry.computeFaceNormals();
     //this.scene.add(this.mesh);
   }
 
-  calcNorm(vert)
+  calcNorm(vert,n)
   {
-      var eps = 0.01;
+      var eps = 1/this.res3*n;
       var norm = new THREE.Vector3(0,0,0);
-      norm.x = this.sample(new THREE.Vector3(vert.x+eps,vert.y,vert.z)) - this.sample(new THREE.Vector3(vert.x-eps,vert.y,vert.z));
-      norm.y = this.sample(new THREE.Vector3(vert.x,vert.y+eps,vert.z)) - this.sample(new THREE.Vector3(vert.x,vert.y-eps,vert.z));
-      norm.z = this.sample(new THREE.Vector3(vert.x,vert.y,vert.z+eps)) - this.sample(new THREE.Vector3(vert.x,vert.y,vert.z-eps));
+      norm.x = this.sample(new THREE.Vector3(vert.x-eps,vert.y,vert.z)) - this.sample(new THREE.Vector3(vert.x+eps,vert.y,vert.z));
+      norm.y = this.sample(new THREE.Vector3(vert.x,vert.y-eps,vert.z)) - this.sample(new THREE.Vector3(vert.x,vert.y+eps,vert.z));
+      norm.z = this.sample(new THREE.Vector3(vert.x,vert.y,vert.z-eps)) - this.sample(new THREE.Vector3(vert.x,vert.y,vert.z+eps));
+    //   /norm = -norm;
       norm = norm.normalize();
     //   if(norm.dot(new THREE.Vector3(0,0,1))<0)
     //     {
@@ -432,16 +438,28 @@ class Voxel {
     // @CHANGED - start
     var positions = [
       // Front face
-       [halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth],
-       [halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth],
-      [-halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth],
-      [-halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth],
+       [-halfGridCellWidth, -halfGridCellWidth, -halfGridCellWidth],
+       [-halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth],
+      [halfGridCellWidth, -halfGridCellWidth, -halfGridCellWidth],
+      [halfGridCellWidth, -halfGridCellWidth,  halfGridCellWidth],
 
       // Back face
       [-halfGridCellWidth,  halfGridCellWidth, -halfGridCellWidth],
-      [-halfGridCellWidth, -halfGridCellWidth, -halfGridCellWidth],
-       [halfGridCellWidth, -halfGridCellWidth, -halfGridCellWidth],
-       [halfGridCellWidth,  halfGridCellWidth, -halfGridCellWidth],
+      [-halfGridCellWidth, halfGridCellWidth, halfGridCellWidth],
+       [halfGridCellWidth, halfGridCellWidth, -halfGridCellWidth],
+       [halfGridCellWidth,  halfGridCellWidth, halfGridCellWidth]
+
+    //    // Front face
+    //     [halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth],
+    //     [halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth],
+    //    [-halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth],
+    //    [-halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth],
+       //
+    //    // Back face
+    //    [-halfGridCellWidth,  halfGridCellWidth, -halfGridCellWidth],
+    //    [-halfGridCellWidth, -halfGridCellWidth, -halfGridCellWidth],
+    //     [halfGridCellWidth, -halfGridCellWidth, -halfGridCellWidth],
+    //     [halfGridCellWidth,  halfGridCellWidth, -halfGridCellWidth],
     ];
 
     // Vertices
@@ -562,23 +580,23 @@ class Voxel {
     // Determine the index into the edge table which
     // tells us which vertices are inside of the surface
 
-    if (grid[0].isovalue > isolevel) cubeindex |= 1;
-    if (grid[1].isovalue > isolevel) cubeindex |= 2;
-    if (grid[2].isovalue > isolevel) cubeindex |= 4;
-    if (grid[3].isovalue > isolevel) cubeindex |= 8;
-    if (grid[4].isovalue > isolevel) cubeindex |= 16;
-    if (grid[5].isovalue > isolevel) cubeindex |= 32;
-    if (grid[6].isovalue > isolevel) cubeindex |= 64;
-    if (grid[7].isovalue > isolevel) cubeindex |= 128;
+    // if (grid[0].isovalue > isolevel) cubeindex |= 1;
+    // if (grid[1].isovalue > isolevel) cubeindex |= 2;
+    // if (grid[2].isovalue > isolevel) cubeindex |= 4;
+    // if (grid[3].isovalue > isolevel) cubeindex |= 8;
+    // if (grid[4].isovalue > isolevel) cubeindex |= 16;
+    // if (grid[5].isovalue > isolevel) cubeindex |= 32;
+    // if (grid[6].isovalue > isolevel) cubeindex |= 64;
+    // if (grid[7].isovalue > isolevel) cubeindex |= 128;
 
-    // if (grid[0].isovalue < isolevel) cubeindex |= 1;
-    // if (grid[1].isovalue < isolevel) cubeindex |= 2;
-    // if (grid[2].isovalue < isolevel) cubeindex |= 4;
-    // if (grid[3].isovalue < isolevel) cubeindex |= 8;
-    // if (grid[4].isovalue < isolevel) cubeindex |= 16;
-    // if (grid[5].isovalue < isolevel) cubeindex |= 32;
-    // if (grid[6].isovalue < isolevel) cubeindex |= 64;
-    // if (grid[7].isovalue < isolevel) cubeindex |= 128;
+    if (grid[0].isovalue < isolevel) cubeindex |= 1;
+    if (grid[1].isovalue < isolevel) cubeindex |= 2;
+    if (grid[2].isovalue < isolevel) cubeindex |= 4;
+    if (grid[3].isovalue < isolevel) cubeindex |= 8;
+    if (grid[4].isovalue < isolevel) cubeindex |= 16;
+    if (grid[5].isovalue < isolevel) cubeindex |= 32;
+    if (grid[6].isovalue < isolevel) cubeindex |= 64;
+    if (grid[7].isovalue < isolevel) cubeindex |= 128;
 
     // Cube is entirely in/out of the surface
     if (LUT.EDGE_TABLE[cubeindex] == 0) return(0);
@@ -652,15 +670,6 @@ class Voxel {
         vertexList[11] = this.vertexInterpolation(isolevel,grid[3],grid[7]);
     }
 
-    //console.log(vertexList[3]);
-    // var ntriang=0;
-    // for (var i=0; LUT.TRI_TABLE[cubeindex*16+i]!=-1; i+=3)
-    // {
-    //     triangles[ntriang].p[0] = vertexList[LUT.TRI_TABLE[cubeindex*16+i]];
-    //     triangles[ntriang].p[1] = vertexList[LUT.TRI_TABLE[cubeindex*16+i+1]];
-    //     triangles[ntriang].p[2] = vertexList[LUT.TRI_TABLE[cubeindex*16+i+2]];
-    //     ntriang++;
-    // }
     // for(var i=0; i<12; i++)
     // {
     //     //console.log(vertexList[i]);
@@ -668,12 +677,8 @@ class Voxel {
     //         debugger;
     // }
 
-
-
-    //debugger;
     return {
-      vertPositions: vertexList,//vertPositions,
-      //vertNormals: normalList,//vertNormals
+      vertPositions: vertexList,
       cubeIndex: cubeindex
     };
   };

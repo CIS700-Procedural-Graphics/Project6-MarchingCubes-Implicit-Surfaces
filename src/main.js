@@ -14,15 +14,17 @@ import LUT from './marching_cube_LUT.js'
 import MarchingCubes from './marching_cubes.js'
 
 const DEFAULT_VISUAL_DEBUG = false;
-const DEFAULT_ISO_LEVEL = 1.0;//1.0;
+const DEFAULT_ISO_LEVEL = 0.8;//1.0;
 const DEFAULT_GRID_RES = 30;
 const DEFAULT_GRID_WIDTH = 10;
 const DEFAULT_NUM_METABALLS = 10;
 const DEFAULT_MIN_RADIUS = 0.5;
 const DEFAULT_MAX_RADIUS = 1;
-const DEFAULT_MAX_SPEED = 0.05;
+const DEFAULT_MAX_SPEED = 0.03;
 
 var options = {
+    Iridescent: true,
+
     lightColor: '#ffffff',
     lightIntensity: 2,
     albedo: '#dddddd',
@@ -31,7 +33,7 @@ var options = {
 
     Repeat: 1.0,
 
-    RedYShift: 0.0,
+    RedYShift: -1.0,
     RedAmplitude: 0.5,
     RedFrequency: 1.0,
     RedPhase: -1.0,
@@ -47,6 +49,7 @@ var options = {
     BluePhase: 0.66
 }
 
+export var matselect = true;
 export var iriMaterial = new THREE.ShaderMaterial({
     uniforms: {
         texture: {
@@ -83,7 +86,7 @@ export var iriMaterial = new THREE.ShaderMaterial({
         },
         u_red: {
             type: 'v4',
-            value: new THREE.Vector4(0.0, 0.5, 1.0, -1.0)
+            value: new THREE.Vector4(-1.0, 0.5, 1.0, -1.0)
         },
         u_green: {
             type: 'v4',
@@ -150,8 +153,8 @@ function onLoad(framework) {
   App.camera = camera;
   App.renderer = renderer;
 
-  renderer.setClearColor( 0xbfd1e5 );
-  scene.add(new THREE.AxisHelper(20));
+  renderer.setClearColor( 0x2a4260 );
+  //scene.add(new THREE.AxisHelper(20));
 
   setupCamera(App.camera);
   setupLights(App.scene);
@@ -169,8 +172,8 @@ function onUpdate(framework) {
 
 function setupCamera(camera) {
   // set camera position
-  camera.position.set(5, 5, 30);
-  camera.lookAt(new THREE.Vector3(0,0,0));
+  camera.position.set(5, 5, 10);
+  camera.lookAt(new THREE.Vector3(5,5,5));
 }
 
 function setupLights(scene) {
@@ -205,6 +208,42 @@ function setupGUI(gui) {
 
   gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
     App.config.numMetaballs = value;
+    App.scene.children.forEach(function(object){
+        App.scene.remove(object);
+    });
+    setupLights(App.scene);
+    setupScene(App.scene);
+    App.marchingCubes.init(App);
+  });
+
+  // gui.add(App.config, 'gridRes', 1, 50).onChange(function(value) {
+  //   App.config.gridRes = value;
+  //   App.scene.children.forEach(function(object){
+  //       App.scene.remove(object);
+  //   });
+  //   setupLights(App.scene);
+  //   setupScene(App.scene);
+  //   App.marchingCubes.init(App);
+  // });
+
+  gui.add(App.config, 'isolevel', 0.0, 2.0).onChange(function(value) {
+    App.config.isolevel = value;
+    App.scene.children.forEach(function(object){
+        App.scene.remove(object);
+    });
+    setupLights(App.scene);
+    setupScene(App.scene);
+
+     App.marchingCubes.init(App);
+  });
+
+  gui.add(App.config, 'maxSpeed', 0.01, 0.2).onChange(function(value) {
+    App.config.maxSpeed = value;
+    App.scene.children.forEach(function(object){
+        App.scene.remove(object);
+    });
+    setupLights(App.scene);
+    setupScene(App.scene);
     App.marchingCubes.init(App);
   });
 
@@ -212,55 +251,60 @@ function setupGUI(gui) {
 
 
 
-  gui.add(options, 'Repeat', 1.0, 2.0).onChange(function(val) {
+  var shading = gui.addFolder('Shader Controls');
+
+  shading.add(options, 'Iridescent').onChange(function(val) {
+      matselect=val;
+  });
+  shading.add(options, 'Repeat', 1.0, 2.0).onChange(function(val) {
       iriMaterial.uniforms.u_repeat.value = val;
   });
-  gui.add(options, 'RedYShift', -2.0, 2.0).onChange(function(val) {
+  shading.add(options, 'RedYShift', -2.0, 2.0).onChange(function(val) {
       iriMaterial.uniforms.u_red.value.x = val;
   });
-  gui.add(options, 'RedAmplitude', -2.0, 2.0).onChange(function(val) {
+  shading.add(options, 'RedAmplitude', -2.0, 2.0).onChange(function(val) {
       iriMaterial.uniforms.u_red.value.y = val;
   });
-  gui.add(options, 'RedFrequency', -2.0, 2.0).onChange(function(val) {
+  shading.add(options, 'RedFrequency', -2.0, 2.0).onChange(function(val) {
       iriMaterial.uniforms.u_red.value.z = val;
   });
-  gui.add(options, 'RedPhase', -2.0, 2.0).onChange(function(val) {
+  shading.add(options, 'RedPhase', -2.0, 2.0).onChange(function(val) {
       iriMaterial.uniforms.u_red.value.w = val;
   });
-  gui.add(options, 'GreenYShift', -2.0, 2.0).onChange(function(val) {
+  shading.add(options, 'GreenYShift', -2.0, 2.0).onChange(function(val) {
       iriMaterial.uniforms.u_green.value.x = val;
   });
-  gui.add(options, 'GreenAmplitude', -2.0, 2.0).onChange(function(val) {
+  shading.add(options, 'GreenAmplitude', -2.0, 2.0).onChange(function(val) {
       iriMaterial.uniforms.u_green.value.y = val;
   });
-  gui.add(options, 'GreenFrequency', -2.0, 2.0).onChange(function(val) {
+  shading.add(options, 'GreenFrequency', -2.0, 2.0).onChange(function(val) {
       iriMaterial.uniforms.u_green.value.z = val;
   });
-  gui.add(options, 'GreenPhase', -2.0, 2.0).onChange(function(val) {
+  shading.add(options, 'GreenPhase', -2.0, 2.0).onChange(function(val) {
       iriMaterial.uniforms.u_green.value.w = val;
   });
-  gui.add(options, 'BlueYShift', -2.0, 2.0).onChange(function(val) {
+  shading.add(options, 'BlueYShift', -2.0, 2.0).onChange(function(val) {
       iriMaterial.uniforms.u_blue.value.x = val;
   });
-  gui.add(options, 'BlueAmplitude', -2.0, 2.0).onChange(function(val) {
+  shading.add(options, 'BlueAmplitude', -2.0, 2.0).onChange(function(val) {
       iriMaterial.uniforms.u_blue.value.y = val;
   });
-  gui.add(options, 'BlueFrequency').onChange(function(val) {
+  shading.add(options, 'BlueFrequency').onChange(function(val) {
       iriMaterial.uniforms.u_blue.value.z = val;
   });
-  gui.add(options, 'BluePhase').onChange(function(val) {
+  shading.add(options, 'BluePhase').onChange(function(val) {
       iriMaterial.uniforms.u_blue.value.w = val;
   });
-  gui.addColor(options, 'lightColor').onChange(function(val) {
+  shading.addColor(options, 'lightColor').onChange(function(val) {
       iriMaterial.uniforms.u_lightCol.value = new THREE.Color(val);
   });
-  gui.add(options, 'lightIntensity').onChange(function(val) {
+  shading.add(options, 'lightIntensity').onChange(function(val) {
       iriMaterial.uniforms.u_lightIntensity.value = val;
   });
-  gui.addColor(options, 'albedo').onChange(function(val) {
+  shading.addColor(options, 'albedo').onChange(function(val) {
       iriMaterial.uniforms.u_albedo.value = new THREE.Color(val);
   });
-  gui.addColor(options, 'ambient').onChange(function(val) {
+  shading.addColor(options, 'ambient').onChange(function(val) {
       iriMaterial.uniforms.u_ambient.value = new THREE.Color(val);
   });
 
@@ -274,7 +318,7 @@ function setupGUI(gui) {
   //////
 
   // --- DEBUG ---
-
+/*
   var debugFolder = gui.addFolder('Debug');
   debugFolder.add(App.marchingCubes, 'showGrid').onChange(function(value) {
     App.marchingCubes.showGrid = value;
@@ -297,7 +341,8 @@ function setupGUI(gui) {
       }
     }
   });
-  debugFolder.open();
+  debugFolder.close();
+  */
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
