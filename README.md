@@ -7,6 +7,8 @@ PennKey: msesh
 
 ## Renders
 
+These following renders show metaballs with iridescent shading!
+
 1. ![alt text](https://github.com/MegSesh/Project5-Shaders/blob/master/renders/irid.png "Image 1")
 
 2. ![alt text](https://github.com/MegSesh/Project5-Shaders/blob/master/renders/vignette.png "Image 1")
@@ -14,5 +16,3 @@ PennKey: msesh
 3. ![alt text](https://github.com/MegSesh/Project5-Shaders/blob/master/renders/pointillism.png "Image 1")
 
 4. ![alt text](https://github.com/MegSesh/Project5-Shaders/blob/master/renders/sobel.png "Image 1")
-
-5. ![alt text](https://github.com/MegSesh/Project5-Shaders/blob/master/renders/noise.png "Image 1")
