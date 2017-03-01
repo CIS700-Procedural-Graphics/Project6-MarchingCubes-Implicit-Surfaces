@@ -10,8 +10,6 @@ const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparen
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
 
 var first = true;
-var numMetaballs = 0;
-var balls = [];
 
 export default class MarchingCubes {
 
@@ -40,14 +38,14 @@ export default class MarchingCubes {
     this.res3 = App.config.gridRes * App.config.gridRes * App.config.gridRes;
 
     this.maxSpeed = App.config.maxSpeed;
-    numMetaballs = App.config.numMetaballs; //------------------------------------------------------------------------
+    this.numMetaballs = App.config.numMetaballs; //------------------------------------------------------------------------
 
     this.camera = App.camera;
     this.scene = App.scene;
 
     this.voxels = [];
     this.labels = [];
-    balls = [];
+    this.balls = [];
 
     this.showSpheres = true;
     this.showGrid = true;
@@ -117,7 +115,7 @@ export default class MarchingCubes {
 
   setupMetaballs() {
 
-    balls = [];
+    this.balls = [];
 
     var x, y, z, vx, vy, vz, radius, pos, vel;
     var matLambertWhite = LAMBERT_WHITE;
@@ -125,7 +123,7 @@ export default class MarchingCubes {
     var maxRadiusDoubled = this.maxRadius * 2;
 
     // Randomly generate metaballs with different sizes and velocities
-    for (var i = 0; i < numMetaballs; i++) {
+    for (var i = 0; i < this.numMetaballs; i++) {
       x = this.gridWidth / 2;    
       y = this.gridWidth / 2;    
       z = this.gridWidth / 2;    
@@ -139,7 +137,7 @@ export default class MarchingCubes {
       radius = Math.random() * (this.maxRadius - this.minRadius) + this.minRadius;
   
       var ball = new Metaball(pos, radius, vel, this.gridWidth, VISUAL_DEBUG);
-      balls.push(ball);
+      this.balls.push(ball);
       
       if (VISUAL_DEBUG) {
         this.scene.add(ball.mesh);
@@ -191,8 +189,8 @@ export default class MarchingCubes {
     // f(pointInfluence) = (r^2)/d^2;
 
     var isoVal = 0.0;
-    for (var i = 0; i < numMetaballs; i++) {
-      var ball = balls[i];
+    for (var i = 0; i < this.numMetaballs; i++) {
+      var ball = this.balls[i];
 
       var xD = ball.pos.x - point.x;
       var yD = ball.pos.y - point.y;
@@ -214,7 +212,7 @@ export default class MarchingCubes {
     }
 
     // This should move the metaballs
-    balls.forEach(function(ball) {
+    this.balls.forEach(function(ball) {
       ball.update();
     });
 
@@ -273,10 +271,21 @@ export default class MarchingCubes {
     // -- and update that in update mesh so that it's not associated with currVoxel / cubes
     /********************************************************************************************************/
 
-    var currGeo = new THREE.Geometry();
-    currGeo.dynamic = true;
+    //var blah = new THREE.Mesh()
+
+    //var currGeo = new THREE.BoxGeometry(1, 1, 1);
+    var currGeo = new THREE.BufferGeometry();
+    var indices = new Uint16Array();
+    var positions = new Float32Array();
+    currGeo.setIndex( new THREE.BufferAttribute( indices, 1 ) );
+    currGeo.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+    //console.log(currGeo);
+    // currGeo.verticesNeedUpdate = true;
+    // currGeo.dynamic = true;
     var redMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, transparent: true, opacity: 0.5 });
+    //console.log(redMaterial);
     var m = new THREE.Mesh( currGeo, redMaterial );
+    //console.log(m);
     m.position.set(0.0, 0.0, 0.0);
 
     this.scene.add(m);
@@ -290,48 +299,122 @@ export default class MarchingCubes {
     // use normals for coloring the mesh based on material
 
     // MY ACTUAL STUFF
+
+    // if (first) {
+    //   console.log("in updateMesh1: ");
+    //   console.log(this.usingMesh.geometry);
+    // }
     
     //console.log(this.voxels.length);
-    var verticesGeo = [];
-    var facesGeo = [];
-    var normalsGeo = [];
-    for (var i = 0; i < this.voxels.length; i++) {
+    for (var i = 0; i < this.voxels.length; i++){
       // positions, normals = voxels[i].polygonize(this.isolevel);
 
-      var polyData = this.voxels[i].polygonize(this.isolevel);
+      var currVoxel = this.voxels[i];
+      var obj = currVoxel.polygonize(this.isolevel);
+      
+      var updatedPositions = obj.vertPositions;
+      var updatedNormals = obj.vertNormals;
 
-      for (var j = 0; j < polyData.vertPositions.length; j++) {
-        verticesGeo.push(polyData.vertPositions[j]);
-        normalsGeo.push(polyData.vertNormals[j]);
-        
+      this.usingMesh.geometry.vertices = updatedPositions;
+      this.usingMesh.geometry.faces = new Array();
+
+      // console.log("updatedPositions.length: " + updatedPositions.length);
+      // console.log("updatedNormals.length: " + updatedNormals.length);
+      for (var j = 0; j < updatedNormals.length; j += 3) {
+        var face = new THREE.Face3(j, j+1, j+2, new THREE.Vector3(0.0, 0.0, 1.0), 0xff0000, 0);
+        face.vertexNormals[0] = updatedNormals[j];
+        face.vertexNormals[1] = updatedNormals[j+1];
+        face.vertexNormals[2] = updatedNormals[j+2];
+        this.usingMesh.geometry.faces.push(face);
       }
-
-    }
-    this.usingMesh.geometry.vertices = verticesGeo;
-
-    // faces and faces normals
-    for (var i = 0; i < this.usingMesh.geometry.vertices.length; i += 3) {
-      facesGeo.push( new THREE.Face3(i, i+1, i+2));
-      facesGeo[facesGeo.length - 1].vertexNormals = [new THREE.Vector3(1, 0, 0), new THREE.Vector3(1, 0, 0), new THREE.Vector3(1, 0, 0)];
     }
 
-    this.usingMesh.geometry.faces = facesGeo;
+    if (first) {
+      console.log("mesh attributes after first adjustment");
+      console.log(this.usingMesh.geometry.vertices);
+      console.log(this.usingMesh.geometry.faces);
+      console.log(this.usingMesh.geometry);
+      first = false;
+    }
 
-    //bc computing vertex normals
-    this.usingMesh.geometry.computeVertexNormals();
   
     // update for new geometry
+    this.usingMesh.geometry.dynamic = true;
     this.usingMesh.geometry.verticesNeedUpdate = true;
+    this.usingMesh.geometry.facesNeedUpdate = true;
     this.usingMesh.geometry.elementsNeedUpdate = true;
 
+    // if (first) {
+    //   console.log("in updateMesh2: ");
+    //   console.log(this.usingMesh.geometry.verticesNeedUpdate);
+    //   console.log(this.usingMesh.geometry.vertices.length);
 
-    if (first) { first = false; }
+    //   first = false;
+    // }
 
     // note: since geo is updated - green mesh and white wireframe should both update.
   }  
 };
 
 // ------------------------------------------- //
+
+// -HB: defining type for normals and polygonization
+function vertexHolder() {
+    this.loc = new THREE.Vector3(0.0, 0.0, 0.0); // curr vertex
+    this.touchingFaces = new Array(); // listing of touching faces
+    this.numFaces = 0;
+
+    this.addItem = function(item) {
+      this.touchingFaces.push(item);
+      this.numFaces += 1;
+    }
+}
+
+function allVerticesHolder() {
+    this.allVertexHolders = new Array(); // listing of touching faces
+    this.numVertices = 0;
+
+    this.addVertexHolder = function(item) {
+      this.allVertexHolders.push(item);
+      this.numVertices += 1;
+    }
+
+    this.addFaceToVertex = function(face, vertex) {
+      // face is a Vector3f of Vector3f
+      // vertex is a Vector3f
+      var added = false;
+      for (var i = 0; i < this.numVertices; i++) {
+        var loc = this.allVertexHolders[i].loc;
+        if (loc.x == vertex.x && loc.y == vertex.y && loc.z == vertex.z) {
+          this.allVertexHolders[i].addItem(face);
+          added = true;
+        }
+      }
+
+      if (!added) {
+        var vH = new vertexHolder();
+        vH.addItem(face);
+        vH.loc = vertex;
+
+        this.numVertices += 1;
+        this.allVertexHolders.push(vH);
+      }
+    }
+
+    this.getAssociatedFaces = function(vertex) {
+      var margin = .05;
+      for (var i = 0; i < this.numVertices; i++) {
+        var loc = this.allVertexHolders[i].loc;
+        
+        if (Math.abs(loc.x - vertex.x) < margin && Math.abs(loc.y - vertex.y) < margin && Math.abs(loc.z - vertex.z) < margin) {
+          return this.allVertexHolders[i].touchingFaces;
+        }
+      }
+
+      console.log("MISSING ASSOCIATED FACES FOR A VERTEX");
+      return;
+    }
+}
 
 class Voxel {
 
@@ -433,47 +516,6 @@ class Voxel {
     }
   }
 
-  // -HB : for calculating normals
-  sampleForNormals(point) {
-    // f(pointInfluence) = (r^2)/d^2;
-
-    var isoVal = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
-    var epsilon = 0.00001;
-    for (var i = 0; i < numMetaballs; i++) {
-
-      var xD = /*ball.pos.x -*/ point.x;
-      var yD = /*ball.pos.y -*/ point.y;
-      var zD = /*ball.pos.z -*/ point.z;
-
-      var x0 = xD + epsilon;
-      var y0 = yD + epsilon;
-      var z0 = zD + epsilon;
-      var x1 = xD - epsilon;
-      var y1 = yD - epsilon;
-      var z1 = zD - epsilon;
-
-      var distX0 = Math.sqrt(x0 * x0 + yD * yD + zD * zD);
-      var distX1 = Math.sqrt(x1 * x1 + yD * yD + zD * zD);
-      var distY0 = Math.sqrt(xD * xD + y0 * y0 + zD * zD);
-      var distY1 = Math.sqrt(xD * xD + y1 * y1 + zD * zD);
-      var distZ0 = Math.sqrt(xD * xD + yD * yD + z0 * z0);
-      var distZ1 = Math.sqrt(xD * xD + yD * yD + z1 * z1);
-
-      var rad = balls[i].radius;
-      isoVal[0] += (rad * rad) / (distX0 * distX0);
-      isoVal[1] += (rad * rad) / (distX1 * distX1);
-      isoVal[2] += (rad * rad) / (distY0 * distY0);
-      isoVal[3] += (rad * rad) / (distY1 * distY1);
-      isoVal[4] += (rad * rad) / (distZ0 * distZ0);
-      isoVal[5] += (rad * rad) / (distZ1 * distZ1);
-    }
-
-    var retIso = new THREE.Vector3(isoVal[0] - isoVal[1], isoVal[2] - isoVal[3], isoVal[4] - isoVal[5]);
-
-    // note: sum must be > 1.0 to show up
-    return (retIso.normalize());
-  }
-
   // -HB : for lerping
   vertexInterpolation(isolevel, posA, posB, ip1, ip2) {
     /********************************************************************************************************/
@@ -513,9 +555,13 @@ class Voxel {
     // compute the associated normals as well.
     /********************************************************************************************************/
 
-    // temp holders
-    var vertList = new Array();
-    var normList = new Array();
+    // stores list of vertices but not in triangle format
+    var vertexLocations = [];
+    // stores list of normals but again not in triangle format
+    var normalVals = [];
+    // array to hold listing of vertex to attached faces to later find weighting of associated 
+    //    faces based on inverse of their areas
+    var verticesHolder = new allVerticesHolder();
 
     // figure out cell configuration based isoVals versus isoLevel
     var pickCube = 0;
@@ -525,12 +571,15 @@ class Voxel {
       }
     }
 
+    var vertPositions = []; //to be returned
+    var vertNormals = []; //to be returned
+
     // finding vertices where cube intersects
     // if cube index is 0 then no vertices returned [cube entirely in/out of the visual area so not shown]
     if (pickCube == 0) {
       return {
-        vertPositions: vertList,
-        vertNormals: normList
+        vertPositions: vertPositions,
+        vertNormals: vertNormals
       };
     }
 
@@ -564,36 +613,139 @@ class Voxel {
     // i goes from [0, 11] bc going through all poss bits
     var twelveBits = LUT.EDGE_TABLE[pickCube];
 
-    
-    var lerpingVals = new Array();
-
+    // if (first) {
+    //   console.log("twelveBits: " + twelveBits);
+    // }
     var j = 0;
     for (var i = 0; i < 12; i++) {
       if (twelveBits & Math.pow(2, i)) {
         var i_curr = indexLocs[j];
         var i_next = indexLocs[j+1];
 
-        lerpingVals[i] = this.vertexInterpolation(isoLevel,
-                                                  allPoints[i_curr],
-                                                  allPoints[i_next],
-                                                  this.samples[i_curr],
-                                                  this.samples[i_next]);
+        vertexLocations[i] = this.vertexInterpolation(isoLevel,
+                                                      allPoints[i_curr],
+                                                      allPoints[i_next],
+                                                      this.samples[i_curr],
+                                                      this.samples[i_next]);
       }
 
       j += 2;
     }//end: forLoop over 12bits
 
-    // looping for vertex and normal list positions
-    for (var i = 0; LUT.TRI_TABLE[pickCube * 16 + i] != -1; i += 1) {
-      var loc1 = lerpingVals[LUT.TRI_TABLE[pickCube * 16 + i]];
-      vertList.push(loc1);
-      normList.push(this.sampleForNormals(loc1));
+    // if (first) {
+    //   console.log("vertexLocations");
+    //   console.log(vertexLocations);
+    // }
+
+    // now have vertex locations for all edge intersections - ie what our final geo will be built with
+    // need to make triangles out of these now
+    // var currTri = 0;
+    // iterate through the current tri_table row and fill out triangles until you reach -1 which means there are no longer
+    //    triangles to be filled for this orientation
+    // gets which vertex nums are used for this triangle based on tri table but uses vertex locations for actual positions of 
+    //    intersection location for the triangles that are created
+    // also filling in vertexPositions appropriately
+    // console.log("pickCube: " + pickCube);
+    for (var i = 0; LUT.TRI_TABLE[pickCube * 16 + i] != -1; i += 3) {
+      var loc1 = vertexLocations[LUT.TRI_TABLE[pickCube * 16 + i]];
+      var loc2 = vertexLocations[LUT.TRI_TABLE[pickCube * 16 + i+1]];
+      var loc3 = vertexLocations[LUT.TRI_TABLE[pickCube * 16 + i+2]];
+      var currFace = new THREE.Vector3(loc1, loc2, loc3);
+      vertPositions.push(loc1);
+      vertPositions.push(loc2);
+      vertPositions.push(loc3);
+
+      // now matching vertices with additional faces
+      verticesHolder.addFaceToVertex(currFace, loc1);
+      verticesHolder.addFaceToVertex(currFace, loc2);
+      verticesHolder.addFaceToVertex(currFace, loc3);
+
+      //i += 3;
+      // currTri += 1;
     }
 
+    // if (first) {
+    //   console.log("vertPositions");
+    //   console.log(vertPositions);
+    // }
+
+    // calculating normals
+    // for each vertex - find average of the normals of all attached faces but calculate the overall normal for the point
+    //    such that the weighting used for each normals addition to the calculation is based on 1/SA of the associated face
+    // since for the assignment not focused on implementation speed
+    //    make listing of which vertices touch which faces and just calculate for each vertex then put in
+    for (var i = 0; i < vertexLocations.length; i++) {
+      // face's normal: (A-B)x(C-B).normalize
+      // area of face: based on cross product = length of cross product / 2;
+
+      if (vertexLocations[i] != null) {
+        var currNormal = new THREE.Vector3(0.0);
+        var faces = verticesHolder.getAssociatedFaces(vertexLocations[i]);
+
+        //current problem: faces being returned as a vec3 and not as a vector of faces
+
+        if (first) {
+          console.log("CHECKING: FACES.LENGTH");
+          console.log(faces.length);
+        }
+        for (var j = 0; j < faces.length; j++) {
+          var A = faces[j].x;
+          var B = faces[j].y;
+          var C = faces[j].z;
+
+          var aAndb = new THREE.Vector3(A.x-B.x, A.y - B.y, A.z - B.z);
+          var cAndb = new THREE.Vector3(C.x-B.x, C.y - B.y, C.z - B.z);
+
+          var crossVal = (aAndb).cross(cAndb);
+          var areaOfFace = crossVal.length()/2.0;
+          crossVal.normalize();
+          var adding = new THREE.Vector3(crossVal.x / areaOfFace,
+                                         crossVal.y / areaOfFace,
+                                         crossVal.z / areaOfFace);
+          currNormal = new THREE.Vector3(currNormal.x + adding.x,
+                                         currNormal.y + adding.y,
+                                         currNormal.z + adding.z);
+        }
+
+        currNormal = currNormal.normalize();
+        normalVals.push(currNormal);
+      }
+    }
+
+    if (first) {
+      console.log("INSIDE POLYGONIZE: NORMAL VALS WHOLE ARRAY");
+      console.log(normalVals);
+    }
+    
+    // filling in vertexNormals appropriately based on which vertices are actually used for which faces
+    for (var i = 0; LUT.TRI_TABLE[pickCube * 16 + i] != -1; i += 3) {
+      var loc1 = normalVals[LUT.TRI_TABLE[pickCube * 16 + i]];
+      var loc2 = normalVals[LUT.TRI_TABLE[pickCube * 16 + i+1]];
+      var loc3 = normalVals[LUT.TRI_TABLE[pickCube * 16 + i+2]];
+      if (first) {
+        console.log("INSIDE POLYGONIZE: normal vals");
+        console.log(loc1);
+        console.log(loc2);
+        console.log(loc3);
+      }
+      vertNormals.push(loc1);
+      vertNormals.push(loc2);
+      vertNormals.push(loc3);
+    }
+
+    //console.log("UPDATED POSITIONS AND NORMALS");   
+
+    if (first) {
+      console.log("INSIDE POLYGONIZE");
+      console.log(vertNormals);
+      console.log(vertPositions);
+      console.log("OUTSIDE POLYGONIZE");
+    }
+    
+
     return {
-      vertPositions: vertList,
-      vertNormals: normList
+      vertPositions: vertPositions,
+      vertNormals: vertNormals
     };
   };
-   
 }
