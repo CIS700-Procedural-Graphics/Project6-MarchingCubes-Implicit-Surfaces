@@ -19,7 +19,7 @@ Marching cubes are commonly used in MRI scanning, where you can generate geometr
 - [Marching squares](http://jamie-wong.com/2014/08/19/metaballs-and-marching-squares/) by Jamie Wong.
 
 ## Sampling at corners
-For my implementation of sampling at corners, I do generate new samples at each corner of the voxel to later polygonize the voxel, I just dont have their values show up on the screen. Their isovalues are still updated as the metaball function changes due of metaballs moving.
+For my implementation of sampling at corners, I do generate new samples at each corner of the voxel to later polygonize the voxel, I just dont have their values show up on the screen. Their isovalues are still updated so the metaballs properly change.
 
 - **TRI_TABLE**: This table acts as the triangle indices. Every 16 elements in the table represents a possible polygonizing configuration. Within each configuration, every three consecutive elements represents the indices of a triangle that should be created from the edges above. 
 - **EDGE_TABLE**: This table returns a 12-bit number that represents the edges intersected by the isosurface. For each intersected edge, compute the linearly interpolated vertex position on the edge according to the isovalue at each end corner of the edge.
@@ -32,9 +32,7 @@ I implemented irradiance here.
 
 ## Visuals of the project
 
-Note: used irradiance for shader implementation.
-
-</br>Image: 
+Image: 
 ![Image][img]
 Low Resolution Visual: 
 ![Low Res Visual][lowResVis]
