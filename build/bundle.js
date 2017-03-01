@@ -203,6 +203,10 @@
 	    App.marchingCubes.updateMaterial();
 	  });
 	
+	  gui.add(App.config, 'material', { Toon: 'toon', Lambert: 'lambert' }).onChange(function (value) {
+	    App.marchingCubes.updateMaterial();
+	  });
+	
 	  // --- DEBUG ---
 	
 	  var debugFolder = gui.addFolder('Debug');
