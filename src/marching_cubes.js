@@ -4,11 +4,40 @@ import Metaball from './metaball.js';
 import InspectPoint from './inspect_point.js'
 import LUT from './marching_cube_LUT.js';
 var VISUAL_DEBUG = true;
+const E = 1e-5;
 
 const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparent: true, opacity: 0.5 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
 
+const STD_UNIFORMS = (obj) => {
+  return Object.assign({
+    u_albedo: {
+      type: 'vec3',
+      value: new THREE.Color(0xFF0000)
+    },
+    u_ambient: {
+      type: 'v3',
+      value: new THREE.Color(0xFFFFFF)
+    },
+    u_lightCol: {
+      type: 'v3',
+      value: new THREE.Color(0xFFFFFF)
+    },
+    u_lightPos: {
+      type: 'v3',
+      value: new THREE.Vector3(5, 10, 10)
+    },
+    u_lightIntensity: {
+      type: 'f',
+      value: 0.1
+    },
+    u_viewPos: {
+      type: 'v3',
+      value: window.viewPos
+    }
+  }, obj);
+};
 
 export default class MarchingCubes {
 
@@ -144,8 +173,10 @@ export default class MarchingCubes {
   // Implement a function that returns the value of the all metaballs influence to a given point.
   // Please follow the resources given in the write-up for details.
   sample(point) {
-    // @TODO
-    var isovalue = 1.1;
+    var isovalue = 0.0;
+    for (var i = 0; i < this.balls.length; i++) {
+      isovalue += this.balls[i].radius2 / point.distanceToSquared(this.balls[i].pos);
+    }
     return isovalue;
   }
 
@@ -164,6 +195,10 @@ export default class MarchingCubes {
 
       // Sampling the center point
       this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
+      
+      for (var i = 0; i < 8; i++) {
+        this.voxels[c].corners[i].isovalue = this.sample(this.voxels[c].corners[i].pos);
+      }
 
       // Visualizing grid
       if (VISUAL_DEBUG && this.showGrid) {
@@ -171,12 +206,21 @@ export default class MarchingCubes {
         // Toggle voxels on or off
         if (this.voxels[c].center.isovalue > this.isolevel) {
           this.voxels[c].show();
-        } else {
+        } 
+        else {
           this.voxels[c].hide();
         }
-        this.voxels[c].center.updateLabel(this.camera);
-      } else {
-        this.voxels[c].center.clearLabel();
+
+        for (var i = 0; i < 8; i++) {
+          this.voxels[c].corners[i].updateLabel(this.camera);
+        }
+      } 
+
+      else {
+
+        for (var i = 0; i < 8; i++) {
+          this.voxels[c].corners[i].clearLabel();
+        }
       }
     }
 
@@ -206,11 +250,38 @@ export default class MarchingCubes {
   };
 
   makeMesh() {
-    // @TODO
+    this.mesh = new THREE.Mesh(new THREE.Geometry(), LAMBERT_GREEN);
+    this.mesh.geometry.dynamic = true;
+    this.scene.add(this.mesh);
   }
 
   updateMesh() {
-    // @TODO
+    var newVertices = [];
+    var newFaces = [];
+
+    var faceIdx = 0;
+
+    for (var i = 0; i < this.voxels.length; i++) {
+      var poly = this.voxels[i].polygonize(this.isolevel, this.sample.bind(this));
+      
+      for (var j = 0; j < poly.vertexPositions.length; j+=3) {
+        var vp = poly.vertexPositions;
+        newVertices.push(vp[j], vp[j + 1], vp[j + 2]);
+        var vn = poly.vertexNormals;
+        var normals = [vn[j], vn[j + 1], vn[j + 2]];
+        newFaces.push(new THREE.Face3(3 * faceIdx, 3 * faceIdx + 1, 3 * faceIdx + 2));
+        faceIdx++;
+      }
+      
+    }
+    
+    this.mesh.geometry.vertices = newVertices;
+    this.mesh.geometry.faces = newFaces;
+
+    this.mesh.geometry.verticesNeedUpdate = true;
+    this.mesh.geometry.elementsNeedUpdate = true;
+
+    this.mesh.geometry.computeFaceNormals();
   }  
 };
 
@@ -282,7 +353,18 @@ class Voxel {
     var red = 0xff0000;
 
     // Center dot
-    this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG); 
+    this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG);
+
+    this.corners = [];
+
+    this.corners[0] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.corners[1] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.corners[2] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.corners[3] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.corners[4] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.corners[5] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.corners[6] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.corners[7] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
   }
 
   show() {
@@ -309,21 +391,72 @@ class Voxel {
   }
 
   vertexInterpolation(isolevel, posA, posB) {
-
-    // @TODO
-    var lerpPos;
-    return lerpPos;
+    var t = (isolevel - posA.isovalue) / (posB.isovalue - posA.isovalue);
+    return new THREE.Vector3(
+              posA.pos.x + t * (posB.pos.x - posA.pos.x), 
+              posA.pos.y + t * (posB.pos.y - posA.pos.y), 
+              posA.pos.z + t * (posB.pos.z - posA.pos.z));
   }
 
-  polygonize(isolevel) {
+  polygonize(isolevel, sample) {
 
-    // @TODO
-    var vertexList = [];
-    var normalList = [];
+    var vertexPositions = [];
+    var vertexNormals = [];
+
+    var idx = 0;
+
+    for (var i = 0; i < 8; i++) {
+      if (this.corners[i].isovalue < isolevel) {
+        idx |= Math.pow(2, i);
+      }
+    }
+
+    if (LUT.EDGE_TABLE[idx] == 0) {
+      return {
+        vertexPositions,
+        vertexNormals
+      };
+    }
+    
+    var vertexlist = [];
+    for (var i = 0; i < 12; i++) {
+      var c = i % 8;
+      var n = c + 1;
+      if (i < 8 && (i + 1) % 4 == 0)
+      {
+        n = c - 3;
+      }
+      if (i >= 8)
+      {
+        n = c + 4;
+      }
+      if (LUT.EDGE_TABLE[idx] & Math.pow(2, i)) {
+        vertexlist[i] = this.vertexInterpolation(isolevel, this.corners[c], this.corners[n]);
+      }
+    }
+
+    for (var i = 0; i < 16; i++) {
+      var tri = LUT.TRI_TABLE[16 * idx + i];
+
+      if (tri < 0) {
+        break;
+      }
+
+      var pt = vertexlist[tri];
+      var s = sample(pt);
+      var delta = new THREE.Vector3(sample(new THREE.Vector3(E, 0, 0).add(pt)), 
+                                    sample(new THREE.Vector3(0, E, 0).add(pt)), 
+                                    sample(new THREE.Vector3(0, 0, E).add(pt)));
+      var normal = delta.subScalar(s).normalize();
+
+      vertexPositions.push(pt);
+      vertexNormals.push(normal);
+    }
 
     return {
-      vertPositions: vertPositions,
-      vertNormals: vertNormals
+      vertexPositions: vertexPositions,
+      vertexNormals: vertexNormals
     };
+
   };
 }

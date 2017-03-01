@@ -10,14 +10,14 @@ import Framework from './framework'
 import LUT from './marching_cube_LUT.js'
 import MarchingCubes from './marching_cubes.js'
 
-const DEFAULT_VISUAL_DEBUG = true;
+const DEFAULT_VISUAL_DEBUG = false;
 const DEFAULT_ISO_LEVEL = 1.0;
-const DEFAULT_GRID_RES = 4;
-const DEFAULT_GRID_WIDTH = 10;
-const DEFAULT_NUM_METABALLS = 10;
-const DEFAULT_MIN_RADIUS = 0.5;
-const DEFAULT_MAX_RADIUS = 1;
-const DEFAULT_MAX_SPEED = 0.01;
+const DEFAULT_GRID_RES = 30;
+const DEFAULT_GRID_WIDTH = 15;
+const DEFAULT_NUM_METABALLS = 5;
+const DEFAULT_MIN_RADIUS = 1.0;
+const DEFAULT_MAX_RADIUS = 1.5;
+const DEFAULT_MAX_SPEED = 0.05;
 
 var App = {
   // 
@@ -99,7 +99,7 @@ function setupLights(scene) {
   // Directional light
   var directionalLight = new THREE.DirectionalLight( 0xffffff, 1 );
   directionalLight.color.setHSL(0.1, 1, 0.95);
-  directionalLight.position.set(1, 10, 2);
+  directionalLight.position.set(-10, -10, 10);
   directionalLight.position.multiplyScalar(10);
 
   scene.add(directionalLight);
@@ -109,6 +109,16 @@ function setupScene(scene) {
   App.marchingCubes = new MarchingCubes(App);
 }
 
+function clearScene() {
+  var scene = App.scene;
+    scene.children.forEach(function(object){
+      scene.remove(object);
+  });
+  scene.add(new THREE.AxisHelper(20));
+  setupCamera(App.camera);
+  setupLights(App.scene);
+  setupScene(App.scene);
+}
 
 function setupGUI(gui) {
 
@@ -124,36 +134,11 @@ function setupGUI(gui) {
     }
   });
 
-  gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
+  gui.add(App.config, 'numMetaballs', 1, 10).step(1).onChange(function(value) {
+    clearScene();
     App.config.numMetaballs = value;
     App.marchingCubes.init(App);
-  });
-
-  // --- DEBUG ---
-
-  var debugFolder = gui.addFolder('Debug');
-  debugFolder.add(App.marchingCubes, 'showGrid').onChange(function(value) {
-    App.marchingCubes.showGrid = value;
-    if (value) {
-      App.marchingCubes.show();
-    } else {
-      App.marchingCubes.hide();
-    }
-  });
-
-  debugFolder.add(App.marchingCubes, 'showSpheres').onChange(function(value) {
-    App.marchingCubes.showSpheres = value;
-    if (value) {
-      for (var i = 0; i < App.config.numMetaballs; i++) {
-        App.marchingCubes.balls[i].show();
-      }
-    } else {
-      for (var i = 0; i < App.config.numMetaballs; i++) {
-        App.marchingCubes.balls[i].hide();
-      }
-    }
-  });
-  debugFolder.open();  
+  }); 
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
