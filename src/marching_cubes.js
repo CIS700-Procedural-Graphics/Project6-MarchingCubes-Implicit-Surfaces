@@ -64,7 +64,7 @@ export default class MarchingCubes {
 
     this.materials = [];
     var tex_loader = new THREE.TextureLoader();
-    var texture = tex_loader.load('./aqua2.png');
+    var texture = tex_loader.load('../water.png');
     this.materials['biology'] = new THREE.ShaderMaterial({
         side: THREE.DoubleSide,
         uniforms: {
