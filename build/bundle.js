@@ -48150,7 +48150,7 @@
 	  lightColor: '#ffffff',
 	  lightIntensity: 2,
 	  albedo: '#00ffff',
-	  ambient: '#111111',
+	  ambient: '#55eeff',
 	  useTexture: true
 	};
 	
@@ -48923,7 +48923,7 @@
 /* 14 */
 /***/ function(module, exports) {
 
-	module.exports = "\nuniform sampler2D texture;\nuniform int u_useTexture;\nuniform vec3 u_albedo;\nuniform vec3 u_ambient;\nuniform vec3 u_lightPos;\nuniform vec3 u_lightCol;\nuniform float u_lightIntensity;\n\nvarying vec3 f_position;\nvarying vec3 f_normal;\nvarying vec2 f_uv;\nvarying vec3 f_ray;\n\nvoid main() {\n    vec4 color = vec4(u_albedo, 1.0);\n    vec3 nor = f_normal;\n    if (u_useTexture == 1) {\n        color = texture2D(texture, nor.zy);\n        // color = texture2D(texture, f_uv);\n    }\n\n    float d = clamp(dot(f_normal, normalize(u_lightPos - f_position)), 0.0, 1.0);\n\n    gl_FragColor = vec4(d * color.rgb * u_lightCol * u_lightIntensity + u_ambient, 1.0);\n}\n"
+	module.exports = "\nuniform sampler2D texture;\nuniform int u_useTexture;\nuniform vec3 u_albedo;\nuniform vec3 u_ambient;\nuniform vec3 u_lightPos;\nuniform vec3 u_lightCol;\nuniform float u_lightIntensity;\n\nvarying vec3 f_position;\nvarying vec3 f_normal;\nvarying vec2 f_uv;\nvarying vec3 f_ray;\n\nvoid main() {\n    vec4 color = vec4(u_albedo, 1.0);\n    if (u_useTexture == 1) {\n        color = texture2D(texture, f_normal.zy);\n    }\n\n    float d = clamp(dot(f_normal, normalize(u_lightPos - f_position)), 0.0, 1.0);\n\n    gl_FragColor = vec4(d * color.rgb * u_lightCol * u_lightIntensity + u_ambient, 1.0);\n}\n"
 
 /***/ },
 /* 15 */
