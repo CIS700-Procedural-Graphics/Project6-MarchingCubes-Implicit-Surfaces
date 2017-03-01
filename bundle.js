@@ -48924,13 +48924,13 @@
 /* 12 */
 /***/ function(module, exports) {
 
-	module.exports = "varying vec2 f_uv;\r\nvarying vec3 f_normal;\r\nvarying vec3 f_position;\r\n\r\nvoid main()\r\n{\r\n    f_uv = uv;\r\n    f_normal = normal;\r\n    f_position = position;\r\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\r\n}\r\n"
+	module.exports = "varying vec2 f_uv;\r\nvarying vec3 f_normal;\r\nvarying vec3 f_position;\r\nvarying vec3 camP;\r\n\r\nvoid main()\r\n{\r\n    f_uv = uv;\r\n    f_normal = normal;\r\n    f_position = position;\r\n    camP = cameraPosition;\r\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\r\n}\r\n"
 
 /***/ },
 /* 13 */
 /***/ function(module, exports) {
 
-	module.exports = "uniform vec3 metaball_color;\r\nuniform vec3 lightPos;\r\nuniform vec3 camPos;\r\n\r\nvarying vec3 f_position;\r\nvarying vec3 f_normal;\r\nvarying vec2 f_uv;\r\n\r\nvoid main()\r\n{\r\n    vec4 color = vec4(metaball_color, 1.0);\r\n\r\n    float d = clamp(dot(f_normal, normalize(lightPos - f_position)), 0.0, 1.0);\r\n    float t = clamp(dot(f_normal, normalize(camPos - f_position)), 0.0, 1.0);\r\n\r\n    d = d*5.0;\r\n    //color pallete\r\n    float red = 0.5 + 0.5*(cos(6.28*(t)));\r\n    float green = 0.5 + 0.5*(cos(6.28*(t+0.33)));\r\n    float blue = 0.5 + 0.5*(cos(6.28*(t+0.67)));\r\n\r\n    vec3 iridescent_color = vec3(red, green, blue);\r\n\r\n    vec3 ambient = vec3(0.5, 0.5, 0.5);\r\n    vec3 lightIntensity = vec3(2.0, 2.0, 2.0);\r\n    vec3 lightColor = vec3(1.0, 1.0, 1.0);\r\n\r\n    if(d<0.0)\r\n    {\r\n      gl_FragColor = color;\r\n    }\r\n    else\r\n    {\r\n      gl_FragColor = vec4(t * d * iridescent_color * lightColor * lightIntensity + ambient * metaball_color, 1.0);\r\n    }\r\n}\r\n"
+	module.exports = "uniform vec3 metaball_color;\r\nuniform vec3 lightPos;\r\nuniform vec3 camPos;\r\n\r\nvarying vec3 f_position;\r\nvarying vec3 f_normal;\r\nvarying vec2 f_uv;\r\n\r\nvarying vec3 camP;\r\n\r\nvoid main()\r\n{\r\n    vec4 color = vec4(metaball_color, 1.0);\r\n\r\n    float t = clamp(dot(f_normal, normalize(camP - f_position)), 0.0, 1.0);\r\n\r\n    //color pallete\r\n    float red = 0.5 + 0.5*(cos(6.28*(t)));\r\n    float green = 0.5 + 0.5*(cos(6.28*(t+0.33)));\r\n    float blue = 0.5 + 0.5*(cos(6.28*(t+0.67)));\r\n\r\n    vec3 iridescent_color = vec3(red, green, blue);\r\n\r\n    vec3 ambient = vec3(0.5, 0.5, 0.5);\r\n    vec3 lightIntensity = vec3(2.0, 2.0, 2.0);\r\n    vec3 lightColor = vec3(1.0, 1.0, 1.0);\r\n\r\n    gl_FragColor = vec4(t * iridescent_color * lightColor * lightIntensity + ambient * metaball_color, 1.0);\r\n}\r\n"
 
 /***/ },
 /* 14 */
