@@ -168,11 +168,20 @@ export default class MarchingCubes {
 
     for (var c = 0; c < this.res3; c++) {
       // Sampling the center point
-      this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
+      this.voxels[c].center.isovalue = 1.1;
+      //Sampling the 8 corners 
+      this.voxels[c].bottomLeftBack.isovalue = this.sample(this.voxels[c].bottomLeftBack.pos);
+      this.voxels[c].bottomLeftFront.isovalue = this.sample(this.voxels[c].bottomLeftFront.pos);
+      this.voxels[c].bottomRightBack.isovalue = this.sample(this.voxels[c].bottomRightBack.pos);
+      this.voxels[c].bottomRightFront.isovalue = this.sample(this.voxels[c].bottomRightFront.pos);
+
+      this.voxels[c].topLeftBack.isovalue = this.sample(this.voxels[c].topLeftBack.pos);
+      this.voxels[c].topLeftFront.isovalue = this.sample(this.voxels[c].topLeftFront.pos);
+      this.voxels[c].topRightBack.isovalue = this.sample(this.voxels[c].topRightBack.pos);
+      this.voxels[c].topRightFront.isovalue = this.sample(this.voxels[c].topRightFront.pos);
 
       // Visualizing grid
       if (VISUAL_DEBUG && this.showGrid) {
-        
         // Toggle voxels on or off
         if (this.voxels[c].center.isovalue > this.isolevel) {
           this.voxels[c].show();
@@ -288,6 +297,17 @@ class Voxel {
 
     // Center dot
     this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG); 
+    // bottom 4 dots
+    this.bottomLeftBack = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.bottomLeftFront = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.bottomRightBack = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.bottomRightFront = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    
+    // top 4 dots
+    this.topLeftBack = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.topLeftFront = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.topRightBack = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.topRightFront = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
   }
 
   show() {
