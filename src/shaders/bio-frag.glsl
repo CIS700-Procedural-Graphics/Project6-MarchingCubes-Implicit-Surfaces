@@ -14,10 +14,8 @@ varying vec3 f_ray;
 
 void main() {
     vec4 color = vec4(u_albedo, 1.0);
-    vec3 nor = f_normal;
     if (u_useTexture == 1) {
-        color = texture2D(texture, nor.zy);
-        // color = texture2D(texture, f_uv);
+        color = texture2D(texture, f_normal.zy);
     }
 
     float d = clamp(dot(f_normal, normalize(u_lightPos - f_position)), 0.0, 1.0);
