@@ -19,6 +19,18 @@ export default class MarchingCubes {
     this.init(App);
   }
 
+  updateBalls() {
+    this.myBalls = balls;
+  }
+
+  hideBall(i) {
+    balls[i].hide();
+  }
+
+  showBall(i) {
+    balls[i].show();
+  }
+
   init(App) {
     this.isPaused = false;    
     VISUAL_DEBUG = App.config.visualDebug;
@@ -48,6 +60,7 @@ export default class MarchingCubes {
     this.voxels = [];
     this.labels = [];
     balls = [];
+    this.myBalls = []; // the this version of balls array of metaballs - only used for the app
 
     this.showSpheres = true;
     this.showGrid = true;
@@ -276,7 +289,13 @@ export default class MarchingCubes {
     var currGeo = new THREE.Geometry();
     currGeo.dynamic = true;
     var redMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, transparent: true, opacity: 0.5 });
-    var m = new THREE.Mesh( currGeo, redMaterial );
+
+    var workingMaterial = new THREE.ShaderMaterial({
+      vertexShader: require('./shaders/my-vert.glsl'),
+      fragmentShader: require('./shaders/my-frag.glsl')
+    }); //-HB
+
+    var m = new THREE.Mesh( currGeo, workingMaterial );
     m.position.set(0.0, 0.0, 0.0);
 
     this.scene.add(m);
