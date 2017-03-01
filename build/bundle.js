@@ -60,7 +60,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	__webpack_require__(14);
+	__webpack_require__(15);
 	
 	// Credit:
 	// http://jamie-wong.com/2014/08/19/metaballs-and-marching-squares/
@@ -48208,7 +48208,7 @@
 	
 	      this.materials = [];
 	      var tex_loader = new THREE.TextureLoader();
-	      var texture = tex_loader.load('./water.png');
+	      var texture = tex_loader.load(__webpack_require__(12));
 	      this.materials['biology'] = new THREE.ShaderMaterial({
 	        side: THREE.DoubleSide,
 	        uniforms: {
@@ -48241,8 +48241,8 @@
 	            value: options.lightIntensity
 	          }
 	        },
-	        vertexShader: __webpack_require__(12),
-	        fragmentShader: __webpack_require__(13)
+	        vertexShader: __webpack_require__(13),
+	        fragmentShader: __webpack_require__(14)
 	      });
 	
 	      this.setupCells();
@@ -48909,18 +48909,24 @@
 
 /***/ },
 /* 12 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	module.exports = "\nvarying vec2 f_uv;\nvarying vec3 f_normal;\nvarying vec3 f_position;\nvarying vec3 f_ray;\n\n// uv, position, projectionMatrix, modelViewMatrix, normal\nvoid main() {\n    f_uv = uv;\n    f_normal = normal;\n    f_position = position;\n    f_ray = f_position - cameraPosition;\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n}\n"
+	module.exports = __webpack_require__.p + "./assets/water-50adfe.png";
 
 /***/ },
 /* 13 */
 /***/ function(module, exports) {
 
-	module.exports = "\nuniform sampler2D texture;\nuniform int u_useTexture;\nuniform vec3 u_albedo;\nuniform vec3 u_ambient;\nuniform vec3 u_lightPos;\nuniform vec3 u_lightCol;\nuniform float u_lightIntensity;\n\nvarying vec3 f_position;\nvarying vec3 f_normal;\nvarying vec2 f_uv;\nvarying vec3 f_ray;\n\nvoid main() {\n    vec4 color = vec4(u_albedo, 1.0);\n    vec3 nor = f_normal;\n    if (u_useTexture == 1) {\n        color = texture2D(texture, nor.zy);\n        // color = texture2D(texture, f_uv);\n    }\n\n    float d = clamp(dot(f_normal, normalize(u_lightPos - f_position)), 0.0, 1.0);\n\n    gl_FragColor = vec4(d * color.rgb * u_lightCol * u_lightIntensity + u_ambient, 1.0);\n}\n"
+	module.exports = "\nvarying vec2 f_uv;\nvarying vec3 f_normal;\nvarying vec3 f_position;\nvarying vec3 f_ray;\n\n// uv, position, projectionMatrix, modelViewMatrix, normal\nvoid main() {\n    f_uv = uv;\n    f_normal = normal;\n    f_position = position;\n    f_ray = f_position - cameraPosition;\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n}\n"
 
 /***/ },
 /* 14 */
+/***/ function(module, exports) {
+
+	module.exports = "\nuniform sampler2D texture;\nuniform int u_useTexture;\nuniform vec3 u_albedo;\nuniform vec3 u_ambient;\nuniform vec3 u_lightPos;\nuniform vec3 u_lightCol;\nuniform float u_lightIntensity;\n\nvarying vec3 f_position;\nvarying vec3 f_normal;\nvarying vec2 f_uv;\nvarying vec3 f_ray;\n\nvoid main() {\n    vec4 color = vec4(u_albedo, 1.0);\n    vec3 nor = f_normal;\n    if (u_useTexture == 1) {\n        color = texture2D(texture, nor.zy);\n        // color = texture2D(texture, f_uv);\n    }\n\n    float d = clamp(dot(f_normal, normalize(u_lightPos - f_position)), 0.0, 1.0);\n\n    gl_FragColor = vec4(d * color.rgb * u_lightCol * u_lightIntensity + u_ambient, 1.0);\n}\n"
+
+/***/ },
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = __webpack_require__.p + "index.html";
