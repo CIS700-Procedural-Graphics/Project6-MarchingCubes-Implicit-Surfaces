@@ -4,11 +4,45 @@ import Metaball from './metaball.js';
 import InspectPoint from './inspect_point.js'
 import LUT from './marching_cube_LUT.js';
 var VISUAL_DEBUG = true;
+var deltaPos = [new THREE.Vector3(0,0,0),
+                new THREE.Vector3(1,0,0),
+                new THREE.Vector3(-1,0,0),
+                new THREE.Vector3(0,1,0),
+                new THREE.Vector3(0,-1,0),
+                new THREE.Vector3(0,0,1),
+                new THREE.Vector3(0,0,-1)];
 
 const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparent: true, opacity: 0.5 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
 
+var BALL_MAT = new THREE.ShaderMaterial({
+    side: THREE.DoubleSide,
+    uniforms: {
+        u_color: {
+            type: 'v3',
+            value: new THREE.Color('#ffffff')
+        },
+        u_ambient: {
+            type: 'v3',
+            value: new THREE.Color('#111111')
+        },
+        u_lightPos: {
+            type: 'v3',
+            value: new THREE.Vector3(40,40,40)
+        },
+        u_lightCol: {
+            type: 'v3',
+            value: new THREE.Color('#ffffff')
+        },
+        u_lightIntensity: {
+            type: 'f',
+            value: 1
+        }
+    },
+    vertexShader: require('./shaders/vert.glsl'),
+    fragmentShader: require('./shaders/frag.glsl')
+  });
 
 export default class MarchingCubes {
 
@@ -91,6 +125,14 @@ export default class MarchingCubes {
       );
   };
 
+  updateColor(color) {
+    BALL_MAT.uniforms.u_lightCol.value = new THREE.Color(color);
+  }
+
+  updateAmbient(color) {
+    BALL_MAT.uniforms.u_ambient.value = new THREE.Color(color);
+  }
+
   setupCells() {
 
     // Allocate voxels based on our grid resolution
@@ -144,9 +186,26 @@ export default class MarchingCubes {
   // Implement a function that returns the value of the all metaballs influence to a given point.
   // Please follow the resources given in the write-up for details.
   sample(point) {
-    // @TODO
-    var isovalue = 1.1;
-    return isovalue;
+
+    var isovalues = [1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1];
+
+    var gradient = new THREE.Vector3(0,0,0);
+    this.balls.forEach(function(ball) {
+      for (var i = 0; i < 7; i++) {
+        var dist = point.distanceTo(new THREE.Vector3(ball.pos.x + deltaPos[i].x, ball.pos.y + deltaPos[i].y,ball.pos.z + deltaPos[i].z));
+        var influence = (ball.radius * ball.radius) / (dist * dist);
+        isovalues[i] += influence;
+      }
+    });
+
+    gradient.x = (isovalues[1] - isovalues[2]) / this.gridWidth;
+    gradient.y = (isovalues[3] - isovalues[4]) / this.gridWidth;
+    gradient.z = (isovalues[5] - isovalues[6]) / this.gridWidth;
+
+    return {
+      isovalue: isovalues[0],
+      normal: gradient
+    };
   }
 
   update() {
@@ -163,7 +222,8 @@ export default class MarchingCubes {
     for (var c = 0; c < this.res3; c++) {
 
       // Sampling the center point
-      this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
+      var sampleResult = this.sample(this.voxels[c].center.pos);
+      this.voxels[c].center.isovalue = sampleResult.isovalue;
 
       // Visualizing grid
       if (VISUAL_DEBUG && this.showGrid) {
@@ -178,6 +238,20 @@ export default class MarchingCubes {
       } else {
         this.voxels[c].center.clearLabel();
       }
+
+      // Sample corners
+      for (var i = 0; i < 8; i++) {
+        sampleResult = this.sample(this.voxels[c].corners[i].pos); 
+        this.voxels[c].corners[i].isovalue = sampleResult.isovalue;
+        this.voxels[c].corners[i].normal = sampleResult.normal;
+
+        if (VISUAL_DEBUG && this.showGrid) {
+          this.voxels[c].corners[i].updateLabel(this.camera);
+        } else {
+          this.voxels[c].corners[i].clearLabel();
+        }
+      }
+
     }
 
     this.updateMesh();
@@ -205,12 +279,70 @@ export default class MarchingCubes {
     this.showGrid = false;
   };
 
+  removeMesh() {
+    if (this.scene.children) {
+      console.log("here");
+      console.log(this.scene.children);
+      this.scene.children.forEach(function(object) {
+          if (object.type === "Mesh") {
+            this.scene.remove(object);
+          }
+      });
+    }
+  }
+
   makeMesh() {
-    // @TODO
+    var hasMesh = false;
+    if (this.scene.children) {
+      this.scene.children.forEach(function(object) {
+        if (object.type === "Mesh") {
+          hasMesh = true;
+        }
+      });
+    }
+
+    if (!hasMesh) {
+      var geometry = new THREE.Geometry();
+      var material = new THREE.MeshLambertMaterial({color: 0xff00ff, side: THREE.DoubleSide});
+      this.mesh = new THREE.Mesh(geometry, BALL_MAT);
+      this.scene.add(this.mesh);
+    }
   }
 
   updateMesh() {
-    // @TODO
+
+    var geometry = new THREE.Geometry();
+    var count = 0;
+
+    this.voxels.forEach(function(voxel) {
+      var poly = voxel.polygonize(this.isolevel);
+      for (var j = 0; j < 16; j+=3) {
+        if (LUT.TRI_TABLE[poly.cubeIndex * 16 + j] == -1) {
+          break;
+        }
+
+        var idx1 = poly.cubeIndex * 16 + j;
+        var idx2 = poly.cubeIndex * 16 + j + 1;
+        var idx3 = poly.cubeIndex * 16 + j + 2;
+
+        geometry.vertices.push(poly.vertPositions[LUT.TRI_TABLE[idx1]]);
+        geometry.vertices.push(poly.vertPositions[LUT.TRI_TABLE[idx2]]);
+        geometry.vertices.push(poly.vertPositions[LUT.TRI_TABLE[idx3]]);
+
+        var n1 = poly.vertNormals[LUT.TRI_TABLE[idx1]];
+        var n2 = poly.vertNormals[LUT.TRI_TABLE[idx2]];
+        var n3 = poly.vertNormals[LUT.TRI_TABLE[idx3]];
+
+        var normal = n1.lerp(n2.lerp(n3, 0.5), 0.5).normalize();
+        normal = new THREE.Vector3(normal.x, -normal.y, normal.z);
+        geometry.faces.push(new THREE.Face3(count + 0, count + 1, count + 2, normal));
+        count += 3;
+
+      }
+    }, this);
+
+    this.mesh.geometry = geometry;
+    this.mesh.needsUpdate = true;
   }  
 };
 
@@ -283,6 +415,19 @@ class Voxel {
 
     // Center dot
     this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG); 
+
+    // Corners
+    this.corners = [];
+    var pointIdx = [7, 3, 2, 6, 5, 1, 0 ,4];
+    for (var i = 0; i < 8; i++) {
+      var x = this.pos.x + Math.pow(-1, (pointIdx[i]>>0)&1) * halfGridCellWidth;
+      var y = this.pos.y + Math.pow(-1, (pointIdx[i]>>1)&1) * halfGridCellWidth;
+      var z = this.pos.z + Math.pow(-1, (pointIdx[i]>>2)&1) * halfGridCellWidth;
+
+      this.corners[i] = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG);
+      // console.log(this.corners[i]);
+    }
+
   }
 
   show() {
@@ -310,9 +455,24 @@ class Voxel {
 
   vertexInterpolation(isolevel, posA, posB) {
 
-    // @TODO
-    var lerpPos;
-    return lerpPos;
+    if (Math.abs(isolevel-posA.isovalue) < 0.00001) {
+      return {pos : posA.pos, normal : posA.normal};
+    }
+    if (Math.abs(isolevel-posB.isovalue) < 0.00001) {
+      return {pos : posB.pos, normal : posB.normal};
+    }
+    if (Math.abs(posA.isovalue-posB.isovalue) < 0.00001) {
+      return {pos : posA.pos, normal : posA.normal};
+    }
+
+    var mu = (isolevel - posA.isovalue) / (posB.isovalue - posA.isovalue);
+    var lerpPos = new THREE.Vector3(0,0,0);
+    lerpPos.lerpVectors(posA.pos, posB.pos, mu);
+
+    var lerpNormal = new THREE.Vector3(0,0,0);
+    lerpNormal.lerpVectors(posA.normal, posB.normal, mu);
+
+    return {pos : lerpPos, normal : lerpNormal};
   }
 
   polygonize(isolevel) {
@@ -321,9 +481,91 @@ class Voxel {
     var vertexList = [];
     var normalList = [];
 
+    // For more info, see : http://paulbourke.net/geometry/polygonise/ 
+    var cubeindex = 0;
+    if (this.corners[0].isovalue < isolevel) cubeindex |= 1;
+    if (this.corners[1].isovalue < isolevel) cubeindex |= 2;
+    if (this.corners[2].isovalue < isolevel) cubeindex |= 4;
+    if (this.corners[3].isovalue < isolevel) cubeindex |= 8;
+    if (this.corners[4].isovalue < isolevel) cubeindex |= 16;
+    if (this.corners[5].isovalue < isolevel) cubeindex |= 32;
+    if (this.corners[6].isovalue < isolevel) cubeindex |= 64;
+    if (this.corners[7].isovalue < isolevel) cubeindex |= 128;
+
+    if (LUT.EDGE_TABLE[cubeindex] == 0) {
+      return {
+        cubeIndex: cubeindex,
+        vertPositions: vertexList,
+        vertNormals: normalList
+      };
+    }
+
+    var result;
+    if (LUT.EDGE_TABLE[cubeindex] & 1) {
+       result = this.vertexInterpolation(isolevel, this.corners[0], this.corners[1]);
+       vertexList[0] = result.pos;
+       normalList[0] = result.normal;
+    }
+    if (LUT.EDGE_TABLE[cubeindex] & 2) {
+       result = this.vertexInterpolation(isolevel, this.corners[1], this.corners[2]);
+       vertexList[1] = result.pos;
+       normalList[1] = result.normal;
+    }
+    if (LUT.EDGE_TABLE[cubeindex] & 4) {
+       result = this.vertexInterpolation(isolevel, this.corners[2], this.corners[3]);
+       vertexList[2] = result.pos;
+       normalList[2] = result.normal;
+    }
+    if (LUT.EDGE_TABLE[cubeindex] & 8) {
+       result = this.vertexInterpolation(isolevel, this.corners[3], this.corners[0]);
+       vertexList[3] = result.pos;
+       normalList[3] = result.normal;
+    }
+    if (LUT.EDGE_TABLE[cubeindex] & 16) {
+       result = this.vertexInterpolation(isolevel, this.corners[4], this.corners[5]);
+       vertexList[4] = result.pos;
+       normalList[4] = result.normal;
+    }
+    if (LUT.EDGE_TABLE[cubeindex] & 32) {
+       result = this.vertexInterpolation(isolevel, this.corners[5], this.corners[6]);
+       vertexList[5] = result.pos;
+       normalList[5] = result.normal;
+    }
+    if (LUT.EDGE_TABLE[cubeindex] & 64) {
+       result = this.vertexInterpolation(isolevel, this.corners[6], this.corners[7]);
+       vertexList[6] = result.pos;
+       normalList[6] = result.normal;
+    }
+    if (LUT.EDGE_TABLE[cubeindex] & 128) {
+       result = this.vertexInterpolation(isolevel, this.corners[7], this.corners[4]);
+       vertexList[7] = result.pos;
+       normalList[7] = result.normal;
+    }
+    if (LUT.EDGE_TABLE[cubeindex] & 256) {
+       result = this.vertexInterpolation(isolevel, this.corners[0], this.corners[4]);
+       vertexList[8] = result.pos;
+       normalList[8] = result.normal;
+    }
+    if (LUT.EDGE_TABLE[cubeindex] & 512) {
+       result = this.vertexInterpolation(isolevel, this.corners[1], this.corners[5]);
+       vertexList[9] = result.pos;
+       normalList[9] = result.normal;
+    }
+    if (LUT.EDGE_TABLE[cubeindex] & 1024) {
+       result = this.vertexInterpolation(isolevel, this.corners[2], this.corners[6]);
+       vertexList[10] = result.pos;
+       normalList[10] = result.normal;
+    }
+    if (LUT.EDGE_TABLE[cubeindex] & 2048) {
+       result = this.vertexInterpolation(isolevel, this.corners[3], this.corners[7]);
+       vertexList[11] = result.pos;
+       normalList[11] = result.normal;
+    }
+
     return {
-      vertPositions: vertPositions,
-      vertNormals: vertNormals
+      cubeIndex: cubeindex,
+      vertPositions: vertexList,
+      vertNormals: normalList
     };
   };
 }

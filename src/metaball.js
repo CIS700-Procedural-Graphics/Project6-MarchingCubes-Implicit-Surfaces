@@ -41,6 +41,22 @@ export default class Metaball {
   };
 
   update() {
-    // @TODO
+    // Check if out of bounds. If so, reverse velocity
+    var margin = 1.0;
+    if ((this.pos.x - this.radius) < 0 + margin || (this.pos.x + this.radius) > this.gridWidth - margin) {
+      this.vel = new THREE.Vector3(-this.vel.x, this.vel.y, this.vel.z);
+    }
+    if ((this.pos.y - this.radius) < 0 + margin || (this.pos.y + this.radius) > this.gridWidth - margin) {
+      this.vel = new THREE.Vector3(this.vel.x, -this.vel.y, this.vel.z);
+    }
+    if ((this.pos.z - this.radius) < 0 + margin || (this.pos.z + this.radius) > this.gridWidth - margin) {
+      this.vel = new THREE.Vector3(this.vel.x, this.vel.y, -this.vel.z);
+    }
+
+    // Update velocity
+    this.pos = new THREE.Vector3(this.vel.x + this.pos.x, this.vel.y + this.pos.y, this.vel.z + this.pos.z);
+    if (this.mesh) {
+      this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
+    }
   }
 }
