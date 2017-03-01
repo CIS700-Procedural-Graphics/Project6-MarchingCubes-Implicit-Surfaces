@@ -8,16 +8,25 @@ const THREE = require('three'); // older modules are imported like this. You sho
 
 import Framework from './framework'
 import LUT from './marching_cube_LUT.js'
-import MarchingCubes from './marching_cubes.js'
+import MarchingCubes, {Shaders} from './marching_cubes.js'
 
 const DEFAULT_VISUAL_DEBUG = true;
-const DEFAULT_ISO_LEVEL = 1.0;
-const DEFAULT_GRID_RES = 4;
+const DEFAULT_ISO_LEVEL = 0.4;
+const DEFAULT_GRID_RES = 12;
 const DEFAULT_GRID_WIDTH = 10;
-const DEFAULT_NUM_METABALLS = 10;
+const DEFAULT_NUM_METABALLS = 4;
 const DEFAULT_MIN_RADIUS = 0.5;
 const DEFAULT_MAX_RADIUS = 1;
-const DEFAULT_MAX_SPEED = 0.01;
+const DEFAULT_MAX_SPEED = 0.07;
+const DEFAULT_SHADER = 'lambert';
+
+// options
+var options = {
+    lightColor: '#ffffff',
+    lightIntensity: 2,
+    albedo: '#dddddd',
+    ambient: '#111111',
+}
 
 var App = {
   // 
@@ -51,7 +60,9 @@ var App = {
     maxRadius:      DEFAULT_MAX_RADIUS,
 
     // Maximum speed of a metaball
-    maxSpeed:       DEFAULT_MAX_SPEED
+    maxSpeed:       DEFAULT_MAX_SPEED,
+
+    shader:         DEFAULT_SHADER
   },
 
   // Scene's framework objects
@@ -113,7 +124,7 @@ function setupScene(scene) {
 function setupGUI(gui) {
 
   // more information here: https://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
-  
+
   // --- CONFIG ---
   gui.add(App, 'isPaused').onChange(function(value) {
     App.isPaused = value;
@@ -127,6 +138,35 @@ function setupGUI(gui) {
   gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
     App.config.numMetaballs = value;
     App.marchingCubes.init(App);
+  });
+
+  gui.addColor(options, 'lightColor').onChange(function(val) {
+      Shaders[App.config.shader].material.uniforms.u_lightCol.value = new THREE.Color(val);
+  });
+
+  gui.add(options, 'lightIntensity').onChange(function(val) {
+      Shaders[App.config.shader].material.uniforms.u_lightIntensity.value = val;
+  });
+
+  gui.addColor(options, 'albedo').onChange(function(val) {
+      Shaders[App.config.shader].material.uniforms.u_albedo.value = new THREE.Color(val);
+  });
+
+  gui.addColor(options, 'ambient').onChange(function(val) {
+      Shaders[App.config.shader].material.uniforms.u_ambient.value = new THREE.Color(val);
+  });
+
+  gui.add(App.config, 'shader', Object.keys(Shaders)).onChange(function(value) {
+    App.marchingCubes.init(App);
+    switch(value) {
+      case 'lambert':
+        App.config.shader = 'lambert';
+        break;
+      case 'toon':
+        App.config.shader = 'lambert';
+        Shaders[App.config.shader].uniforms.u_viewPos.value = App.camera.position;
+        break;
+    }
   });
 
   // --- DEBUG ---

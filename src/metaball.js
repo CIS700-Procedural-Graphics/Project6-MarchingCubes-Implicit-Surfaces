@@ -42,5 +42,16 @@ export default class Metaball {
 
   update() {
     // @TODO
+    if (this.pos.x + this.radius + 0.65 > this.gridWidth || this.pos.x - this.radius - 0.65 < 0) {
+      this.vel.x *= -1;
+    }
+    if (this.pos.y + this.radius + 0.65 > this.gridWidth || this.pos.y - this.radius - 0.65 < 0) {
+      this.vel.y *= -1;
+    }
+    if (this.pos.z + this.radius + 0.65 > this.gridWidth || this.pos.z - this.radius - 0.65 < 0) {
+      this.vel.z *= -1;
+    }
+    this.pos.add(this.vel);
+    this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
   }
 }
