@@ -169,7 +169,6 @@ export default class MarchingCubes {
     for (var c = 0; c < this.res3; c++) {
       // Sampling the center point
       this.voxels[c].center.isovalue = 1.1;
-
       //Sampling the 8 corners 
       for (var j = 0; j < this.voxels[c].corners.length; j++) {
         this.voxels[c].corners[j].isovalue = this.sample(this.voxels[c].corners[j].pos);
@@ -178,26 +177,14 @@ export default class MarchingCubes {
       // Visualizing grid
       if (VISUAL_DEBUG && this.showGrid) {
         // Toggle voxels on or off
-        // if (this.voxels[c].center.isovalue > this.isolevel) {
-        //   this.voxels[c].show();
-        // } else {
-        //   this.voxels[c].hide();
-        // }
-        // this.voxels[c].center.updateLabel(this.camera);
-
-        for (var k = 0; k < this.voxels[c].corners.length; k++) {
-          if (this.voxels[c].corners[k].isovalue > this.isolevel) {
-            this.voxels[c].show();
-          } else {
-            this.voxels[c].hide();
-          }
-          this.voxels[c].corners[k].updateLabel(this.camera);
+        if (this.voxels[c].center.isovalue > this.isolevel) {
+          this.voxels[c].show();
+        } else {
+          this.voxels[c].hide();
         }
-        
+        this.voxels[c].center.updateLabel(this.camera);
       } else {
-        for (var l = 0; l < this.voxels[c].corners.length; l++) {
-          this.voxels[c].corners[l].clearLabel();
-        }
+        this.voxels[c].center.clearLabel();
       }
     }
 
