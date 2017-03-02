@@ -17,9 +17,8 @@ export default class Metaball {
     this.radius2 = radius * radius;
     this.mesh = null;
 
-    if (visualDebug) {      
-      this.makeMesh();
-    }
+    this.makeMesh();
+    
   }
 
   makeMesh() {
@@ -53,8 +52,6 @@ export default class Metaball {
     if (this.pos.z >= 8 || this.pos.z <= 1) {
         this.vel.z *= -1; 
       }
-
-
 
     this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
   }
