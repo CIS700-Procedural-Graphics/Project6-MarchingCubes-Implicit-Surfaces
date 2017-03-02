@@ -261,7 +261,11 @@ export default class MarchingCubes {
       geom.vertices.push(vertices[i]);
       geom.vertices.push(vertices[i+1]);
       geom.vertices.push(vertices[i+2]);
-      geom.faces.push( new THREE.Face3( i, i+1, i+2 ) );
+      var face = new THREE.Face3( i, i+1, i+2 );
+      // face.vertexNormals[1] = normals[i];
+      // face.vertexNormals[2] = normals[i+1];
+      // face.vertexNormals[3] = normals[i+2];
+      geom.faces.push(face);
       geom.computeFaceNormals();
     }
     var updatedObj = new THREE.Mesh( geom, new THREE.MeshNormalMaterial());

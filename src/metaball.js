@@ -40,16 +40,17 @@ export default class Metaball {
   };
 
   update() {
+    var upperLimit = this.gridWidth - 1;
     this.pos.x += this.vel.x; 
-      if (this.pos.x >= 9 || this.pos.x <= 1) {
+      if (this.pos.x >= upperLimit || this.pos.x <= 1) {
         this.vel.x *= -1; 
       }
     this.pos.y += this.vel.y; 
-    if (this.pos.y >= 9 || this.pos.y <= 1) {
+    if (this.pos.y >= upperLimit || this.pos.y <= 1) {
         this.vel.y *= -1; 
       }
     this.pos.z += this.vel.z; 
-    if (this.pos.z >= 8 || this.pos.z <= 1) {
+    if (this.pos.z >= upperLimit || this.pos.z <= 1) {
         this.vel.z *= -1; 
       }
 
