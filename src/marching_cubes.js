@@ -59,9 +59,6 @@ export default class MarchingCubes {
     this.setupMetaballs();
     this.makeMesh();
 
-    //TEST
-    // var info = this.voxels[0].polygonize(this.isolevel);
-    // console.log(info);
   };
 
   // Convert from 1D index to 3D indices
@@ -268,58 +265,68 @@ export default class MarchingCubes {
 
   makeMesh() {
 
-    this.clock = new THREE.Clock();
-    // @TODO
     var geometry = new THREE.Geometry();
-    
-    geometry.vertices.push(
-      new THREE.Vector3( -10,  10, 0 ),
-      new THREE.Vector3( -10, -10, 0 ),
-      new THREE.Vector3(  10, -10, 0 )
-    );
 
-    // geometry.vertices.push(
-    //   new THREE.Vector3( 10,  -10, 0 ),
-    //   new THREE.Vector3( 10, 10, 0 ),
-    //   new THREE.Vector3( -10, 10, 0 )
-    // );
+    var sphereTexture = THREE.ImageUtils.loadTexture('src/assets/sphere-textures/red.jpg');
 
+    var material = new THREE.ShaderMaterial({
+            uniforms: {
+                uSphereTexture: {
+                    type: "t", 
+                    value: sphereTexture                },
+            },
+            vertexShader: require('./glsl/lit-sphere-vert.glsl'),
+            fragmentShader: require('./glsl/lit-sphere-frag.glsl')
+    })
 
-    geometry.faces.push( new THREE.Face3( 0, 1, 2 ) );
-    // geometry.faces.push( new THREE.Face3( 3, 4, 5 ) );
+    this.metaballsMesh = new THREE.Mesh(geometry, material);
 
-
-    this.metaballsMesh = new THREE.Mesh(geometry, LAMBERT_GREEN);
     this.scene.add(this.metaballsMesh);
 
   }
 
   updateMesh() {
-    // @TODO
-    var vertices = this.metaballsMesh.geometry.vertices;
+
+    this.metaballsMesh.geometry.vertices = [];
+    this.metaballsMesh.geometry.faces = [];
+
+    var triCount = 0;
+
+    for (var i = 0; i < this.res3; i++){
+
+      var voxelPolygonMap = this.voxels[i].polygonize(this.isolevel);
+
+      if (voxelPolygonMap != 0){
+        var voxelVertices = voxelPolygonMap['vertPositions'];
+        var voxelNormals = voxelPolygonMap['vertNormals'];
+
+        // console.log(voxelVertices);
+        // console.log(voxelNormals);
+
+        for (var v = 0; v < voxelVertices.length; v+= 3){
+
+          this.metaballsMesh.geometry.vertices.push(voxelVertices[v]);
+          this.metaballsMesh.geometry.vertices.push(voxelVertices[v + 1]);
+          this.metaballsMesh.geometry.vertices.push(voxelVertices[v + 2]);
+
+          var face = new THREE.Face3(v + triCount*3, v+1 + triCount*3, v+2 + triCount*3, 
+            [voxelNormals[v], voxelNormals[v+1], voxelNormals[v+2]]);
+
+          this.metaballsMesh.geometry.faces.push(face);
+
+       }
+
+       triCount+= voxelVertices.length/3;
+      
+      }
+
+      
+
+    }  
     
-    //TESTING GEOMETRY
-    var flag = false;
-    if (this.clock.getElapsedTime() > 3.0 && !flag){
 
-      this.metaballsMesh.geometry.vertices.push(
-        new THREE.Vector3( 10,  -10, 0 ),
-        new THREE.Vector3( 10, 10, 0 ),
-        new THREE.Vector3( -10, 10, 0 )
-      );
-   
-    this.metaballsMesh.geometry.faces.push( new THREE.Face3( 3, 4, 5 ) );   
-    this.metaballsMesh.geometry.elementsNeedUpdate = true;    
-    flag = true;
-
-    }
-
-
-
-    for (var i = 0; i < vertices.length; i++){
-      vertices[i].set(vertices[i].x, vertices[i].y, Math.sin(this.clock.getElapsedTime()));
-    }
     this.metaballsMesh.geometry.verticesNeedUpdate = true;    
+    this.metaballsMesh.geometry.elementsNeedUpdate = true;    
 
 
   }  
@@ -524,8 +531,8 @@ class Voxel {
     var vertexList = [];
     var normalList = [];
 
-    var edgeTable = LUT.EDGE_TABLE;
-    var triTable = LUT.TRI_TABLE;
+    // var edgeTable = LUT.EDGE_TABLE;
+    // var triTable = LUT.TRI_TABLE;
 
    
    /*
@@ -534,79 +541,92 @@ class Voxel {
    */
    //WARNING: might have to re-name voxel vertices to match Paul's figure
    var cubeindex = 0;
-          
-   var v1 = this.v1;
-   var v2 = this.v2;
-   var v3 = this.v3;
-   var v4 = this.v4;
-   var v5 = this.v5;
-   var v6 = this.v6;
-   var v7 = this.v7;
-   var v8 = this.v8;
+   //TODO: rename this shit to follow him
+   var v0 = this.v6;
+   var v1 = this.v7;
+   var v2 = this.v8;
+   var v3 = this.v5;
+   var v4 = this.v2;
+   var v5 = this.v3;
+   var v6 = this.v4;
+   var v7 = this.v1;
 
-   if (v1.isovalue < isolevel) cubeindex |= 1;
-   if (v2.isovalue < isolevel) cubeindex |= 2;
-   if (v3.isovalue < isolevel) cubeindex |= 4;
-   if (v4.isovalue < isolevel) cubeindex |= 8;
-   if (v5.isovalue < isolevel) cubeindex |= 16;
-   if (v6.isovalue < isolevel) cubeindex |= 32;
-   if (v7.isovalue < isolevel) cubeindex |= 64;
-   if (v8.isovalue < isolevel) cubeindex |= 128;
+   if (v0.isovalue < isolevel) cubeindex |= 1;
+   if (v1.isovalue < isolevel) cubeindex |= 2;
+   if (v2.isovalue < isolevel) cubeindex |= 4;
+   if (v3.isovalue < isolevel) cubeindex |= 8;
+   if (v4.isovalue < isolevel) cubeindex |= 16;
+   if (v5.isovalue < isolevel) cubeindex |= 32;
+   if (v6.isovalue < isolevel) cubeindex |= 64;
+   if (v7.isovalue < isolevel) cubeindex |= 128;
    
     /* Cube is entirely in/out of the surface */
-   if (edgeTable[cubeindex] == 0)
+   if (LUT.EDGE_TABLE[cubeindex] == 0)
       return(0);
 
     /* Find the vertices where the surface intersects the cube */
-   if (edgeTable[cubeindex] & 1)
+   if (LUT.EDGE_TABLE[cubeindex] & 1)
       vertexList[0] =
-         this.vertexInterpolation(isolevel,v1,v2);
-   if (edgeTable[cubeindex] & 2)
+         this.vertexInterpolation(isolevel,v0,v1);
+   if (LUT.EDGE_TABLE[cubeindex] & 2)
       vertexList[1] =
-         this.vertexInterpolation(isolevel,v2,v3);
-   if (edgeTable[cubeindex] & 4)
+         this.vertexInterpolation(isolevel,v1,v2);
+   if (LUT.EDGE_TABLE[cubeindex] & 4)
       vertexList[2] =
-         this.vertexInterpolation(isolevel,v3,v4);
-   if (edgeTable[cubeindex] & 8)
+         this.vertexInterpolation(isolevel,v2,v3);
+   if (LUT.EDGE_TABLE[cubeindex] & 8)
       vertexList[3] =
-         this.vertexInterpolation(isolevel,v4,v1);
-   if (edgeTable[cubeindex] & 16)
+         this.vertexInterpolation(isolevel,v3,v0);
+   if (LUT.EDGE_TABLE[cubeindex] & 16)
       vertexList[4] =
-         this.vertexInterpolation(isolevel,v5,v6);
-   if (edgeTable[cubeindex] & 32)
+         this.vertexInterpolation(isolevel,v4,v5);
+   if (LUT.EDGE_TABLE[cubeindex] & 32)
       vertexList[5] =
-         this.vertexInterpolation(isolevel,v6,v7);
-   if (edgeTable[cubeindex] & 64)
+         this.vertexInterpolation(isolevel,v5,v6);
+   if (LUT.EDGE_TABLE[cubeindex] & 64)
       vertexList[6] =
-         this.vertexInterpolation(isolevel,v7,v8);
-   if (edgeTable[cubeindex] & 128)
+         this.vertexInterpolation(isolevel,v6,v7);
+   if (LUT.EDGE_TABLE[cubeindex] & 128)
       vertexList[7] =
-         this.vertexInterpolation(isolevel,v8,v5);
-   if (edgeTable[cubeindex] & 256)
+         this.vertexInterpolation(isolevel,v7,v4);
+   if (LUT.EDGE_TABLE[cubeindex] & 256)
       vertexList[8] =
-         this.vertexInterpolation(isolevel,v1,v5);
-   if (edgeTable[cubeindex] & 512)
+         this.vertexInterpolation(isolevel,v0,v4);
+   if (LUT.EDGE_TABLE[cubeindex] & 512)
       vertexList[9] =
-         this.vertexInterpolation(isolevel,v2,v6);
-   if (edgeTable[cubeindex] & 1024)
+         this.vertexInterpolation(isolevel,v1,v5);
+   if (LUT.EDGE_TABLE[cubeindex] & 1024)
       vertexList[10] =
-         this.vertexInterpolation(isolevel,v3,v7);
-   if (edgeTable[cubeindex] & 2048)
+         this.vertexInterpolation(isolevel,v2,v6);
+   if (LUT.EDGE_TABLE[cubeindex] & 2048)
       vertexList[11] =
-         this.vertexInterpolation(isolevel,v4,v8);
+         this.vertexInterpolation(isolevel,v3,v7);
 
     /* Create the triangle */
     var vertPositions = [];
     var vertNormals = [];
 
-    for (var i = 0; triTable[cubeindex * 16 * i]!=-1; i+=3) {
-      vertPositions[i] = vertexList[triTable[cubeindex * 16 * i ]];
-      vertPositions[i+1] = vertexList[triTable[cubeindex * 16 * i + 1]];
-      vertPositions[i+2] = vertexList[triTable[cubeindex * 16 * i + 2]];
+    // console.log(cubeindex);
+
+    for (var i = 0; LUT.TRI_TABLE[cubeindex * 16 + i]!= -1; i+=3) {
+      var triV0 = vertexList[LUT.TRI_TABLE[cubeindex * 16 + i ]];
+      var triV1 = vertexList[LUT.TRI_TABLE[cubeindex * 16 + i + 1]];
+      var triV2 = vertexList[LUT.TRI_TABLE[cubeindex * 16 + i + 2]];
+      vertPositions.push(triV0);
+      vertPositions.push(triV1);
+      vertPositions.push(triV2);
+
+      //calc cross product for normal
+      var e10 = triV1.clone().sub(triV0);
+      var e21 = triV2.clone().sub(triV1);
+      var normal = e10.cross(e21);
+      vertNormals.push(normal);
+      vertNormals.push(normal);
+      vertNormals.push(normal);
    }
 
 
-    // console.log(vertPositions);
+    // console.log(vertPositions.length == vertNormals.length);
 
     return {
       vertPositions: vertPositions,

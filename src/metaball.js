@@ -24,10 +24,11 @@ export default class Metaball {
     this.radius = radius;
     this.radius2 = radius * radius;
     this.mesh = null;
+    this.makeMesh();
 
-    if (visualDebug) {      
-      this.makeMesh();
-    }
+    // if (visualDebug) {      
+    //   this.makeMesh();
+    // }
   }
 
   makeMesh() {
@@ -50,7 +51,7 @@ export default class Metaball {
 
   update() {
     // @TODO
-    var padding = 0.25;
+    var padding = this.radius * 1.2;
 
     //reverse velocity if outside radius from center
     if (Math.abs(this.startPos.distanceTo(this.pos)) > (this.gridWidth/2.0 - padding)){
