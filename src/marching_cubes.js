@@ -8,7 +8,7 @@ var VISUAL_DEBUG = true;
 const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparent: true, opacity: 0.5 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
-
+const NORMAL_OFFSET = 0.0001; 
 
 export default class MarchingCubes {
 
@@ -166,6 +166,9 @@ export default class MarchingCubes {
       ball.update();
     });
 
+    var vertices = [];
+    var normals = [];
+
     for (var c = 0; c < this.res3; c++) {
       // Sampling the center point
       this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
@@ -186,9 +189,28 @@ export default class MarchingCubes {
       } else {
         this.voxels[c].center.clearLabel();
       }
+
+      var polyResults = this.voxels[c].polygonize(this.isolevel);
+      polyResults.vertNormals = [];
+      for (var i = 0; i < polyResults.vertPositions.length; i++) {
+        // calculate normals by sampling each vertex of the triangle
+        var v = this.sample(polyResults.vertPositions[i]);
+        var offsetXPt = new THREE.Vector3(polyResults.vertPositions[i].x + NORMAL_OFFSET, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z); 
+        var v1 = this.sample(offsetXPt);
+        var offsetYPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y + NORMAL_OFFSET, polyResults.vertPositions[i].z); 
+        var v2 = this.sample(offsetYPt);
+        var offsetZPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z + NORMAL_OFFSET); 
+        var v3 = this.sample(offsetZPt);
+        var sampledPts = new THREE.Vector3(v1, v2, v3);
+        sampledPts.subScalar(v);
+        sampledPts.normalize();
+        polyResults.vertNormals.push(sampledPts);
+        vertices.push(polyResults.vertPositions[i]);
+        normals.push(sampledPts);
+      }
     }
 
-    this.updateMesh();
+    this.updateMesh(vertices, normals);
   }
 
   pause() {
@@ -214,11 +236,37 @@ export default class MarchingCubes {
   };
 
   makeMesh() {
-    // @TODO
+    var geom = new THREE.Geometry(); 
+    var v1 = new THREE.Vector3(0,0,0);
+    var v2 = new THREE.Vector3(0,500,0);
+    var v3 = new THREE.Vector3(0,500,500);
+
+    geom.vertices.push(v1);
+    geom.vertices.push(v2);
+    geom.vertices.push(v3);
+
+    geom.faces.push( new THREE.Face3( 0, 1, 2 ) );
+    geom.computeFaceNormals();
+
+    var object = new THREE.Mesh( geom, new THREE.MeshNormalMaterial() );
+    object.name = "mesh";
+    this.scene.add(object);
   }
 
-  updateMesh() {
+  updateMesh(vertices, normals) {
     // @TODO
+    var obj = this.scene.getObjectByName("mesh");
+    this.scene.remove(obj);
+    var geom = new THREE.Geometry();
+    for (var i = 0; i < vertices.length; i+=3) {
+      geom.vertices.push(vertices[i]);
+      geom.vertices.push(vertices[i+1]);
+      geom.vertices.push(vertices[i+2]);
+      geom.faces.push( new THREE.Face3( i, i+1, i+2 ) );
+      geom.computeFaceNormals();
+    }
+    var updatedObj = new THREE.Mesh( geom, new THREE.MeshNormalMaterial());
+    this.scene.add(updatedObj);
   }  
 };
 
@@ -343,7 +391,7 @@ class Voxel {
 
     var f = (isolevel - iv1)/(iv2 - iv1);
 
-    var lerpPos;
+    var lerpPos = new THREE.Vector3();
     lerpPos.x = p1.x + f * (p2.x - p1.x);
     lerpPos.y = p1.y + f * (p2.y - p1.y);
     lerpPos.z = p1.z + f * (p2.z - p1.z);
@@ -352,7 +400,7 @@ class Voxel {
   }
 
   polygonize(isolevel) {
-    var cubeIndex;
+    var cubeIndex = 0;
     if (this.corners[0].isovalue < isolevel) cubeIndex |= 1;
     if (this.corners[1].isovalue < isolevel) cubeIndex |= 2;
     if (this.corners[2].isovalue < isolevel) cubeIndex |= 4;
@@ -362,54 +410,67 @@ class Voxel {
     if (this.corners[6].isovalue < isolevel) cubeIndex |= 64;
     if (this.corners[7].isovalue < isolevel) cubeIndex |= 128;
 
-    var edgeLookup = EDGE_TABLE[cubeIndex];
+    //console.log(cubeIndex);
+
+    var edgeLookup = LUT.EDGE_TABLE[cubeIndex];
     if (edgeLookup == 0) {
       return { vertPositions: [], vertNormals: []};
     } 
-    
+
     var vertexList = [];
     var normalList = [];
 
     if (edgeLookup & 1) {
-      vertexList[0] = vertexInterpolation(isolevel, this.corners[0], this.corners[1]);
+      vertexList[0] = this.vertexInterpolation(isolevel, this.corners[0], this.corners[1]);
     }
     if (edgeLookup & 2) {
-      vertexList[1] = vertexInterpolation(isolevel, this.corners[1], this.corners[2]);
+      vertexList[1] = this.vertexInterpolation(isolevel, this.corners[1], this.corners[2]);
     }
     if (edgeLookup & 4) {
-      vertexList[2] = vertexInterpolation(isolevel, this.corners[2], this.corners[3]);
+      vertexList[2] = this.vertexInterpolation(isolevel, this.corners[2], this.corners[3]);
     }
     if (edgeLookup & 8) {
-      vertexList[3] = vertexInterpolation(isolevel, this.corners[3], this.corners[0]);
+      vertexList[3] = this.vertexInterpolation(isolevel, this.corners[3], this.corners[0]);
     }
     if (edgeLookup & 16) {
-      vertexList[4] = vertexInterpolation(isolevel, this.corners[4], this.corners[5]);
+      vertexList[4] = this.vertexInterpolation(isolevel, this.corners[4], this.corners[5]);
     }
     if (edgeLookup & 32) {
-      vertexList[5] = vertexInterpolation(isolevel, this.corners[5], this.corners[6]);
+      vertexList[5] = this.vertexInterpolation(isolevel, this.corners[5], this.corners[6]);
     }
     if (edgeLookup & 64) {
-      vertexList[6] = vertexInterpolation(isolevel, this.corners[6], this.corners[7]);
+      vertexList[6] = this.vertexInterpolation(isolevel, this.corners[6], this.corners[7]);
     }
     if (edgeLookup & 128) {
-      vertexList[7] = vertexInterpolation(isolevel, this.corners[7], this.corners[4]);
+      vertexList[7] = this.vertexInterpolation(isolevel, this.corners[7], this.corners[4]);
     }
     if (edgeLookup & 256) {
-      vertexList[8] = vertexInterpolation(isolevel, this.corners[0], this.corners[4]);
+      vertexList[8] = this.vertexInterpolation(isolevel, this.corners[0], this.corners[4]);
     }
     if (edgeLookup & 512) {
-      vertexList[9] = vertexInterpolation(isolevel, this.corners[1], this.corners[5]);
+      vertexList[9] = this.vertexInterpolation(isolevel, this.corners[1], this.corners[5]);
     }
     if (edgeLookup & 1024) {
-      vertexList[10] = vertexInterpolation(isolevel, this.corners[2], this.corners[6]);
+      vertexList[10] = this.vertexInterpolation(isolevel, this.corners[2], this.corners[6]);
     }
     if (edgeLookup & 2048) {
-      vertexList[11] = vertexInterpolation(isolevel, this.corners[3], this.corners[7]);
+      vertexList[11] = this.vertexInterpolation(isolevel, this.corners[3], this.corners[7]);
+    }
+
+    var finalVertexPositions = []; 
+
+    var i = 0; 
+    var adjustedIndex = cubeIndex*16; 
+    while (LUT.TRI_TABLE[adjustedIndex + i] != -1) {
+      finalVertexPositions[i] = vertexList[LUT.TRI_TABLE[adjustedIndex + i]];
+      finalVertexPositions[i+1] = vertexList[LUT.TRI_TABLE[adjustedIndex + i + 1]];
+      finalVertexPositions[i+2] = vertexList[LUT.TRI_TABLE[adjustedIndex + i + 2]];
+      i+=3;
     }
 
     return {
-      vertPositions: vertPositions,
-      vertNormals: vertNormals
+      vertPositions: finalVertexPositions,
+      vertNormals: normalList
     };
   };
 }
