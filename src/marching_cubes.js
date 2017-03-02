@@ -60,7 +60,8 @@ export default class MarchingCubes {
     this.makeMesh();
 
     //TEST
-    this.voxels[0].polygonize(this.isolevel);
+    // var info = this.voxels[0].polygonize(this.isolevel);
+    // console.log(info);
   };
 
   // Convert from 1D index to 3D indices
@@ -235,10 +236,10 @@ export default class MarchingCubes {
         this.voxels[c].v7.clearLabel();
         this.voxels[c].v8.clearLabel();
 
-
-
       }
+
     }
+
 
     this.updateMesh();
   }
@@ -266,11 +267,61 @@ export default class MarchingCubes {
   };
 
   makeMesh() {
+
+    this.clock = new THREE.Clock();
     // @TODO
+    var geometry = new THREE.Geometry();
+    
+    geometry.vertices.push(
+      new THREE.Vector3( -10,  10, 0 ),
+      new THREE.Vector3( -10, -10, 0 ),
+      new THREE.Vector3(  10, -10, 0 )
+    );
+
+    // geometry.vertices.push(
+    //   new THREE.Vector3( 10,  -10, 0 ),
+    //   new THREE.Vector3( 10, 10, 0 ),
+    //   new THREE.Vector3( -10, 10, 0 )
+    // );
+
+
+    geometry.faces.push( new THREE.Face3( 0, 1, 2 ) );
+    // geometry.faces.push( new THREE.Face3( 3, 4, 5 ) );
+
+
+    this.metaballsMesh = new THREE.Mesh(geometry, LAMBERT_GREEN);
+    this.scene.add(this.metaballsMesh);
+
   }
 
   updateMesh() {
     // @TODO
+    var vertices = this.metaballsMesh.geometry.vertices;
+    
+    //TESTING GEOMETRY
+    var flag = false;
+    if (this.clock.getElapsedTime() > 3.0 && !flag){
+
+      this.metaballsMesh.geometry.vertices.push(
+        new THREE.Vector3( 10,  -10, 0 ),
+        new THREE.Vector3( 10, 10, 0 ),
+        new THREE.Vector3( -10, 10, 0 )
+      );
+   
+    this.metaballsMesh.geometry.faces.push( new THREE.Face3( 3, 4, 5 ) );   
+    this.metaballsMesh.geometry.elementsNeedUpdate = true;    
+    flag = true;
+
+    }
+
+
+
+    for (var i = 0; i < vertices.length; i++){
+      vertices[i].set(vertices[i].x, vertices[i].y, Math.sin(this.clock.getElapsedTime()));
+    }
+    this.metaballsMesh.geometry.verticesNeedUpdate = true;    
+
+
   }  
 };
 
@@ -443,11 +494,27 @@ class Voxel {
     }
   }
 
-  vertexInterpolation(isolevel, posA, posB) {
+  vertexInterpolation(isolevel, voxelA, voxelB) {
 
-    // @TODO
-    var lerpPos;
-    return lerpPos;
+   //@TODO
+   var mu;
+   var lerpPos = new THREE.Vector3();
+
+   if (Math.abs(isolevel - voxelA.isovalue) < 0.00001)
+      return voxelA.pos;
+   if (Math.abs(isolevel - voxelB.isovalue) < 0.00001)
+      return voxelB.pos;
+   if (Math.abs(voxelA.isovalue - voxelB.isovalue) < 0.00001)
+      return voxelA.pos;
+   
+   mu = (isolevel - voxelA.isovalue) / (voxelB.isovalue - voxelA.isovalue);
+
+   lerpPos.x = voxelA.pos.x + mu * (voxelB.pos.x - voxelA.pos.x);
+   lerpPos.y = voxelA.pos.y + mu * (voxelB.pos.y - voxelA.pos.y);
+   lerpPos.z = voxelA.pos.z + mu * (voxelB.pos.z - voxelA.pos.z);
+
+   return lerpPos;
+
   }
 
   polygonize(isolevel) {
@@ -458,6 +525,7 @@ class Voxel {
     var normalList = [];
 
     var edgeTable = LUT.EDGE_TABLE;
+    var triTable = LUT.TRI_TABLE;
 
    
    /*
@@ -485,47 +553,60 @@ class Voxel {
    if (v7.isovalue < isolevel) cubeindex |= 64;
    if (v8.isovalue < isolevel) cubeindex |= 128;
    
-        /* Cube is entirely in/out of the surface */
+    /* Cube is entirely in/out of the surface */
    if (edgeTable[cubeindex] == 0)
       return(0);
 
     /* Find the vertices where the surface intersects the cube */
    if (edgeTable[cubeindex] & 1)
       vertexList[0] =
-         vertexInterpolation(isolevel,v1,v2);
+         this.vertexInterpolation(isolevel,v1,v2);
    if (edgeTable[cubeindex] & 2)
       vertexList[1] =
-         vertexInterpolation(isolevel,v2,v3);
+         this.vertexInterpolation(isolevel,v2,v3);
    if (edgeTable[cubeindex] & 4)
       vertexList[2] =
-         vertexInterpolation(isolevel,v3,v4);
+         this.vertexInterpolation(isolevel,v3,v4);
    if (edgeTable[cubeindex] & 8)
       vertexList[3] =
-         vertexInterpolation(isolevel,v4,v1);
+         this.vertexInterpolation(isolevel,v4,v1);
    if (edgeTable[cubeindex] & 16)
       vertexList[4] =
-         vertexInterpolation(isolevel,v5,v6);
+         this.vertexInterpolation(isolevel,v5,v6);
    if (edgeTable[cubeindex] & 32)
       vertexList[5] =
-         vertexInterpolation(isolevel,v6,v7);
+         this.vertexInterpolation(isolevel,v6,v7);
    if (edgeTable[cubeindex] & 64)
       vertexList[6] =
-         vertexInterpolation(isolevel,v7,v8);
+         this.vertexInterpolation(isolevel,v7,v8);
    if (edgeTable[cubeindex] & 128)
       vertexList[7] =
-         vertexInterpolation(isolevel,v8,v5);
+         this.vertexInterpolation(isolevel,v8,v5);
    if (edgeTable[cubeindex] & 256)
       vertexList[8] =
-         vertexInterpolation(isolevel,v1,v5);
+         this.vertexInterpolation(isolevel,v1,v5);
    if (edgeTable[cubeindex] & 512)
       vertexList[9] =
-         vertexInterpolation(isolevel,v2,v6);
+         this.vertexInterpolation(isolevel,v2,v6);
    if (edgeTable[cubeindex] & 1024)
       vertexList[10] =
-         vertexInterpolation(isolevel,v3,v7);
+         this.vertexInterpolation(isolevel,v3,v7);
    if (edgeTable[cubeindex] & 2048)
       vertexList[11] =
-         vertexInterpolation(isolevel,v4,v8);
+         this.vertexInterpolation(isolevel,v4,v8);
+
+    /* Create the triangle */
+    var vertPositions = [];
+    var vertNormals = [];
+
+    for (var i = 0; triTable[cubeindex * 16 * i]!=-1; i+=3) {
+      vertPositions[i] = vertexList[triTable[cubeindex * 16 * i ]];
+      vertPositions[i+1] = vertexList[triTable[cubeindex * 16 * i + 1]];
+      vertPositions[i+2] = vertexList[triTable[cubeindex * 16 * i + 2]];
+   }
+
+
+    // console.log(vertPositions);
 
     return {
       vertPositions: vertPositions,
