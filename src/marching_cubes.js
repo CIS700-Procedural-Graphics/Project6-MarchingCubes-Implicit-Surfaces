@@ -237,9 +237,9 @@ export default class MarchingCubes {
 
   makeMesh() {
     var geom = new THREE.Geometry(); 
-    var v1 = new THREE.Vector3(0,0,0);
-    var v2 = new THREE.Vector3(0,500,0);
-    var v3 = new THREE.Vector3(0,500,500);
+    var v1 = new THREE.Vector3(5,0,0);
+    var v2 = new THREE.Vector3(0,5,0);
+    var v3 = new THREE.Vector3(0,5,5);
 
     geom.vertices.push(v1);
     geom.vertices.push(v2);
@@ -254,10 +254,6 @@ export default class MarchingCubes {
   }
 
   updateMesh(vertices, normals) {
-    // @TODO
-    console.log(vertices);
-    console.log(normals);
-
     var obj = this.scene.getObjectByName("mesh");
     this.scene.remove(obj);
     var geom = new THREE.Geometry();
@@ -354,7 +350,7 @@ class Voxel {
     var topLeftFront = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
     var topRightBack = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
     var topRightFront = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
-    this.corners = [bottomLeftBack, bottomRightBack, bottomLeftFront, bottomRightFront, topLeftBack, topRightBack, topRightFront, topLeftFront];
+    this.corners = [bottomLeftBack, bottomRightBack, bottomRightFront, bottomLeftFront, topLeftBack, topRightBack, topRightFront, topLeftFront];
   }
 
   show() {
@@ -413,8 +409,6 @@ class Voxel {
     if (this.corners[5].isovalue < isolevel) cubeIndex |= 32;
     if (this.corners[6].isovalue < isolevel) cubeIndex |= 64;
     if (this.corners[7].isovalue < isolevel) cubeIndex |= 128;
-
-    //console.log(cubeIndex);
 
     var edgeLookup = LUT.EDGE_TABLE[cubeIndex];
     if (edgeLookup == 0) {
