@@ -255,6 +255,9 @@ export default class MarchingCubes {
 
   updateMesh(vertices, normals) {
     // @TODO
+    console.log(vertices);
+    console.log(normals);
+
     var obj = this.scene.getObjectByName("mesh");
     this.scene.remove(obj);
     var geom = new THREE.Geometry();
@@ -266,6 +269,7 @@ export default class MarchingCubes {
       geom.computeFaceNormals();
     }
     var updatedObj = new THREE.Mesh( geom, new THREE.MeshNormalMaterial());
+    updatedObj.name = "mesh";
     this.scene.add(updatedObj);
   }  
 };
