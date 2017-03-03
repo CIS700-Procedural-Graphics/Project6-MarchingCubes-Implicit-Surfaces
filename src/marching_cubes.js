@@ -58,6 +58,7 @@ export default class MarchingCubes {
     this.setupCells();
     this.setupMetaballs();
     this.makeMesh();
+
   };
 
   // Convert from 1D index to 3D indices
@@ -143,10 +144,36 @@ export default class MarchingCubes {
   // This function samples a point from the metaball's density function
   // Implement a function that returns the value of the all metaballs influence to a given point.
   // Please follow the resources given in the write-up for details.
+  influence(ball, point){
+    var rSquared = Math.pow(ball.radius, 2.0);
+    var xDiffSquared = Math.pow(point.x - ball.pos.x, 2.0);
+    var yDiffSquared = Math.pow(point.y - ball.pos.y, 2.0);
+    var zDiffSquared = Math.pow(point.z - ball.pos.z, 2.0);
+    return (rSquared/(xDiffSquared + yDiffSquared + zDiffSquared));
+  };
+
   sample(point) {
     // @TODO
-    var isovalue = 1.1;
+    var isovalue = 0.0;
+
+    // var i = this.influence(this.balls[0], point);
+
+    for (var i = 0; i < this.balls.length; i++){
+      isovalue += this.influence(this.balls[i], point);
+    }
+
+    // isovalue = 1.1;
+
     return isovalue;
+  }
+
+  averageIso(voxel){
+    var sum = 
+    voxel.v1.isovalue + voxel.v2.isovalue
+    + voxel.v3.isovalue + voxel.v4.isovalue
+    + voxel.v5.isovalue + voxel.v6.isovalue
+    + voxel.v7.isovalue + voxel.v8.isovalue;
+    return sum/8.0;
   }
 
   update() {
@@ -164,21 +191,52 @@ export default class MarchingCubes {
 
       // Sampling the center point
       this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
+      //Sampling the corner points
+      this.voxels[c].v1.isovalue = this.sample(this.voxels[c].v1.pos);
+      this.voxels[c].v2.isovalue = this.sample(this.voxels[c].v2.pos);
+      this.voxels[c].v3.isovalue = this.sample(this.voxels[c].v3.pos);
+      this.voxels[c].v4.isovalue = this.sample(this.voxels[c].v4.pos);
+      this.voxels[c].v5.isovalue = this.sample(this.voxels[c].v5.pos);
+      this.voxels[c].v6.isovalue = this.sample(this.voxels[c].v6.pos);
+      this.voxels[c].v7.isovalue = this.sample(this.voxels[c].v7.pos);
+      this.voxels[c].v8.isovalue = this.sample(this.voxels[c].v8.pos);
 
       // Visualizing grid
       if (VISUAL_DEBUG && this.showGrid) {
         
         // Toggle voxels on or off
+        // if (this.averageIso(this.voxels[c]) > this.isolevel) {
         if (this.voxels[c].center.isovalue > this.isolevel) {
           this.voxels[c].show();
         } else {
           this.voxels[c].hide();
         }
-        this.voxels[c].center.updateLabel(this.camera);
+        // this.voxels[c].center.updateLabel(this.camera);
+        this.voxels[c].v1.updateLabel(this.camera);
+        this.voxels[c].v2.updateLabel(this.camera);
+        this.voxels[c].v3.updateLabel(this.camera);
+        this.voxels[c].v4.updateLabel(this.camera);
+        this.voxels[c].v5.updateLabel(this.camera);
+        this.voxels[c].v6.updateLabel(this.camera);
+        this.voxels[c].v7.updateLabel(this.camera);
+        this.voxels[c].v8.updateLabel(this.camera);
+
+
       } else {
         this.voxels[c].center.clearLabel();
+        this.voxels[c].v1.clearLabel();
+        this.voxels[c].v2.clearLabel();
+        this.voxels[c].v3.clearLabel();
+        this.voxels[c].v4.clearLabel();
+        this.voxels[c].v5.clearLabel();
+        this.voxels[c].v6.clearLabel();
+        this.voxels[c].v7.clearLabel();
+        this.voxels[c].v8.clearLabel();
+
       }
+
     }
+
 
     this.updateMesh();
   }
@@ -206,11 +264,71 @@ export default class MarchingCubes {
   };
 
   makeMesh() {
-    // @TODO
+
+    var geometry = new THREE.Geometry();
+
+    var sphereTexture = THREE.ImageUtils.loadTexture('src/assets/sphere-textures/red.jpg');
+
+    var material = new THREE.ShaderMaterial({
+            uniforms: {
+                uSphereTexture: {
+                    type: "t", 
+                    value: sphereTexture                },
+            },
+            vertexShader: require('./glsl/lit-sphere-vert.glsl'),
+            fragmentShader: require('./glsl/lit-sphere-frag.glsl')
+    })
+
+    this.metaballsMesh = new THREE.Mesh(geometry, material);
+
+    this.scene.add(this.metaballsMesh);
+
   }
 
   updateMesh() {
-    // @TODO
+
+    this.metaballsMesh.geometry.vertices = [];
+    this.metaballsMesh.geometry.faces = [];
+
+    var triCount = 0;
+
+    for (var i = 0; i < this.res3; i++){
+
+      var voxelPolygonMap = this.voxels[i].polygonize(this.isolevel);
+
+      if (voxelPolygonMap != 0){
+        var voxelVertices = voxelPolygonMap['vertPositions'];
+        var voxelNormals = voxelPolygonMap['vertNormals'];
+
+        // console.log(voxelVertices);
+        // console.log(voxelNormals);
+
+        for (var v = 0; v < voxelVertices.length; v+= 3){
+
+          this.metaballsMesh.geometry.vertices.push(voxelVertices[v]);
+          this.metaballsMesh.geometry.vertices.push(voxelVertices[v + 1]);
+          this.metaballsMesh.geometry.vertices.push(voxelVertices[v + 2]);
+
+          var face = new THREE.Face3(v + triCount*3, v+1 + triCount*3, v+2 + triCount*3, 
+            [voxelNormals[v], voxelNormals[v+1], voxelNormals[v+2]]);
+
+          this.metaballsMesh.geometry.faces.push(face);
+
+       }
+
+       triCount+= voxelVertices.length/3;
+      
+      }
+
+      
+
+    }  
+    
+
+    this.metaballsMesh.geometry.verticesNeedUpdate = true;    
+    this.metaballsMesh.geometry.elementsNeedUpdate = true;    
+
+
   }  
 };
 
@@ -282,7 +400,50 @@ class Voxel {
     var red = 0xff0000;
 
     // Center dot
-    this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG); 
+    this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG);
+
+    //Create labels at corners 
+    //See http://mathstat.slu.edu/escher/upload/thumb/6/69/Cube-labeled.svg/300px-Cube-labeled.svg.png
+    var v1x = x - halfGridCellWidth;
+    var v1y = y + halfGridCellWidth;
+    var v1z = z - halfGridCellWidth;
+    this.v1 = new InspectPoint(new THREE.Vector3(v1x, v1y, v1z), 0, VISUAL_DEBUG);
+
+    var v2x = v1x;
+    var v2y = v1y;
+    var v2z = z + halfGridCellWidth;
+    this.v2 = new InspectPoint(new THREE.Vector3(v2x, v2y, v2z), 0, VISUAL_DEBUG);
+
+    var v3x = x + halfGridCellWidth;
+    var v3y = v2y;
+    var v3z = v2z;
+    this.v3 = new InspectPoint(new THREE.Vector3(v3x, v3y, v3z), 0, VISUAL_DEBUG);
+
+    var v4x = v3x;
+    var v4y = v3y;
+    var v4z = v1z;
+    this.v4 = new InspectPoint(new THREE.Vector3(v4x, v4y, v4z), 0, VISUAL_DEBUG);
+
+    var v5x = v1x;
+    var v5y = y - halfGridCellWidth;
+    var v5z = v1z;
+    this.v5 = new InspectPoint(new THREE.Vector3(v5x, v5y, v5z), 0, VISUAL_DEBUG);
+
+    var v6x = v5x;
+    var v6y = v5y;
+    var v6z = v2z;
+    this.v6 = new InspectPoint(new THREE.Vector3(v6x, v6y, v6z), 0, VISUAL_DEBUG);
+
+    var v7x = v3x;
+    var v7y = v6y;
+    var v7z = v6z;
+    this.v7 = new InspectPoint(new THREE.Vector3(v7x, v7y, v7z), 0, VISUAL_DEBUG);
+
+    var v8x = v7x;
+    var v8y = v7y;
+    var v8z = v4z;
+    this.v8 = new InspectPoint(new THREE.Vector3(v8x, v8y, v8z), 0, VISUAL_DEBUG);
+
   }
 
   show() {
@@ -306,20 +467,166 @@ class Voxel {
     if (this.center) {
       this.center.clearLabel();
     }
+
+    if (this.v1){
+      this.v1.clearLabel();
+    }
+    
+    if(this.v2){
+      this.v2.clearLabel();
+    }
+    
+    if(this.v3){
+      this.v3.clearLabel();
+    }
+    
+    if(this.v4){
+      this.v4.clearLabel();
+    }
+
+    if(this.v5){
+      this.v5.clearLabel();
+    }
+
+    if(this.v6){
+      this.v6.clearLabel();
+    }
+
+    if(this.v7){
+      this.v7.clearLabel();
+    }
+    
+    if(this.v8){
+      this.v8.clearLabel();
+    }
   }
 
-  vertexInterpolation(isolevel, posA, posB) {
+  vertexInterpolation(isolevel, voxelA, voxelB) {
 
-    // @TODO
-    var lerpPos;
-    return lerpPos;
+   //@TODO
+   var mu;
+   var lerpPos = new THREE.Vector3();
+
+   if (Math.abs(isolevel - voxelA.isovalue) < 0.00001)
+      return voxelA.pos;
+   if (Math.abs(isolevel - voxelB.isovalue) < 0.00001)
+      return voxelB.pos;
+   if (Math.abs(voxelA.isovalue - voxelB.isovalue) < 0.00001)
+      return voxelA.pos;
+   
+   mu = (isolevel - voxelA.isovalue) / (voxelB.isovalue - voxelA.isovalue);
+
+   lerpPos.x = voxelA.pos.x + mu * (voxelB.pos.x - voxelA.pos.x);
+   lerpPos.y = voxelA.pos.y + mu * (voxelB.pos.y - voxelA.pos.y);
+   lerpPos.z = voxelA.pos.z + mu * (voxelB.pos.z - voxelA.pos.z);
+
+   return lerpPos;
+
   }
 
   polygonize(isolevel) {
 
     // @TODO
+
     var vertexList = [];
     var normalList = [];
+
+    // var edgeTable = LUT.EDGE_TABLE;
+    // var triTable = LUT.TRI_TABLE;
+
+   
+   /*
+      Determine the index into the edge table which
+      tells us which vertices are inside of the surface
+   */
+   //WARNING: might have to re-name voxel vertices to match Paul's figure
+   var cubeindex = 0;
+   //TODO: rename this shit to follow him
+   var v0 = this.v6;
+   var v1 = this.v7;
+   var v2 = this.v8;
+   var v3 = this.v5;
+   var v4 = this.v2;
+   var v5 = this.v3;
+   var v6 = this.v4;
+   var v7 = this.v1;
+
+   if (v0.isovalue < isolevel) cubeindex |= 1;
+   if (v1.isovalue < isolevel) cubeindex |= 2;
+   if (v2.isovalue < isolevel) cubeindex |= 4;
+   if (v3.isovalue < isolevel) cubeindex |= 8;
+   if (v4.isovalue < isolevel) cubeindex |= 16;
+   if (v5.isovalue < isolevel) cubeindex |= 32;
+   if (v6.isovalue < isolevel) cubeindex |= 64;
+   if (v7.isovalue < isolevel) cubeindex |= 128;
+   
+    /* Cube is entirely in/out of the surface */
+   if (LUT.EDGE_TABLE[cubeindex] == 0)
+      return(0);
+
+    /* Find the vertices where the surface intersects the cube */
+   if (LUT.EDGE_TABLE[cubeindex] & 1)
+      vertexList[0] =
+         this.vertexInterpolation(isolevel,v0,v1);
+   if (LUT.EDGE_TABLE[cubeindex] & 2)
+      vertexList[1] =
+         this.vertexInterpolation(isolevel,v1,v2);
+   if (LUT.EDGE_TABLE[cubeindex] & 4)
+      vertexList[2] =
+         this.vertexInterpolation(isolevel,v2,v3);
+   if (LUT.EDGE_TABLE[cubeindex] & 8)
+      vertexList[3] =
+         this.vertexInterpolation(isolevel,v3,v0);
+   if (LUT.EDGE_TABLE[cubeindex] & 16)
+      vertexList[4] =
+         this.vertexInterpolation(isolevel,v4,v5);
+   if (LUT.EDGE_TABLE[cubeindex] & 32)
+      vertexList[5] =
+         this.vertexInterpolation(isolevel,v5,v6);
+   if (LUT.EDGE_TABLE[cubeindex] & 64)
+      vertexList[6] =
+         this.vertexInterpolation(isolevel,v6,v7);
+   if (LUT.EDGE_TABLE[cubeindex] & 128)
+      vertexList[7] =
+         this.vertexInterpolation(isolevel,v7,v4);
+   if (LUT.EDGE_TABLE[cubeindex] & 256)
+      vertexList[8] =
+         this.vertexInterpolation(isolevel,v0,v4);
+   if (LUT.EDGE_TABLE[cubeindex] & 512)
+      vertexList[9] =
+         this.vertexInterpolation(isolevel,v1,v5);
+   if (LUT.EDGE_TABLE[cubeindex] & 1024)
+      vertexList[10] =
+         this.vertexInterpolation(isolevel,v2,v6);
+   if (LUT.EDGE_TABLE[cubeindex] & 2048)
+      vertexList[11] =
+         this.vertexInterpolation(isolevel,v3,v7);
+
+    /* Create the triangle */
+    var vertPositions = [];
+    var vertNormals = [];
+
+    // console.log(cubeindex);
+
+    for (var i = 0; LUT.TRI_TABLE[cubeindex * 16 + i]!= -1; i+=3) {
+      var triV0 = vertexList[LUT.TRI_TABLE[cubeindex * 16 + i ]];
+      var triV1 = vertexList[LUT.TRI_TABLE[cubeindex * 16 + i + 1]];
+      var triV2 = vertexList[LUT.TRI_TABLE[cubeindex * 16 + i + 2]];
+      vertPositions.push(triV0);
+      vertPositions.push(triV1);
+      vertPositions.push(triV2);
+
+      //calc cross product for normal
+      var e10 = triV1.clone().sub(triV0);
+      var e21 = triV2.clone().sub(triV1);
+      var normal = e10.cross(e21);
+      vertNormals.push(normal);
+      vertNormals.push(normal);
+      vertNormals.push(normal);
+   }
+
+
+    // console.log(vertPositions.length == vertNormals.length);
 
     return {
       vertPositions: vertPositions,
