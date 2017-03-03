@@ -12,9 +12,6 @@ You can make cool glob shapes!<br>
 
 ## Pics
 
-![img](https://github.com/nnewberg/Project5-Shaders/blob/master/screenshots/red.png?raw=true)
+![img](https://github.com/nnewberg/Project6-MarchingCubes-Implicit-Surfaces/blob/master/screenshots/Screen%20Shot%202017-03-02%20at%207.08.21%20PM.png?raw=true)
 
-![img](https://github.com/nnewberg/Project5-Shaders/blob/master/screenshots/toonhatch.png?raw=true)
-
-![img](https://github.com/nnewberg/Project5-Shaders/blob/master/screenshots/blur.png?raw=true)
-
+![img](https://github.com/nnewberg/Project6-MarchingCubes-Implicit-Surfaces/blob/master/screenshots/Screen%20Shot%202017-03-02%20at%207.07.52%20PM.png?raw=true)
