@@ -146,7 +146,7 @@ export default class MarchingCubes {
   sample(point) {
     // @TODO
     // var isovalue = 1.1;
-    var isovalue = 1.1;
+    var isovalue = 0;
     for (var i = 0; i < this.numMetaballs; i++) {
       var ball = this.balls[i];
       var dx = Math.pow(ball.pos.x - point.x, 2);
@@ -169,9 +169,12 @@ export default class MarchingCubes {
     });
 
     for (var c = 0; c < this.res3; c++) {
-
       // Sampling the center point
       this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
+      // Sample voxel verts
+      for (var i = 0; i < 8; i++) {
+        this.voxels[c].sampleList[i] = this.sample(this.voxels[c].vertexList[i]);
+      }
 
       // Visualizing grid
       if (VISUAL_DEBUG && this.showGrid) {
@@ -220,6 +223,9 @@ export default class MarchingCubes {
 
   updateMesh() {
     // @TODO
+    for (var i = 0; i < this.res3; i++) {
+      this.voxels[i].polygonize(1);
+    }
   }
 };
 
@@ -281,6 +287,37 @@ class Voxel {
     geo = new THREE.BoxBufferGeometry(this.gridCellWidth, this.gridCellWidth, this.gridCellWidth);
     this.mesh = new THREE.Mesh( geo, LAMBERT_GREEN );
     this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
+
+
+    // Setup vertexList, sampleList, edgeList
+    var w = this.gridCellWidth / 2;
+    // Back
+    var v0 = new THREE.Vector3(this.pos.x - w, this.pos.y - w, this.pos.z - w);
+    var v1 = new THREE.Vector3(this.pos.x + w, this.pos.y - w, this.pos.z - w);
+    var v5 = new THREE.Vector3(this.pos.x + w, this.pos.y + w, this.pos.z = w);
+    var v4 = new THREE.Vector3(this.pos.x - w, this.pos.y + w, this.pos.z - w);
+    // Front
+    var v3 = new THREE.Vector3(this.pos.x - w, this.pos.y - w, this.pos.z + w);
+    var v2 = new THREE.Vector3(this.pos.x + w, this.pos.y - w, this.pos.z + w);
+    var v6 = new THREE.Vector3(this.pos.x + w, this.pos.y + w, this.pos.z + w);
+    var v7 = new THREE.Vector3(this.pos.x - w, this.pos.y + w, this.pos.z + w);
+
+    this.vertexList = [v0, v1, v2, v3, v4, v5, v6, v7];
+    this.sampleList = [0, 0, 0, 0, 0, 0, 0, 0];
+
+    var e0 = [0, 1];
+    var e1 = [1, 2];
+    var e2 = [2, 3];
+    var e3 = [3, 0];
+    var e4 = [4, 5];
+    var e5 = [5, 6];
+    var e6 = [6, 7];
+    var e7 = [7, 4];
+    var e8 = [0, 4];
+    var e9 = [1, 5];
+    var e10 = [2, 6];
+    var e11 = [3, 7];
+    this.edgeList = [e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11];
   }
 
   makeInspectPoints() {
@@ -317,18 +354,60 @@ class Voxel {
     }
   }
 
-  vertexInterpolation(isolevel, posA, posB) {
-
+  vertexInterpolation(isolevel, vertA, vertB) {
     // @TODO
-    var lerpPos;
+    // Sample values
+    var s0 = this.sampleList[vertA];
+    var s1 = this.sampleList[vertB];
+    // Positions
+    var p0 = this.vertexList[vertA];
+    var p1 = this.vertexList[vertB];
+    var diff = new THREE.Vector3(p1.x - p0.x, p1.y - p0.y, p1.z - p0.z);
+
+    var lerpPos = new THREE.Vector3(
+        p0.x + (isolevel - s0) * diff.x/ (s1 - s0),
+        p0.y + (isolevel - s0) * diff.y/ (s1 - s0),
+        p0.z + (isolevel - s0) * diff.z/ (s1 - s0));
+
     return lerpPos;
   }
 
   polygonize(isolevel) {
 
     // @TODO
-    var vertexList = [];
-    var normalList = [];
+    var vertPositions = [];
+    var vertNormals = [];
+
+    var cubeindex = 0; // 8-bit number - which verts are intersected
+    for (var i = 0; i < 8; i++) {
+      var samp = this.sampleList[i];
+      cubeindex = (cubeindex << 1) | (samp > isolevel);
+    }
+
+    var edges = LUT.EDGE_TABLE[cubeindex];
+    var interpPositions = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
+    for (var i = 0; i < 12; i++) {
+      var bit = Math.pow(2, i);
+      if ((edges & bit)) { // If edge i is intersected
+        var v0 = this.edgeList[i][0];
+        var v1 = this.edgeList[i][1];
+        var pos = this.vertexInterpolation(isolevel, v0, v1);
+        interpPositions[i] = pos;
+      }
+    }
+
+    var tris = [];
+    for (var i = cubeindex * 16; i < cubeindex * 16 + 16; i++) {
+      tris.push(LUT.TRI_TABLE[i]);
+    }
+
+    for (var i = 0; i < 13; i+=3) {
+      if (tris[i] != -1) {
+        vertPositions.push(interpPositions[tris[i]]);
+        vertPositions.push(interpPositions[tris[i + 1]]);
+        vertPositions.push(interpPositions[tris[i + 2]]);
+      }
+    }
 
     return {
       vertPositions: vertPositions,
