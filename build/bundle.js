@@ -60,7 +60,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	__webpack_require__(12);
+	__webpack_require__(14);
 	
 	// Credit:
 	// http://jamie-wong.com/2014/08/19/metaballs-and-marching-squares/
@@ -118,7 +118,10 @@
 	  renderer: undefined,
 	
 	  // Play/pause control for the simulation
-	  isPaused: false
+	  isPaused: false,
+	
+	  // toggle custom shader
+	  resetWithCustomShader: false
 	};
 	
 	// called after the scene loads
@@ -184,6 +187,11 @@
 	    }
 	  });
 	
+	  gui.add(App, 'resetWithCustomShader').onChange(function (value) {
+	    App.customShader = value;
+	    App.marchingCubes.init(App);
+	  });
+	
 	  gui.add(App.config, 'numMetaballs', 1, 10).onChange(function (value) {
 	    App.config.numMetaballs = value;
 	    App.marchingCubes.init(App);
@@ -213,7 +221,7 @@
 	      }
 	    }
 	  });
-	  debugFolder.open();
+	  debugFolder.close();
 	}
 	
 	// when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
@@ -48148,7 +48156,7 @@
 	var LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 	var LAMBERT_GREEN = new THREE.MeshBasicMaterial({ color: 0x00ee00, transparent: true, opacity: 0.5 });
 	var WIREFRAME_MAT = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 10 });
-	var NORMAL_OFFSET = 0.0001;
+	var NORMAL_OFFSET = 0.25;
 	
 	var MarchingCubes = function () {
 	  function MarchingCubes(App) {
@@ -48191,11 +48199,47 @@
 	
 	      this.showSpheres = true;
 	      this.showGrid = true;
+	      // options for lambert shader
+	      var options = {
+	        lightColor: '#ffffff',
+	        lightIntensity: 2,
+	        albedo: '#dddddd',
+	        ambient: '#111111'
+	      };
 	
-	      if (App.config.material) {
-	        this.material = new THREE.MeshPhongMaterial({ color: 0xff6a1d });
+	      var iridescentMaterial = new THREE.ShaderMaterial({
+	        uniforms: {
+	          u_albedo: {
+	            type: 'v3',
+	            value: new THREE.Color(options.albedo)
+	          },
+	          u_ambient: {
+	            type: 'v3',
+	            value: new THREE.Color(options.ambient)
+	          },
+	          u_lightCol: {
+	            type: 'v3',
+	            value: new THREE.Color(options.lightColor)
+	          },
+	          u_lightIntensity: {
+	            type: 'f',
+	            value: options.lightIntensity
+	          },
+	          u_cameraPos: {
+	            type: 'v3',
+	            value: App.camera.position
+	          }
+	        },
+	        vertexShader: __webpack_require__(12),
+	        fragmentShader: __webpack_require__(13)
+	      });
+	
+	      this.customShaderOn = App.resetWithCustomShader;
+	
+	      if (App.resetWithCustomShader) {
+	        this.material = iridescentMaterial;
 	      } else {
-	        this.material = App.config.material;
+	        this.material = new THREE.MeshNormalMaterial();
 	      }
 	
 	      this.setupCells();
@@ -48350,16 +48394,34 @@
 	        for (var i = 0; i < polyResults.vertPositions.length; i++) {
 	          // calculate normals by sampling each vertex of the triangle
 	          var v = this.sample(polyResults.vertPositions[i]);
-	          var offsetXPt = new THREE.Vector3(polyResults.vertPositions[i].x + NORMAL_OFFSET, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z);
+	
+	          var offsetXPt;
+	          if (polyResults.vertPositions[i].x > 0) {
+	            offsetXPt = new THREE.Vector3(polyResults.vertPositions[i].x + NORMAL_OFFSET, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z);
+	          } else {
+	            offsetXPt = new THREE.Vector3(polyResults.vertPositions[i].x - NORMAL_OFFSET, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z);
+	          }
 	          var v1 = this.sample(offsetXPt);
-	          var offsetYPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y + NORMAL_OFFSET, polyResults.vertPositions[i].z);
+	
+	          var offsetYPt;
+	          if (polyResults.vertPositions[i].y > 0) {
+	            offsetYPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y + NORMAL_OFFSET, polyResults.vertPositions[i].z);
+	          } else {
+	            offsetYPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y - NORMAL_OFFSET, polyResults.vertPositions[i].z);
+	          }
 	          var v2 = this.sample(offsetYPt);
-	          var offsetZPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z + NORMAL_OFFSET);
+	
+	          var offsetZPt;
+	          if (polyResults.vertPositions[i].z > 0) {
+	            offsetZPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z + NORMAL_OFFSET);
+	          } else {
+	            offsetZPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z - NORMAL_OFFSET);
+	          }
+	
 	          var v3 = this.sample(offsetZPt);
 	          var sampledPts = new THREE.Vector3(v1, v2, v3);
 	          sampledPts.subScalar(v);
 	          sampledPts.normalize();
-	          polyResults.vertNormals.push(sampledPts);
 	          vertices.push(polyResults.vertPositions[i]);
 	          normals.push(sampledPts);
 	        }
@@ -48417,19 +48479,31 @@
 	    value: function updateMesh(vertices, normals) {
 	      var obj = this.scene.getObjectByName("mesh");
 	      this.scene.remove(obj);
+	
+	      var f_normals = new Float32Array(normals.length * 3);
 	      var geom = new THREE.Geometry();
+	      var normalsCtr = 0;
 	      for (var i = 0; i < vertices.length; i += 3) {
 	        geom.vertices.push(vertices[i]);
 	        geom.vertices.push(vertices[i + 1]);
 	        geom.vertices.push(vertices[i + 2]);
 	        var face = new THREE.Face3(i, i + 1, i + 2);
-	        // face.vertexNormals[1] = normals[i];
-	        // face.vertexNormals[2] = normals[i+1];
-	        // face.vertexNormals[3] = normals[i+2];
 	        geom.faces.push(face);
-	        geom.computeFaceNormals();
+	        if (this.customShaderOn) {
+	          f_normals[i] = normals[normalsCtr].x;
+	          f_normals[i + 1] = normals[normalsCtr].y;
+	          f_normals[i + 2] = normals[normalsCtr].z;
+	          normalsCtr++;
+	        } else {
+	          geom.computeFaceNormals();
+	        }
 	      }
-	      var updatedObj = new THREE.Mesh(geom, new THREE.MeshNormalMaterial());
+	
+	      var bufferGeom = new THREE.BufferGeometry();
+	      bufferGeom.fromGeometry(geom);
+	      bufferGeom.addAttribute('computedNormal', new THREE.BufferAttribute(f_normals, 3));
+	      var updatedObj = new THREE.Mesh(bufferGeom, this.material);
+	
 	      updatedObj.name = "mesh";
 	      this.scene.add(updatedObj);
 	    }
@@ -48811,6 +48885,18 @@
 
 /***/ },
 /* 12 */
+/***/ function(module, exports) {
+
+	module.exports = "attribute vec3 computedNormal;\n\nvarying vec3 f_normal;\nvarying vec3 f_position;\n\n// uv, position, projectionMatrix, modelViewMatrix, normal\nvoid main() {\n    f_normal = computedNormal;\n    f_position = position;\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n}"
+
+/***/ },
+/* 13 */
+/***/ function(module, exports) {
+
+	module.exports = "uniform vec3 u_albedo;\nuniform vec3 u_ambient;\nuniform vec3 u_lightCol;\nuniform float u_lightIntensity;\nuniform vec3 u_cameraPos;\n\nvarying vec3 f_position;\nvarying vec3 f_normal;\n\n// cosine based palette, 4 vec3 params from http://www.iquilezles.org/www/articles/palettes/palettes.htm\nvec3 palette( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d )\n{\n    return a + b*cos( 6.28318*(c*t+d) );\n}\n\nvoid main() {\n\n\tvec3 look = normalize(u_cameraPos - f_position);\t\n    float d = dot(f_normal, look);\n\n    vec3 paletteColor = palette(d, vec3(0.5, 0.5, 0.5), vec3(0.5, 0.5, 0.5), vec3(1.0, 1.0, 1.0), vec3(0.00, 0.33, 0.67));\n\n\tgl_FragColor = vec4(paletteColor * u_lightCol * u_lightIntensity + u_ambient, 1.0);\n}"
+
+/***/ },
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = __webpack_require__.p + "index.html";
