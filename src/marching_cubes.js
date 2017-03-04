@@ -8,7 +8,7 @@ var VISUAL_DEBUG = true;
 const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparent: true, opacity: 0.5 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
-const NORMAL_OFFSET = 0.0001; 
+const NORMAL_OFFSET = 0.01; 
 
 export default class MarchingCubes {
 
@@ -48,11 +48,47 @@ export default class MarchingCubes {
 
     this.showSpheres = true;
     this.showGrid = true;
+    // options for lambert shader
+    var options = {
+        lightColor: '#ffffff',
+        lightIntensity: 2,
+        albedo: '#dddddd',
+        ambient: '#111111'
+    }
 
-    if (App.config.material) {
-      this.material = new THREE.MeshPhongMaterial({ color: 0xff6a1d});
+    var iridescentMaterial = new THREE.ShaderMaterial({
+          uniforms: {
+              u_albedo: {
+                  type: 'v3',
+                  value: new THREE.Color(options.albedo)
+              },
+              u_ambient: {
+                  type: 'v3',
+                  value: new THREE.Color(options.ambient)
+              },
+              u_lightCol: {
+                  type: 'v3',
+                  value: new THREE.Color(options.lightColor)
+              },
+              u_lightIntensity: {
+                  type: 'f',
+                  value: options.lightIntensity
+              }, 
+              u_cameraPos: {
+                  type: 'v3',
+                  value: App.camera.position
+              }
+          },
+          vertexShader: require('./glsl/lambert-vert.glsl'),
+          fragmentShader: require('./glsl/iridescent-frag.glsl')
+      });
+
+    this.customShaderOn = App.resetWithCustomShader;
+
+    if (App.resetWithCustomShader) {
+      this.material = iridescentMaterial;
     } else {
-      this.material = App.config.material;
+      this.material = new THREE.MeshNormalMaterial();
     }
 
     this.setupCells();
@@ -195,11 +231,30 @@ export default class MarchingCubes {
       for (var i = 0; i < polyResults.vertPositions.length; i++) {
         // calculate normals by sampling each vertex of the triangle
         var v = this.sample(polyResults.vertPositions[i]);
-        var offsetXPt = new THREE.Vector3(polyResults.vertPositions[i].x + NORMAL_OFFSET, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z); 
+        
+        var offsetXPt;
+        if (polyResults.vertPositions[i].x > 0) {
+          offsetXPt = new THREE.Vector3(polyResults.vertPositions[i].x + NORMAL_OFFSET, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z); 
+        } else {
+          offsetXPt = new THREE.Vector3(polyResults.vertPositions[i].x - NORMAL_OFFSET, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z); 
+        }
         var v1 = this.sample(offsetXPt);
-        var offsetYPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y + NORMAL_OFFSET, polyResults.vertPositions[i].z); 
+        
+        var offsetYPt;
+        if (polyResults.vertPositions[i].y > 0) {
+          offsetYPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y + NORMAL_OFFSET, polyResults.vertPositions[i].z); 
+        } else {
+          offsetYPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y - NORMAL_OFFSET, polyResults.vertPositions[i].z); 
+        }
         var v2 = this.sample(offsetYPt);
-        var offsetZPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z + NORMAL_OFFSET); 
+        
+        var offsetZPt;
+        if (polyResults.vertPositions[i].z >= 0) {
+          offsetZPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z + NORMAL_OFFSET); 
+        } else {
+          offsetZPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z - NORMAL_OFFSET); 
+        }
+
         var v3 = this.sample(offsetZPt);
         var sampledPts = new THREE.Vector3(v1, v2, v3);
         sampledPts.subScalar(v);
@@ -256,21 +311,34 @@ export default class MarchingCubes {
   updateMesh(vertices, normals) {
     var obj = this.scene.getObjectByName("mesh");
     this.scene.remove(obj);
+
+    var f_normals = new Float32Array( normals.length * 3 );
     var geom = new THREE.Geometry();
+    var normalsCtr = 0; 
     for (var i = 0; i < vertices.length; i+=3) {
       geom.vertices.push(vertices[i]);
       geom.vertices.push(vertices[i+1]);
       geom.vertices.push(vertices[i+2]);
       var face = new THREE.Face3( i, i+1, i+2 );
-      // face.vertexNormals[1] = normals[i];
-      // face.vertexNormals[2] = normals[i+1];
-      // face.vertexNormals[3] = normals[i+2];
       geom.faces.push(face);
-      geom.computeFaceNormals();
+      if (this.customShaderOn) {
+        f_normals[i] = normals[normalsCtr].x;
+        f_normals[i+1] = normals[normalsCtr].y;
+        f_normals[i+2] = normals[normalsCtr].z;
+        normalsCtr++;
+      } else {
+        geom.computeFaceNormals();
+      }
     }
-    var updatedObj = new THREE.Mesh( geom, new THREE.MeshNormalMaterial());
+
+    var bufferGeom = new THREE.BufferGeometry();
+    bufferGeom.fromGeometry(geom);
+    bufferGeom.addAttribute( 'computedNormal', new THREE.BufferAttribute( f_normals, 3 ) );
+    var updatedObj = new THREE.Mesh( bufferGeom, this.material);
+
     updatedObj.name = "mesh";
     this.scene.add(updatedObj);
+
   }  
 };
 

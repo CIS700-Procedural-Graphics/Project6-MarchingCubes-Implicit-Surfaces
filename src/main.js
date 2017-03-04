@@ -60,12 +60,14 @@ var App = {
   renderer:         undefined,
 
   // Play/pause control for the simulation
-  isPaused:         false
+  isPaused:         false,
+
+  // toggle custom shader
+  resetWithCustomShader: false
 };
 
 // called after the scene loads
 function onLoad(framework) {
-
   var {scene, camera, renderer, gui, stats} = framework;
   App.scene = scene;
   App.camera = camera;
@@ -121,6 +123,11 @@ function setupGUI(gui) {
     } else {
       App.marchingCubes.play();
     }
+  });
+
+  gui.add(App, 'resetWithCustomShader').onChange(function(value) {
+    App.customShader = value;
+    App.marchingCubes.init(App);
   });
 
   gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
