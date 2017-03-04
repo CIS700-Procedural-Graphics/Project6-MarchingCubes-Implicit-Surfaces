@@ -8,7 +8,7 @@ var VISUAL_DEBUG = true;
 const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparent: true, opacity: 0.5 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
-const NORMAL_OFFSET = 0.01; 
+const NORMAL_OFFSET = 0.25; 
 
 export default class MarchingCubes {
 
@@ -249,7 +249,7 @@ export default class MarchingCubes {
         var v2 = this.sample(offsetYPt);
         
         var offsetZPt;
-        if (polyResults.vertPositions[i].z >= 0) {
+        if (polyResults.vertPositions[i].z > 0) {
           offsetZPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z + NORMAL_OFFSET); 
         } else {
           offsetZPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z - NORMAL_OFFSET); 
@@ -259,7 +259,6 @@ export default class MarchingCubes {
         var sampledPts = new THREE.Vector3(v1, v2, v3);
         sampledPts.subScalar(v);
         sampledPts.normalize();
-        polyResults.vertNormals.push(sampledPts);
         vertices.push(polyResults.vertPositions[i]);
         normals.push(sampledPts);
       }

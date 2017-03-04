@@ -159,7 +159,7 @@ function setupGUI(gui) {
       }
     }
   });
-  debugFolder.open();  
+  debugFolder.close();  
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
