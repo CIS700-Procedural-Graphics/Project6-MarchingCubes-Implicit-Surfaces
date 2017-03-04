@@ -12,12 +12,12 @@ const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth:
 
 export default class MarchingCubes {
 
-  constructor(App) {      
+  constructor(App) {
     this.init(App);
   }
 
   init(App) {
-    this.isPaused = false;    
+    this.isPaused = false;
     VISUAL_DEBUG = App.config.visualDebug;
 
     // Initializing member variables.
@@ -105,7 +105,7 @@ export default class MarchingCubes {
         this.scene.add(voxel.wireframe);
         this.scene.add(voxel.mesh);
       }
-    }    
+    }
   }
 
   setupMetaballs() {
@@ -119,21 +119,21 @@ export default class MarchingCubes {
 
     // Randomly generate metaballs with different sizes and velocities
     for (var i = 0; i < this.numMetaballs; i++) {
-      x = this.gridWidth / 2;    
-      y = this.gridWidth / 2;    
-      z = this.gridWidth / 2;    
+      x = this.gridWidth / 2;
+      y = this.gridWidth / 2;
+      z = this.gridWidth / 2;
       pos = new THREE.Vector3(x, y, z);
-      
+
       vx = (Math.random() * 2 - 1) * this.maxSpeed;
       vy = (Math.random() * 2 - 1) * this.maxSpeed;
       vz = (Math.random() * 2 - 1) * this.maxSpeed;
       vel = new THREE.Vector3(vx, vy, vz);
-      
+
       radius = Math.random() * (this.maxRadius - this.minRadius) + this.minRadius;
-  
+
       var ball = new Metaball(pos, radius, vel, this.gridWidth, VISUAL_DEBUG);
       this.balls.push(ball);
-      
+
       if (VISUAL_DEBUG) {
         this.scene.add(ball.mesh);
       }
@@ -145,7 +145,15 @@ export default class MarchingCubes {
   // Please follow the resources given in the write-up for details.
   sample(point) {
     // @TODO
+    // var isovalue = 1.1;
     var isovalue = 1.1;
+    for (var i = 0; i < this.numMetaballs; i++) {
+      var ball = this.balls[i];
+      var dx = Math.pow(ball.pos.x - point.x, 2);
+      var dy = Math.pow(ball.pos.y - point.y, 2);
+      var dz = Math.pow(ball.pos.z - point.x, 2);
+      isovalue += ball.radius2 / (dx + dy + dz);
+    }
     return isovalue;
   }
 
@@ -167,7 +175,7 @@ export default class MarchingCubes {
 
       // Visualizing grid
       if (VISUAL_DEBUG && this.showGrid) {
-        
+
         // Toggle voxels on or off
         if (this.voxels[c].center.isovalue > this.isolevel) {
           this.voxels[c].show();
@@ -207,11 +215,12 @@ export default class MarchingCubes {
 
   makeMesh() {
     // @TODO
+
   }
 
   updateMesh() {
     // @TODO
-  }  
+  }
 };
 
 // ------------------------------------------- //
@@ -229,8 +238,8 @@ class Voxel {
     if (VISUAL_DEBUG) {
       this.makeMesh();
     }
-    
-    this.makeInspectPoints();      
+
+    this.makeInspectPoints();
   }
 
   makeMesh() {
@@ -282,7 +291,7 @@ class Voxel {
     var red = 0xff0000;
 
     // Center dot
-    this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG); 
+    this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG);
   }
 
   show() {
