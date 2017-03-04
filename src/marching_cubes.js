@@ -8,7 +8,7 @@ var VISUAL_DEBUG = true;
 const LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
 const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparent: true, opacity: 0.5 });
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
-
+const NORMAL_OFFSET = 0.25; 
 
 export default class MarchingCubes {
 
@@ -48,11 +48,47 @@ export default class MarchingCubes {
 
     this.showSpheres = true;
     this.showGrid = true;
+    // options for lambert shader
+    var options = {
+        lightColor: '#ffffff',
+        lightIntensity: 2,
+        albedo: '#dddddd',
+        ambient: '#111111'
+    }
 
-    if (App.config.material) {
-      this.material = new THREE.MeshPhongMaterial({ color: 0xff6a1d});
+    var iridescentMaterial = new THREE.ShaderMaterial({
+          uniforms: {
+              u_albedo: {
+                  type: 'v3',
+                  value: new THREE.Color(options.albedo)
+              },
+              u_ambient: {
+                  type: 'v3',
+                  value: new THREE.Color(options.ambient)
+              },
+              u_lightCol: {
+                  type: 'v3',
+                  value: new THREE.Color(options.lightColor)
+              },
+              u_lightIntensity: {
+                  type: 'f',
+                  value: options.lightIntensity
+              }, 
+              u_cameraPos: {
+                  type: 'v3',
+                  value: App.camera.position
+              }
+          },
+          vertexShader: require('./glsl/lambert-vert.glsl'),
+          fragmentShader: require('./glsl/iridescent-frag.glsl')
+      });
+
+    this.customShaderOn = App.resetWithCustomShader;
+
+    if (App.resetWithCustomShader) {
+      this.material = iridescentMaterial;
     } else {
-      this.material = App.config.material;
+      this.material = new THREE.MeshNormalMaterial();
     }
 
     this.setupCells();
@@ -144,13 +180,19 @@ export default class MarchingCubes {
   // Implement a function that returns the value of the all metaballs influence to a given point.
   // Please follow the resources given in the write-up for details.
   sample(point) {
-    // @TODO
-    var isovalue = 1.1;
+    var isovalue = 0;
+    for (var i = 0; i < this.balls.length; i++) {
+      var ri_squared = Math.pow(this.balls[i].radius, 2);
+      var x = Math.pow(point.x - this.balls[i].pos.x, 2);  
+      var y = Math.pow(point.y - this.balls[i].pos.y, 2);  
+      var z = Math.pow(point.z - this.balls[i].pos.z, 2); 
+      isovalue += (ri_squared / (x + y + z)); 
+    }
+
     return isovalue;
   }
 
   update() {
-
     if (this.isPaused) {
       return;
     }
@@ -160,14 +202,19 @@ export default class MarchingCubes {
       ball.update();
     });
 
-    for (var c = 0; c < this.res3; c++) {
+    var vertices = [];
+    var normals = [];
 
+    for (var c = 0; c < this.res3; c++) {
       // Sampling the center point
       this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
+      //Sampling the 8 corners 
+      for (var j = 0; j < this.voxels[c].corners.length; j++) {
+        this.voxels[c].corners[j].isovalue = this.sample(this.voxels[c].corners[j].pos);
+      }
 
       // Visualizing grid
       if (VISUAL_DEBUG && this.showGrid) {
-        
         // Toggle voxels on or off
         if (this.voxels[c].center.isovalue > this.isolevel) {
           this.voxels[c].show();
@@ -178,9 +225,46 @@ export default class MarchingCubes {
       } else {
         this.voxels[c].center.clearLabel();
       }
+
+      var polyResults = this.voxels[c].polygonize(this.isolevel);
+      polyResults.vertNormals = [];
+      for (var i = 0; i < polyResults.vertPositions.length; i++) {
+        // calculate normals by sampling each vertex of the triangle
+        var v = this.sample(polyResults.vertPositions[i]);
+        
+        var offsetXPt;
+        if (polyResults.vertPositions[i].x > 0) {
+          offsetXPt = new THREE.Vector3(polyResults.vertPositions[i].x + NORMAL_OFFSET, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z); 
+        } else {
+          offsetXPt = new THREE.Vector3(polyResults.vertPositions[i].x - NORMAL_OFFSET, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z); 
+        }
+        var v1 = this.sample(offsetXPt);
+        
+        var offsetYPt;
+        if (polyResults.vertPositions[i].y > 0) {
+          offsetYPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y + NORMAL_OFFSET, polyResults.vertPositions[i].z); 
+        } else {
+          offsetYPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y - NORMAL_OFFSET, polyResults.vertPositions[i].z); 
+        }
+        var v2 = this.sample(offsetYPt);
+        
+        var offsetZPt;
+        if (polyResults.vertPositions[i].z > 0) {
+          offsetZPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z + NORMAL_OFFSET); 
+        } else {
+          offsetZPt = new THREE.Vector3(polyResults.vertPositions[i].x, polyResults.vertPositions[i].y, polyResults.vertPositions[i].z - NORMAL_OFFSET); 
+        }
+
+        var v3 = this.sample(offsetZPt);
+        var sampledPts = new THREE.Vector3(v1, v2, v3);
+        sampledPts.subScalar(v);
+        sampledPts.normalize();
+        vertices.push(polyResults.vertPositions[i]);
+        normals.push(sampledPts);
+      }
     }
 
-    this.updateMesh();
+    this.updateMesh(vertices, normals);
   }
 
   pause() {
@@ -206,11 +290,54 @@ export default class MarchingCubes {
   };
 
   makeMesh() {
-    // @TODO
+    var geom = new THREE.Geometry(); 
+    var v1 = new THREE.Vector3(5,0,0);
+    var v2 = new THREE.Vector3(0,5,0);
+    var v3 = new THREE.Vector3(0,5,5);
+
+    geom.vertices.push(v1);
+    geom.vertices.push(v2);
+    geom.vertices.push(v3);
+
+    geom.faces.push( new THREE.Face3( 0, 1, 2 ) );
+    geom.computeFaceNormals();
+
+    var object = new THREE.Mesh( geom, new THREE.MeshNormalMaterial() );
+    object.name = "mesh";
+    this.scene.add(object);
   }
 
-  updateMesh() {
-    // @TODO
+  updateMesh(vertices, normals) {
+    var obj = this.scene.getObjectByName("mesh");
+    this.scene.remove(obj);
+
+    var f_normals = new Float32Array( normals.length * 3 );
+    var geom = new THREE.Geometry();
+    var normalsCtr = 0; 
+    for (var i = 0; i < vertices.length; i+=3) {
+      geom.vertices.push(vertices[i]);
+      geom.vertices.push(vertices[i+1]);
+      geom.vertices.push(vertices[i+2]);
+      var face = new THREE.Face3( i, i+1, i+2 );
+      geom.faces.push(face);
+      if (this.customShaderOn) {
+        f_normals[i] = normals[normalsCtr].x;
+        f_normals[i+1] = normals[normalsCtr].y;
+        f_normals[i+2] = normals[normalsCtr].z;
+        normalsCtr++;
+      } else {
+        geom.computeFaceNormals();
+      }
+    }
+
+    var bufferGeom = new THREE.BufferGeometry();
+    bufferGeom.fromGeometry(geom);
+    bufferGeom.addAttribute( 'computedNormal', new THREE.BufferAttribute( f_normals, 3 ) );
+    var updatedObj = new THREE.Mesh( bufferGeom, this.material);
+
+    updatedObj.name = "mesh";
+    this.scene.add(updatedObj);
+
   }  
 };
 
@@ -283,6 +410,18 @@ class Voxel {
 
     // Center dot
     this.center = new InspectPoint(new THREE.Vector3(x, y, z), 0, VISUAL_DEBUG); 
+    // bottom 4 dots
+    var bottomLeftBack = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    var bottomLeftFront = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    var bottomRightBack = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    var bottomRightFront = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    
+    // top 4 dots
+    var topLeftBack = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    var topLeftFront = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    var topRightBack = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, VISUAL_DEBUG);
+    var topRightFront = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, VISUAL_DEBUG);
+    this.corners = [bottomLeftBack, bottomRightBack, bottomRightFront, bottomLeftFront, topLeftBack, topRightBack, topRightFront, topLeftFront];
   }
 
   show() {
@@ -309,21 +448,98 @@ class Voxel {
   }
 
   vertexInterpolation(isolevel, posA, posB) {
+    var p1 = posA.pos; 
+    var p2 = posB.pos;
+    var iv1 = posA.isovalue;
+    var iv2 = posB.isovalue;
 
-    // @TODO
-    var lerpPos;
+    if (Math.abs(isolevel - iv1) < 0.00001 || Math.abs(iv1-iv2) < 0.00001) {
+      return p1;
+    }
+    if (Math.abs(isolevel - iv2) < 0.00001) {
+      return p2;
+    }
+
+    var f = (isolevel - iv1)/(iv2 - iv1);
+
+    var lerpPos = new THREE.Vector3();
+    lerpPos.x = p1.x + f * (p2.x - p1.x);
+    lerpPos.y = p1.y + f * (p2.y - p1.y);
+    lerpPos.z = p1.z + f * (p2.z - p1.z);
+
     return lerpPos;
   }
 
   polygonize(isolevel) {
+    var cubeIndex = 0;
+    if (this.corners[0].isovalue < isolevel) cubeIndex |= 1;
+    if (this.corners[1].isovalue < isolevel) cubeIndex |= 2;
+    if (this.corners[2].isovalue < isolevel) cubeIndex |= 4;
+    if (this.corners[3].isovalue < isolevel) cubeIndex |= 8;
+    if (this.corners[4].isovalue < isolevel) cubeIndex |= 16;
+    if (this.corners[5].isovalue < isolevel) cubeIndex |= 32;
+    if (this.corners[6].isovalue < isolevel) cubeIndex |= 64;
+    if (this.corners[7].isovalue < isolevel) cubeIndex |= 128;
 
-    // @TODO
+    var edgeLookup = LUT.EDGE_TABLE[cubeIndex];
+    if (edgeLookup == 0) {
+      return { vertPositions: [], vertNormals: []};
+    } 
+
     var vertexList = [];
     var normalList = [];
 
+    if (edgeLookup & 1) {
+      vertexList[0] = this.vertexInterpolation(isolevel, this.corners[0], this.corners[1]);
+    }
+    if (edgeLookup & 2) {
+      vertexList[1] = this.vertexInterpolation(isolevel, this.corners[1], this.corners[2]);
+    }
+    if (edgeLookup & 4) {
+      vertexList[2] = this.vertexInterpolation(isolevel, this.corners[2], this.corners[3]);
+    }
+    if (edgeLookup & 8) {
+      vertexList[3] = this.vertexInterpolation(isolevel, this.corners[3], this.corners[0]);
+    }
+    if (edgeLookup & 16) {
+      vertexList[4] = this.vertexInterpolation(isolevel, this.corners[4], this.corners[5]);
+    }
+    if (edgeLookup & 32) {
+      vertexList[5] = this.vertexInterpolation(isolevel, this.corners[5], this.corners[6]);
+    }
+    if (edgeLookup & 64) {
+      vertexList[6] = this.vertexInterpolation(isolevel, this.corners[6], this.corners[7]);
+    }
+    if (edgeLookup & 128) {
+      vertexList[7] = this.vertexInterpolation(isolevel, this.corners[7], this.corners[4]);
+    }
+    if (edgeLookup & 256) {
+      vertexList[8] = this.vertexInterpolation(isolevel, this.corners[0], this.corners[4]);
+    }
+    if (edgeLookup & 512) {
+      vertexList[9] = this.vertexInterpolation(isolevel, this.corners[1], this.corners[5]);
+    }
+    if (edgeLookup & 1024) {
+      vertexList[10] = this.vertexInterpolation(isolevel, this.corners[2], this.corners[6]);
+    }
+    if (edgeLookup & 2048) {
+      vertexList[11] = this.vertexInterpolation(isolevel, this.corners[3], this.corners[7]);
+    }
+
+    var finalVertexPositions = []; 
+
+    var i = 0; 
+    var adjustedIndex = cubeIndex*16; 
+    while (LUT.TRI_TABLE[adjustedIndex + i] != -1) {
+      finalVertexPositions[i] = vertexList[LUT.TRI_TABLE[adjustedIndex + i]];
+      finalVertexPositions[i+1] = vertexList[LUT.TRI_TABLE[adjustedIndex + i + 1]];
+      finalVertexPositions[i+2] = vertexList[LUT.TRI_TABLE[adjustedIndex + i + 2]];
+      i+=3;
+    }
+
     return {
-      vertPositions: vertPositions,
-      vertNormals: vertNormals
+      vertPositions: finalVertexPositions,
+      vertNormals: normalList
     };
   };
 }

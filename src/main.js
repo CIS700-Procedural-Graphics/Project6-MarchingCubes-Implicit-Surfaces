@@ -10,9 +10,9 @@ import Framework from './framework'
 import LUT from './marching_cube_LUT.js'
 import MarchingCubes from './marching_cubes.js'
 
-const DEFAULT_VISUAL_DEBUG = true;
+const DEFAULT_VISUAL_DEBUG = false;
 const DEFAULT_ISO_LEVEL = 1.0;
-const DEFAULT_GRID_RES = 4;
+const DEFAULT_GRID_RES = 25;
 const DEFAULT_GRID_WIDTH = 10;
 const DEFAULT_NUM_METABALLS = 10;
 const DEFAULT_MIN_RADIUS = 0.5;
@@ -60,12 +60,14 @@ var App = {
   renderer:         undefined,
 
   // Play/pause control for the simulation
-  isPaused:         false
+  isPaused:         false,
+
+  // toggle custom shader
+  resetWithCustomShader: false
 };
 
 // called after the scene loads
 function onLoad(framework) {
-
   var {scene, camera, renderer, gui, stats} = framework;
   App.scene = scene;
   App.camera = camera;
@@ -82,7 +84,6 @@ function onLoad(framework) {
 
 // called on frame updates
 function onUpdate(framework) {
-
   if (App.marchingCubes) {
     App.marchingCubes.update();
   }
@@ -124,6 +125,11 @@ function setupGUI(gui) {
     }
   });
 
+  gui.add(App, 'resetWithCustomShader').onChange(function(value) {
+    App.customShader = value;
+    App.marchingCubes.init(App);
+  });
+
   gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
     App.config.numMetaballs = value;
     App.marchingCubes.init(App);
@@ -153,7 +159,7 @@ function setupGUI(gui) {
       }
     }
   });
-  debugFolder.open();  
+  debugFolder.close();  
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
