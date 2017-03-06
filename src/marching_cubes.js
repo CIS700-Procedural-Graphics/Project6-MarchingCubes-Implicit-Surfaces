@@ -165,7 +165,7 @@ export default class MarchingCubes {
 
     // This should move the metaballs
     this.balls.forEach(function(ball) {
-      ball.update();
+      ball.update(VISUAL_DEBUG);
     });
 
     for (var c = 0; c < this.res3; c++) {
@@ -260,6 +260,36 @@ class Voxel {
     }
 
     this.makeInspectPoints();
+
+    // Setup vertexList, sampleList, edgeList
+    var w = this.gridCellWidth / 2;
+    // Back
+    var v0 = new THREE.Vector3(this.pos.x - w, this.pos.y - w, this.pos.z - w);
+    var v1 = new THREE.Vector3(this.pos.x + w, this.pos.y - w, this.pos.z - w);
+    var v5 = new THREE.Vector3(this.pos.x + w, this.pos.y + w, this.pos.z - w);
+    var v4 = new THREE.Vector3(this.pos.x - w, this.pos.y + w, this.pos.z - w);
+    // Front
+    var v3 = new THREE.Vector3(this.pos.x - w, this.pos.y - w, this.pos.z + w);
+    var v2 = new THREE.Vector3(this.pos.x + w, this.pos.y - w, this.pos.z + w);
+    var v6 = new THREE.Vector3(this.pos.x + w, this.pos.y + w, this.pos.z + w);
+    var v7 = new THREE.Vector3(this.pos.x - w, this.pos.y + w, this.pos.z + w);
+
+    this.vertexList = [v0, v1, v2, v3, v4, v5, v6, v7];
+    this.sampleList = [0, 0, 0, 0, 0, 0, 0, 0];
+
+    var e0 = [0, 1];
+    var e1 = [1, 2];
+    var e2 = [2, 3];
+    var e3 = [3, 0];
+    var e4 = [4, 5];
+    var e5 = [5, 6];
+    var e6 = [6, 7];
+    var e7 = [7, 4];
+    var e8 = [0, 4];
+    var e9 = [1, 5];
+    var e10 = [2, 6];
+    var e11 = [3, 7];
+    this.edgeList = [e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11];
   }
 
   makeMesh() {
@@ -301,36 +331,6 @@ class Voxel {
     geo = new THREE.BoxBufferGeometry(this.gridCellWidth, this.gridCellWidth, this.gridCellWidth);
     this.mesh = new THREE.Mesh( geo, LAMBERT_GREEN );
     this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
-
-    // Setup vertexList, sampleList, edgeList
-    var w = this.gridCellWidth / 2;
-    // Back
-    var v0 = new THREE.Vector3(this.pos.x - w, this.pos.y - w, this.pos.z - w);
-    var v1 = new THREE.Vector3(this.pos.x + w, this.pos.y - w, this.pos.z - w);
-    var v5 = new THREE.Vector3(this.pos.x + w, this.pos.y + w, this.pos.z - w);
-    var v4 = new THREE.Vector3(this.pos.x - w, this.pos.y + w, this.pos.z - w);
-    // Front
-    var v3 = new THREE.Vector3(this.pos.x - w, this.pos.y - w, this.pos.z + w);
-    var v2 = new THREE.Vector3(this.pos.x + w, this.pos.y - w, this.pos.z + w);
-    var v6 = new THREE.Vector3(this.pos.x + w, this.pos.y + w, this.pos.z + w);
-    var v7 = new THREE.Vector3(this.pos.x - w, this.pos.y + w, this.pos.z + w);
-
-    this.vertexList = [v0, v1, v2, v3, v4, v5, v6, v7];
-    this.sampleList = [0, 0, 0, 0, 0, 0, 0, 0];
-
-    var e0 = [0, 1];
-    var e1 = [1, 2];
-    var e2 = [2, 3];
-    var e3 = [3, 0];
-    var e4 = [4, 5];
-    var e5 = [5, 6];
-    var e6 = [6, 7];
-    var e7 = [7, 4];
-    var e8 = [0, 4];
-    var e9 = [1, 5];
-    var e10 = [2, 6];
-    var e11 = [3, 7];
-    this.edgeList = [e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11];
   }
 
   makeInspectPoints() {
@@ -374,7 +374,6 @@ class Voxel {
     // Positions
     var p0 = this.vertexList[vertA];
     var p1 = this.vertexList[vertB];
-    var diff = new THREE.Vector3(p1.x - p0.x, p1.y - p0.y, p1.z - p0.z);
 
     if (Math.abs(isolevel - s0) < 0.00001) {
       return p0;
@@ -385,15 +384,13 @@ class Voxel {
     if (Math.abs(s0 - s1) < 0.00001) {
       return p0;
     }
-    var lerpPos = new THREE.Vector3(
-        p0.x + (isolevel - s0) * diff.x / (s1 - s0),
-        p0.y + (isolevel - s0) * diff.y / (s1 - s0),
-        p0.z + (isolevel - s0) * diff.z / (s1 - s0));
 
-  var lerpPos = new THREE.Vector3(
-      (p0.x + p1.x) / 2,
-      (p0.y + p1.y) / 2,
-      (p0.z + p1.z) / 2);
+    var mu = (isolevel - s0) / (s1 - s0);
+
+    var lerpPos = new THREE.Vector3(
+        p0.x + mu * (p1.x - p0.x),
+        p0.y + mu * (p1.y - p0.y),
+        p0.z + mu * (p1.z - p0.z));
 
     return lerpPos;
   }
@@ -403,7 +400,7 @@ class Voxel {
     var vertNormals = [];
 
     var cubeindex = 0; // 8-bit number (which verts are intersected)
-    for (var i = 0; i < 8; i++) {
+    for (var i = 7; i >= 0; i--) {
       var samp = this.sampleList[i];
       cubeindex = (cubeindex << 1) | (samp > isolevel);
     }
@@ -416,6 +413,7 @@ class Voxel {
         var v0 = this.edgeList[i][0];
         var v1 = this.edgeList[i][1];
         var pos = this.vertexInterpolation(isolevel, v0, v1);
+
         interpPositions[i] = pos;
       }
     }
@@ -425,7 +423,7 @@ class Voxel {
       tris.push(LUT.TRI_TABLE[i]);
     }
 
-    for (var i = 0; i < 16; i+=3) {
+    for (var i = 0; i < 16; i += 3) {
       if (tris[i] != -1) {
         vertPositions.push(interpPositions[tris[i]]);
         vertPositions.push(interpPositions[tris[i + 1]]);

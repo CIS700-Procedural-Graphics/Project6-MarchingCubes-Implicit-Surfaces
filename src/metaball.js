@@ -41,7 +41,7 @@ export default class Metaball {
     }
   };
 
-  update() {
+  update(visualDebug) {
     // TODO: Move metaball position based on its velocity
     // Reverse the velocity whenever the metaball goes out of bounds
     var thres = this.radius;
@@ -52,7 +52,12 @@ export default class Metaball {
       this.vel.multiplyScalar(-1);
     }
     this.pos.set(pos.x + this.vel.x, pos.y + this.vel.y, pos.z + this.vel.z);
-    this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
-    this.mesh.geometry.verticesNeedUpdate = true;
+    if (visualDebug) {
+      if (!this.mesh) {
+        this.makeMesh();
+      }
+      this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
+      this.mesh.geometry.verticesNeedUpdate = true;
+    }
   }
 }
