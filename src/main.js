@@ -13,7 +13,7 @@ import MarchingCubes from './marching_cubes.js'
 const DEFAULT_VISUAL_DEBUG = false;
 const DEFAULT_ISO_LEVEL = 1.0;
 const DEFAULT_GRID_RES = 40;
-const DEFAULT_GRID_WIDTH = 10;
+const DEFAULT_GRID_WIDTH = 12;
 const DEFAULT_NUM_METABALLS = 10;
 const DEFAULT_MIN_RADIUS = 0.5;
 const DEFAULT_MAX_RADIUS = 1;
