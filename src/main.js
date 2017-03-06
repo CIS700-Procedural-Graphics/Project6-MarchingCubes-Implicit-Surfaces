@@ -20,11 +20,11 @@ const DEFAULT_MAX_RADIUS = 1;
 const DEFAULT_MAX_SPEED = 0.01;
 
 var App = {
-  // 
+  //
   marchingCubes:             undefined,
   config: {
-    // Global control of all visual debugging. 
-    // This can be set to false to disallow any memory allocation of visual debugging components. 
+    // Global control of all visual debugging.
+    // This can be set to false to disallow any memory allocation of visual debugging components.
     // **Note**: If your application experiences performance drop, disable this flag.
     visualDebug:    DEFAULT_VISUAL_DEBUG,
 
@@ -113,7 +113,7 @@ function setupScene(scene) {
 function setupGUI(gui) {
 
   // more information here: https://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
-  
+
   // --- CONFIG ---
   gui.add(App, 'isPaused').onChange(function(value) {
     App.isPaused = value;
@@ -153,7 +153,7 @@ function setupGUI(gui) {
       }
     }
   });
-  debugFolder.open();  
+  debugFolder.open();
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate

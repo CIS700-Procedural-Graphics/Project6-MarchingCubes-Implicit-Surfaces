@@ -52,6 +52,7 @@ export default class Metaball {
       this.vel.multiplyScalar(-1);
     }
     this.pos.set(pos.x + this.vel.x, pos.y + this.vel.y, pos.z + this.vel.z);
+    this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
     this.mesh.geometry.verticesNeedUpdate = true;
   }
 }

@@ -145,15 +145,15 @@ export default class MarchingCubes {
   // Please follow the resources given in the write-up for details.
   sample(point) {
     // @TODO
-    // var isovalue = 1.1;
     var isovalue = 0;
     for (var i = 0; i < this.numMetaballs; i++) {
       var ball = this.balls[i];
       var dx = Math.pow(ball.pos.x - point.x, 2);
       var dy = Math.pow(ball.pos.y - point.y, 2);
-      var dz = Math.pow(ball.pos.z - point.x, 2);
+      var dz = Math.pow(ball.pos.z - point.z, 2);
       isovalue += ball.radius2 / (dx + dy + dz);
     }
+
     return isovalue;
   }
 
@@ -218,14 +218,28 @@ export default class MarchingCubes {
 
   makeMesh() {
     // @TODO
+    var geo = new THREE.BufferGeometry();
+    var verts = [];
+    for (var i = 0; i < this.res3; i++) {
+      var obj = this.voxels[i].polygonize(this.isolevel);
+      for (var v of obj.vertPositions) {
+        verts.push(v.x);
+        verts.push(v.y);
+        verts.push(v.z);
+      }
+    }
 
+    var posBuffer = Float32Array.from(verts);
+    geo.addAttribute('position', new THREE.BufferAttribute(posBuffer, 3));
+    this.mesh = new THREE.Mesh(geo, LAMBERT_WHITE);
+    this.scene.add(this.mesh);
   }
 
   updateMesh() {
     // @TODO
-    for (var i = 0; i < this.res3; i++) {
-      this.voxels[i].polygonize(1);
-    }
+    this.scene.remove(this.mesh);
+    this.makeMesh()
+    this.scene.add(this.mesh);
   }
 };
 
@@ -288,13 +302,12 @@ class Voxel {
     this.mesh = new THREE.Mesh( geo, LAMBERT_GREEN );
     this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
 
-
     // Setup vertexList, sampleList, edgeList
     var w = this.gridCellWidth / 2;
     // Back
     var v0 = new THREE.Vector3(this.pos.x - w, this.pos.y - w, this.pos.z - w);
     var v1 = new THREE.Vector3(this.pos.x + w, this.pos.y - w, this.pos.z - w);
-    var v5 = new THREE.Vector3(this.pos.x + w, this.pos.y + w, this.pos.z = w);
+    var v5 = new THREE.Vector3(this.pos.x + w, this.pos.y + w, this.pos.z - w);
     var v4 = new THREE.Vector3(this.pos.x - w, this.pos.y + w, this.pos.z - w);
     // Front
     var v3 = new THREE.Vector3(this.pos.x - w, this.pos.y - w, this.pos.z + w);
@@ -355,7 +368,6 @@ class Voxel {
   }
 
   vertexInterpolation(isolevel, vertA, vertB) {
-    // @TODO
     // Sample values
     var s0 = this.sampleList[vertA];
     var s1 = this.sampleList[vertB];
@@ -364,21 +376,33 @@ class Voxel {
     var p1 = this.vertexList[vertB];
     var diff = new THREE.Vector3(p1.x - p0.x, p1.y - p0.y, p1.z - p0.z);
 
+    if (Math.abs(isolevel - s0) < 0.00001) {
+      return p0;
+    }
+    if (Math.abs(isolevel - s1) < 0.00001) {
+      return p1;
+    }
+    if (Math.abs(s0 - s1) < 0.00001) {
+      return p0;
+    }
     var lerpPos = new THREE.Vector3(
-        p0.x + (isolevel - s0) * diff.x/ (s1 - s0),
-        p0.y + (isolevel - s0) * diff.y/ (s1 - s0),
-        p0.z + (isolevel - s0) * diff.z/ (s1 - s0));
+        p0.x + (isolevel - s0) * diff.x / (s1 - s0),
+        p0.y + (isolevel - s0) * diff.y / (s1 - s0),
+        p0.z + (isolevel - s0) * diff.z / (s1 - s0));
+
+  var lerpPos = new THREE.Vector3(
+      (p0.x + p1.x) / 2,
+      (p0.y + p1.y) / 2,
+      (p0.z + p1.z) / 2);
 
     return lerpPos;
   }
 
   polygonize(isolevel) {
-
-    // @TODO
     var vertPositions = [];
     var vertNormals = [];
 
-    var cubeindex = 0; // 8-bit number - which verts are intersected
+    var cubeindex = 0; // 8-bit number (which verts are intersected)
     for (var i = 0; i < 8; i++) {
       var samp = this.sampleList[i];
       cubeindex = (cubeindex << 1) | (samp > isolevel);
@@ -401,13 +425,15 @@ class Voxel {
       tris.push(LUT.TRI_TABLE[i]);
     }
 
-    for (var i = 0; i < 13; i+=3) {
+    for (var i = 0; i < 16; i+=3) {
       if (tris[i] != -1) {
         vertPositions.push(interpPositions[tris[i]]);
         vertPositions.push(interpPositions[tris[i + 1]]);
         vertPositions.push(interpPositions[tris[i + 2]]);
       }
     }
+
+    //TODO: compute nornmals
 
     return {
       vertPositions: vertPositions,
