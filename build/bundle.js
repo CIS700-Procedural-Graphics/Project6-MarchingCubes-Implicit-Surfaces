@@ -70,12 +70,12 @@
 	
 	var DEFAULT_VISUAL_DEBUG = false;
 	var DEFAULT_ISO_LEVEL = 1.0;
-	var DEFAULT_GRID_RES = 20;
+	var DEFAULT_GRID_RES = 40;
 	var DEFAULT_GRID_WIDTH = 10;
 	var DEFAULT_NUM_METABALLS = 10;
 	var DEFAULT_MIN_RADIUS = 0.5;
 	var DEFAULT_MAX_RADIUS = 1;
-	var DEFAULT_MAX_SPEED = 0.01;
+	var DEFAULT_MAX_SPEED = 0.07;
 	
 	var App = {
 	  //
@@ -134,7 +134,7 @@
 	  App.renderer = renderer;
 	
 	  renderer.setClearColor(0xbfd1e5);
-	  scene.add(new THREE.AxisHelper(20));
+	  // scene.add(new THREE.AxisHelper(20));
 	
 	  setupCamera(App.camera);
 	  setupLights(App.scene);
@@ -48265,8 +48265,6 @@
 	
 	      var x, y, z, vx, vy, vz, radius, pos, vel;
 	      var matLambertWhite = LAMBERT_WHITE;
-	      var maxRadiusTRippled = this.maxRadius * 3;
-	      var maxRadiusDoubled = this.maxRadius * 2;
 	
 	      // Randomly generate metaballs with different sizes and velocities
 	      for (var i = 0; i < this.numMetaballs; i++) {
@@ -48692,7 +48690,7 @@
 	    value: function update(visualDebug) {
 	      // TODO: Move metaball position based on its velocity
 	      // Reverse the velocity whenever the metaball goes out of bounds
-	      var thres = this.radius;
+	      var thres = this.radius + this.gridWidth * 0.1;
 	      var max = this.gridWidth - thres;
 	      var pos = this.pos;
 	      if (pos.x < thres || pos.y < thres || pos.z < thres || pos.x > max || pos.y > max || pos.z > max) {
