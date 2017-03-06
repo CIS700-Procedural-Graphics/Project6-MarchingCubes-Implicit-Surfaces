@@ -114,8 +114,6 @@ export default class MarchingCubes {
 
     var x, y, z, vx, vy, vz, radius, pos, vel;
     var matLambertWhite = LAMBERT_WHITE;
-    var maxRadiusTRippled = this.maxRadius * 3;
-    var maxRadiusDoubled = this.maxRadius * 2;
 
     // Randomly generate metaballs with different sizes and velocities
     for (var i = 0; i < this.numMetaballs; i++) {

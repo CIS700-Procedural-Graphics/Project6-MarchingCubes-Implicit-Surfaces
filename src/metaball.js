@@ -44,7 +44,7 @@ export default class Metaball {
   update(visualDebug) {
     // TODO: Move metaball position based on its velocity
     // Reverse the velocity whenever the metaball goes out of bounds
-    var thres = this.radius;
+    var thres = this.radius + this.gridWidth * 0.1;
     var max = this.gridWidth - thres;
     var pos = this.pos;
     if (pos.x < thres || pos.y < thres || pos.z < thres ||

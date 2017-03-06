@@ -12,12 +12,12 @@ import MarchingCubes from './marching_cubes.js'
 
 const DEFAULT_VISUAL_DEBUG = false;
 const DEFAULT_ISO_LEVEL = 1.0;
-const DEFAULT_GRID_RES = 20;
+const DEFAULT_GRID_RES = 40;
 const DEFAULT_GRID_WIDTH = 10;
 const DEFAULT_NUM_METABALLS = 10;
 const DEFAULT_MIN_RADIUS = 0.5;
 const DEFAULT_MAX_RADIUS = 1;
-const DEFAULT_MAX_SPEED = 0.01;
+const DEFAULT_MAX_SPEED = 0.07;
 
 var App = {
   //
@@ -72,7 +72,7 @@ function onLoad(framework) {
   App.renderer = renderer;
 
   renderer.setClearColor( 0xbfd1e5 );
-  scene.add(new THREE.AxisHelper(20));
+  // scene.add(new THREE.AxisHelper(20));
 
   setupCamera(App.camera);
   setupLights(App.scene);
