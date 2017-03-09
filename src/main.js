@@ -1,6 +1,6 @@
 require('file-loader?name=[name].[ext]!../index.html');
 
-// Credit:
+// Resources:
 // http://jamie-wong.com/2014/08/19/metaballs-and-marching-squares/
 // http://paulbourke.net/geometry/polygonise/
 
@@ -52,8 +52,6 @@ var App = {
 
     // Maximum speed of a metaball
     maxSpeed:       DEFAULT_MAX_SPEED
-
-
   },
 
   // Scene's framework objects
@@ -61,8 +59,8 @@ var App = {
   scene:            undefined,
   renderer:         undefined,
 
+  //Position of the Light in the scene; for iridescent shader
   lightPos: new THREE.Vector3(1.0, 10.0, 2.0),
-  // camPos: new THREE.Color(5.0, 5.0, 30.0)
 
   // Play/pause control for the simulation
   isPaused:         false
@@ -135,6 +133,8 @@ function setupGUI(gui)
   });
 
   // --- DEBUG ---
+  //uncomment for debugging purposes
+  /*
   var debugFolder = gui.addFolder('Debug');
   debugFolder.add(App.marchingCubes, 'showGrid').onChange(function(value) {
     App.marchingCubes.showGrid = value;
@@ -158,6 +158,7 @@ function setupGUI(gui)
     }
   });
   debugFolder.open();
+  */
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate

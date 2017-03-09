@@ -4,6 +4,10 @@ var SPHERE_GEO = new THREE.SphereBufferGeometry(1, 32, 32);
 var LAMBERT_WHITE = new THREE.MeshLambertMaterial( { color: 0x9EB3D8, transparent: true, opacity: 0.5 });
 var offset = 0.1;
 
+//This class creates the spheres that move around in the voxelised
+// grid and are emanation points for the field values.
+//The field values when summed together give you iso-surface.
+
 export default class Metaball {
   constructor(pos, radius, vel, gridWidth, visualDebug) {
     this.init(pos, radius, vel, gridWidth, visualDebug);
@@ -25,6 +29,7 @@ export default class Metaball {
   }
 
   makeMesh() {
+    //create mesh for metaball
     this.mesh = new THREE.Mesh(SPHERE_GEO, LAMBERT_WHITE);
     this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
     this.mesh.scale.set(this.radius, this.radius, this.radius);
@@ -44,6 +49,9 @@ export default class Metaball {
 
   update()
   {
+    //move metaballs inside voxel grid;
+    // changing the direction of velocity when the metaball comes
+    // close enough to the boundary of the voxel grid
       if((this.pos.x >= this.gridWidth - offset) || (this.pos.x <= offset))
       {
         this.vel.x = -this.vel.x;
