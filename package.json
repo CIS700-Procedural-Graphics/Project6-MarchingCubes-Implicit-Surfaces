@@ -1,7 +1,7 @@
 {
   "scripts": {
     "start": "webpack-dev-server --hot --inline",
-    "deploy": "npm run build && node deploy.js",
+    "deploy": "node deploy.js",
     "build": "webpack"
   },
   "dependencies": {
