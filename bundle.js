@@ -48171,7 +48171,6 @@
 	
 	var balls = [];
 	var numMetaballs;
-	var count = 0.0;
 	
 	var MarchingCubes = function () {
 	  function MarchingCubes(App) {

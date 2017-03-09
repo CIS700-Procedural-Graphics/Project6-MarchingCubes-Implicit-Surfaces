@@ -311,7 +311,7 @@ export default class MarchingCubes
       }
     }
 
-    // var geo = this.mesh.geometry;
+    var geo = this.mesh.geometry;
     this.mesh.geometry.vertices = this.vertexPos;
 
     for(var i=0; i< this.vertexPos.length ;i=i+3)
