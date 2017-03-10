@@ -62,7 +62,7 @@
 	
 	__webpack_require__(14);
 	
-	// Credit:
+	// Resources:
 	// http://jamie-wong.com/2014/08/19/metaballs-and-marching-squares/
 	// http://paulbourke.net/geometry/polygonise/
 	
@@ -110,7 +110,6 @@
 	
 	    // Maximum speed of a metaball
 	    maxSpeed: DEFAULT_MAX_SPEED
-	
 	  },
 	
 	  // Scene's framework objects
@@ -118,8 +117,8 @@
 	  scene: undefined,
 	  renderer: undefined,
 	
+	  //Position of the Light in the scene; for iridescent shader
 	  lightPos: new THREE.Vector3(1.0, 10.0, 2.0),
-	  // camPos: new THREE.Color(5.0, 5.0, 30.0)
 	
 	  // Play/pause control for the simulation
 	  isPaused: false
@@ -191,8 +190,10 @@
 	  });
 	
 	  // --- DEBUG ---
+	  //uncomment for debugging purposes
+	  /*
 	  var debugFolder = gui.addFolder('Debug');
-	  debugFolder.add(App.marchingCubes, 'showGrid').onChange(function (value) {
+	  debugFolder.add(App.marchingCubes, 'showGrid').onChange(function(value) {
 	    App.marchingCubes.showGrid = value;
 	    if (value) {
 	      App.marchingCubes.show();
@@ -200,8 +201,7 @@
 	      App.marchingCubes.hide();
 	    }
 	  });
-	
-	  debugFolder.add(App.marchingCubes, 'showSpheres').onChange(function (value) {
+	    debugFolder.add(App.marchingCubes, 'showSpheres').onChange(function(value) {
 	    App.marchingCubes.showSpheres = value;
 	    if (value) {
 	      for (var i = 0; i < App.config.numMetaballs; i++) {
@@ -214,6 +214,7 @@
 	    }
 	  });
 	  debugFolder.open();
+	  */
 	}
 	
 	// when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
@@ -48104,8 +48105,14 @@
 	// http://local.wasp.uwa.edu.au/~pbourke/geometry/polygonise/
 	// who in turn got them from Cory Gene Bloyd.
 	
+	//EDGE_TABLE stores all possible combinations for the edges
+	//intersected by the isosurface as 12bit numbers
 	var EDGE_TABLE = new Int32Array([0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00, 0x190, 0x99, 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c, 0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90, 0x230, 0x339, 0x33, 0x13a, 0x636, 0x73f, 0x435, 0x53c, 0xa3c, 0xb35, 0x83f, 0x936, 0xe3a, 0xf33, 0xc39, 0xd30, 0x3a0, 0x2a9, 0x1a3, 0xaa, 0x7a6, 0x6af, 0x5a5, 0x4ac, 0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0, 0x460, 0x569, 0x663, 0x76a, 0x66, 0x16f, 0x265, 0x36c, 0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a, 0x963, 0xa69, 0xb60, 0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff, 0x3f5, 0x2fc, 0xdfc, 0xcf5, 0xfff, 0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0, 0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55, 0x15c, 0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950, 0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf, 0x1c5, 0xcc, 0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0, 0x8c0, 0x9c9, 0xac3, 0xbca, 0xcc6, 0xdcf, 0xec5, 0xfcc, 0xcc, 0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9, 0x7c0, 0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c, 0x15c, 0x55, 0x35f, 0x256, 0x55a, 0x453, 0x759, 0x650, 0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6, 0xfff, 0xcf5, 0xdfc, 0x2fc, 0x3f5, 0xff, 0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0, 0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 0xd65, 0xc6c, 0x36c, 0x265, 0x16f, 0x66, 0x76a, 0x663, 0x569, 0x460, 0xca0, 0xda9, 0xea3, 0xfaa, 0x8a6, 0x9af, 0xaa5, 0xbac, 0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa, 0x1a3, 0x2a9, 0x3a0, 0xd30, 0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c, 0x53c, 0x435, 0x73f, 0x636, 0x13a, 0x33, 0x339, 0x230, 0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c, 0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x99, 0x190, 0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c, 0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0]);
 	
+	//TRI_TABLE stores indices that determine the which edges the triangle vertices lie on;
+	// So for every triangle there are a set of 3 indices;
+	//every voxel can contain 0-5 triangles
+	// every 16th element is -1, which is used as a indicator telling us that there are no more triangles
 	var TRI_TABLE = new Int32Array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 8, 3, 9, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 8, 3, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 2, 10, 0, 2, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, 8, 3, 2, 10, 8, 10, 9, 8, -1, -1, -1, -1, -1, -1, -1, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 11, 2, 8, 11, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 9, 0, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 11, 2, 1, 9, 11, 9, 8, 11, -1, -1, -1, -1, -1, -1, -1, 3, 10, 1, 11, 10, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 10, 1, 0, 8, 10, 8, 11, 10, -1, -1, -1, -1, -1, -1, -1, 3, 9, 0, 3, 11, 9, 11, 10, 9, -1, -1, -1, -1, -1, -1, -1, 9, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 3, 0, 7, 3, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 1, 9, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 1, 9, 4, 7, 1, 7, 3, 1, -1, -1, -1, -1, -1, -1, -1, 1, 2, 10, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 3, 4, 7, 3, 0, 4, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, 9, 2, 10, 9, 0, 2, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, 2, 10, 9, 2, 9, 7, 2, 7, 3, 7, 9, 4, -1, -1, -1, -1, 8, 4, 7, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 11, 4, 7, 11, 2, 4, 2, 0, 4, -1, -1, -1, -1, -1, -1, -1, 9, 0, 1, 8, 4, 7, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, 4, 7, 11, 9, 4, 11, 9, 11, 2, 9, 2, 1, -1, -1, -1, -1, 3, 10, 1, 3, 11, 10, 7, 8, 4, -1, -1, -1, -1, -1, -1, -1, 1, 11, 10, 1, 4, 11, 1, 0, 4, 7, 11, 4, -1, -1, -1, -1, 4, 7, 8, 9, 0, 11, 9, 11, 10, 11, 0, 3, -1, -1, -1, -1, 4, 7, 11, 4, 11, 9, 9, 11, 10, -1, -1, -1, -1, -1, -1, -1, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 5, 4, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 5, 4, 1, 5, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, 5, 4, 8, 3, 5, 3, 1, 5, -1, -1, -1, -1, -1, -1, -1, 1, 2, 10, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 3, 0, 8, 1, 2, 10, 4, 9, 5, -1, -1, -1, -1, -1, -1, -1, 5, 2, 10, 5, 4, 2, 4, 0, 2, -1, -1, -1, -1, -1, -1, -1, 2, 10, 5, 3, 2, 5, 3, 5, 4, 3, 4, 8, -1, -1, -1, -1, 9, 5, 4, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 11, 2, 0, 8, 11, 4, 9, 5, -1, -1, -1, -1, -1, -1, -1, 0, 5, 4, 0, 1, 5, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, 2, 1, 5, 2, 5, 8, 2, 8, 11, 4, 8, 5, -1, -1, -1, -1, 10, 3, 11, 10, 1, 3, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, 4, 9, 5, 0, 8, 1, 8, 10, 1, 8, 11, 10, -1, -1, -1, -1, 5, 4, 0, 5, 0, 11, 5, 11, 10, 11, 0, 3, -1, -1, -1, -1, 5, 4, 8, 5, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1, 9, 7, 8, 5, 7, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 3, 0, 9, 5, 3, 5, 7, 3, -1, -1, -1, -1, -1, -1, -1, 0, 7, 8, 0, 1, 7, 1, 5, 7, -1, -1, -1, -1, -1, -1, -1, 1, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 7, 8, 9, 5, 7, 10, 1, 2, -1, -1, -1, -1, -1, -1, -1, 10, 1, 2, 9, 5, 0, 5, 3, 0, 5, 7, 3, -1, -1, -1, -1, 8, 0, 2, 8, 2, 5, 8, 5, 7, 10, 5, 2, -1, -1, -1, -1, 2, 10, 5, 2, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1, 7, 9, 5, 7, 8, 9, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, 9, 5, 7, 9, 7, 2, 9, 2, 0, 2, 7, 11, -1, -1, -1, -1, 2, 3, 11, 0, 1, 8, 1, 7, 8, 1, 5, 7, -1, -1, -1, -1, 11, 2, 1, 11, 1, 7, 7, 1, 5, -1, -1, -1, -1, -1, -1, -1, 9, 5, 8, 8, 5, 7, 10, 1, 3, 10, 3, 11, -1, -1, -1, -1, 5, 7, 0, 5, 0, 9, 7, 11, 0, 1, 0, 10, 11, 10, 0, -1, 11, 10, 0, 11, 0, 3, 10, 5, 0, 8, 0, 7, 5, 7, 0, -1, 11, 10, 5, 7, 11, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 8, 3, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 0, 1, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 8, 3, 1, 9, 8, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, 1, 6, 5, 2, 6, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 6, 5, 1, 2, 6, 3, 0, 8, -1, -1, -1, -1, -1, -1, -1, 9, 6, 5, 9, 0, 6, 0, 2, 6, -1, -1, -1, -1, -1, -1, -1, 5, 9, 8, 5, 8, 2, 5, 2, 6, 3, 2, 8, -1, -1, -1, -1, 2, 3, 11, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 11, 0, 8, 11, 2, 0, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, 0, 1, 9, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, 5, 10, 6, 1, 9, 2, 9, 11, 2, 9, 8, 11, -1, -1, -1, -1, 6, 3, 11, 6, 5, 3, 5, 1, 3, -1, -1, -1, -1, -1, -1, -1, 0, 8, 11, 0, 11, 5, 0, 5, 1, 5, 11, 6, -1, -1, -1, -1, 3, 11, 6, 0, 3, 6, 0, 6, 5, 0, 5, 9, -1, -1, -1, -1, 6, 5, 9, 6, 9, 11, 11, 9, 8, -1, -1, -1, -1, -1, -1, -1, 5, 10, 6, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 3, 0, 4, 7, 3, 6, 5, 10, -1, -1, -1, -1, -1, -1, -1, 1, 9, 0, 5, 10, 6, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, 10, 6, 5, 1, 9, 7, 1, 7, 3, 7, 9, 4, -1, -1, -1, -1, 6, 1, 2, 6, 5, 1, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, 1, 2, 5, 5, 2, 6, 3, 0, 4, 3, 4, 7, -1, -1, -1, -1, 8, 4, 7, 9, 0, 5, 0, 6, 5, 0, 2, 6, -1, -1, -1, -1, 7, 3, 9, 7, 9, 4, 3, 2, 9, 5, 9, 6, 2, 6, 9, -1, 3, 11, 2, 7, 8, 4, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, 5, 10, 6, 4, 7, 2, 4, 2, 0, 2, 7, 11, -1, -1, -1, -1, 0, 1, 9, 4, 7, 8, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1, 9, 2, 1, 9, 11, 2, 9, 4, 11, 7, 11, 4, 5, 10, 6, -1, 8, 4, 7, 3, 11, 5, 3, 5, 1, 5, 11, 6, -1, -1, -1, -1, 5, 1, 11, 5, 11, 6, 1, 0, 11, 7, 11, 4, 0, 4, 11, -1, 0, 5, 9, 0, 6, 5, 0, 3, 6, 11, 6, 3, 8, 4, 7, -1, 6, 5, 9, 6, 9, 11, 4, 7, 9, 7, 11, 9, -1, -1, -1, -1, 10, 4, 9, 6, 4, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 10, 6, 4, 9, 10, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, 10, 0, 1, 10, 6, 0, 6, 4, 0, -1, -1, -1, -1, -1, -1, -1, 8, 3, 1, 8, 1, 6, 8, 6, 4, 6, 1, 10, -1, -1, -1, -1, 1, 4, 9, 1, 2, 4, 2, 6, 4, -1, -1, -1, -1, -1, -1, -1, 3, 0, 8, 1, 2, 9, 2, 4, 9, 2, 6, 4, -1, -1, -1, -1, 0, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, 3, 2, 8, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1, 10, 4, 9, 10, 6, 4, 11, 2, 3, -1, -1, -1, -1, -1, -1, -1, 0, 8, 2, 2, 8, 11, 4, 9, 10, 4, 10, 6, -1, -1, -1, -1, 3, 11, 2, 0, 1, 6, 0, 6, 4, 6, 1, 10, -1, -1, -1, -1, 6, 4, 1, 6, 1, 10, 4, 8, 1, 2, 1, 11, 8, 11, 1, -1, 9, 6, 4, 9, 3, 6, 9, 1, 3, 11, 6, 3, -1, -1, -1, -1, 8, 11, 1, 8, 1, 0, 11, 6, 1, 9, 1, 4, 6, 4, 1, -1, 3, 11, 6, 3, 6, 0, 0, 6, 4, -1, -1, -1, -1, -1, -1, -1, 6, 4, 8, 11, 6, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 7, 10, 6, 7, 8, 10, 8, 9, 10, -1, -1, -1, -1, -1, -1, -1, 0, 7, 3, 0, 10, 7, 0, 9, 10, 6, 7, 10, -1, -1, -1, -1, 10, 6, 7, 1, 10, 7, 1, 7, 8, 1, 8, 0, -1, -1, -1, -1, 10, 6, 7, 10, 7, 1, 1, 7, 3, -1, -1, -1, -1, -1, -1, -1, 1, 2, 6, 1, 6, 8, 1, 8, 9, 8, 6, 7, -1, -1, -1, -1, 2, 6, 9, 2, 9, 1, 6, 7, 9, 0, 9, 3, 7, 3, 9, -1, 7, 8, 0, 7, 0, 6, 6, 0, 2, -1, -1, -1, -1, -1, -1, -1, 7, 3, 2, 6, 7, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, 3, 11, 10, 6, 8, 10, 8, 9, 8, 6, 7, -1, -1, -1, -1, 2, 0, 7, 2, 7, 11, 0, 9, 7, 6, 7, 10, 9, 10, 7, -1, 1, 8, 0, 1, 7, 8, 1, 10, 7, 6, 7, 10, 2, 3, 11, -1, 11, 2, 1, 11, 1, 7, 10, 6, 1, 6, 7, 1, -1, -1, -1, -1, 8, 9, 6, 8, 6, 7, 9, 1, 6, 11, 6, 3, 1, 3, 6, -1, 0, 9, 1, 11, 6, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 7, 8, 0, 7, 0, 6, 3, 11, 0, 11, 6, 0, -1, -1, -1, -1, 7, 11, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 3, 0, 8, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 1, 9, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, 1, 9, 8, 3, 1, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, 10, 1, 2, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 2, 10, 3, 0, 8, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1, 2, 9, 0, 2, 10, 9, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1, 6, 11, 7, 2, 10, 3, 10, 8, 3, 10, 9, 8, -1, -1, -1, -1, 7, 2, 3, 6, 2, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 7, 0, 8, 7, 6, 0, 6, 2, 0, -1, -1, -1, -1, -1, -1, -1, 2, 7, 6, 2, 3, 7, 0, 1, 9, -1, -1, -1, -1, -1, -1, -1, 1, 6, 2, 1, 8, 6, 1, 9, 8, 8, 7, 6, -1, -1, -1, -1, 10, 7, 6, 10, 1, 7, 1, 3, 7, -1, -1, -1, -1, -1, -1, -1, 10, 7, 6, 1, 7, 10, 1, 8, 7, 1, 0, 8, -1, -1, -1, -1, 0, 3, 7, 0, 7, 10, 0, 10, 9, 6, 10, 7, -1, -1, -1, -1, 7, 6, 10, 7, 10, 8, 8, 10, 9, -1, -1, -1, -1, -1, -1, -1, 6, 8, 4, 11, 8, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 3, 6, 11, 3, 0, 6, 0, 4, 6, -1, -1, -1, -1, -1, -1, -1, 8, 6, 11, 8, 4, 6, 9, 0, 1, -1, -1, -1, -1, -1, -1, -1, 9, 4, 6, 9, 6, 3, 9, 3, 1, 11, 3, 6, -1, -1, -1, -1, 6, 8, 4, 6, 11, 8, 2, 10, 1, -1, -1, -1, -1, -1, -1, -1, 1, 2, 10, 3, 0, 11, 0, 6, 11, 0, 4, 6, -1, -1, -1, -1, 4, 11, 8, 4, 6, 11, 0, 2, 9, 2, 10, 9, -1, -1, -1, -1, 10, 9, 3, 10, 3, 2, 9, 4, 3, 11, 3, 6, 4, 6, 3, -1, 8, 2, 3, 8, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1, 0, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 9, 0, 2, 3, 4, 2, 4, 6, 4, 3, 8, -1, -1, -1, -1, 1, 9, 4, 1, 4, 2, 2, 4, 6, -1, -1, -1, -1, -1, -1, -1, 8, 1, 3, 8, 6, 1, 8, 4, 6, 6, 10, 1, -1, -1, -1, -1, 10, 1, 0, 10, 0, 6, 6, 0, 4, -1, -1, -1, -1, -1, -1, -1, 4, 6, 3, 4, 3, 8, 6, 10, 3, 0, 3, 9, 10, 9, 3, -1, 10, 9, 4, 6, 10, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 9, 5, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 8, 3, 4, 9, 5, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, 5, 0, 1, 5, 4, 0, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, 11, 7, 6, 8, 3, 4, 3, 5, 4, 3, 1, 5, -1, -1, -1, -1, 9, 5, 4, 10, 1, 2, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, 6, 11, 7, 1, 2, 10, 0, 8, 3, 4, 9, 5, -1, -1, -1, -1, 7, 6, 11, 5, 4, 10, 4, 2, 10, 4, 0, 2, -1, -1, -1, -1, 3, 4, 8, 3, 5, 4, 3, 2, 5, 10, 5, 2, 11, 7, 6, -1, 7, 2, 3, 7, 6, 2, 5, 4, 9, -1, -1, -1, -1, -1, -1, -1, 9, 5, 4, 0, 8, 6, 0, 6, 2, 6, 8, 7, -1, -1, -1, -1, 3, 6, 2, 3, 7, 6, 1, 5, 0, 5, 4, 0, -1, -1, -1, -1, 6, 2, 8, 6, 8, 7, 2, 1, 8, 4, 8, 5, 1, 5, 8, -1, 9, 5, 4, 10, 1, 6, 1, 7, 6, 1, 3, 7, -1, -1, -1, -1, 1, 6, 10, 1, 7, 6, 1, 0, 7, 8, 7, 0, 9, 5, 4, -1, 4, 0, 10, 4, 10, 5, 0, 3, 10, 6, 10, 7, 3, 7, 10, -1, 7, 6, 10, 7, 10, 8, 5, 4, 10, 4, 8, 10, -1, -1, -1, -1, 6, 9, 5, 6, 11, 9, 11, 8, 9, -1, -1, -1, -1, -1, -1, -1, 3, 6, 11, 0, 6, 3, 0, 5, 6, 0, 9, 5, -1, -1, -1, -1, 0, 11, 8, 0, 5, 11, 0, 1, 5, 5, 6, 11, -1, -1, -1, -1, 6, 11, 3, 6, 3, 5, 5, 3, 1, -1, -1, -1, -1, -1, -1, -1, 1, 2, 10, 9, 5, 11, 9, 11, 8, 11, 5, 6, -1, -1, -1, -1, 0, 11, 3, 0, 6, 11, 0, 9, 6, 5, 6, 9, 1, 2, 10, -1, 11, 8, 5, 11, 5, 6, 8, 0, 5, 10, 5, 2, 0, 2, 5, -1, 6, 11, 3, 6, 3, 5, 2, 10, 3, 10, 5, 3, -1, -1, -1, -1, 5, 8, 9, 5, 2, 8, 5, 6, 2, 3, 8, 2, -1, -1, -1, -1, 9, 5, 6, 9, 6, 0, 0, 6, 2, -1, -1, -1, -1, -1, -1, -1, 1, 5, 8, 1, 8, 0, 5, 6, 8, 3, 8, 2, 6, 2, 8, -1, 1, 5, 6, 2, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 3, 6, 1, 6, 10, 3, 8, 6, 5, 6, 9, 8, 9, 6, -1, 10, 1, 0, 10, 0, 6, 9, 5, 0, 5, 6, 0, -1, -1, -1, -1, 0, 3, 8, 5, 6, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 10, 5, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 11, 5, 10, 7, 5, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 11, 5, 10, 11, 7, 5, 8, 3, 0, -1, -1, -1, -1, -1, -1, -1, 5, 11, 7, 5, 10, 11, 1, 9, 0, -1, -1, -1, -1, -1, -1, -1, 10, 7, 5, 10, 11, 7, 9, 8, 1, 8, 3, 1, -1, -1, -1, -1, 11, 1, 2, 11, 7, 1, 7, 5, 1, -1, -1, -1, -1, -1, -1, -1, 0, 8, 3, 1, 2, 7, 1, 7, 5, 7, 2, 11, -1, -1, -1, -1, 9, 7, 5, 9, 2, 7, 9, 0, 2, 2, 11, 7, -1, -1, -1, -1, 7, 5, 2, 7, 2, 11, 5, 9, 2, 3, 2, 8, 9, 8, 2, -1, 2, 5, 10, 2, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1, 8, 2, 0, 8, 5, 2, 8, 7, 5, 10, 2, 5, -1, -1, -1, -1, 9, 0, 1, 5, 10, 3, 5, 3, 7, 3, 10, 2, -1, -1, -1, -1, 9, 8, 2, 9, 2, 1, 8, 7, 2, 10, 2, 5, 7, 5, 2, -1, 1, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 8, 7, 0, 7, 1, 1, 7, 5, -1, -1, -1, -1, -1, -1, -1, 9, 0, 3, 9, 3, 5, 5, 3, 7, -1, -1, -1, -1, -1, -1, -1, 9, 8, 7, 5, 9, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 5, 8, 4, 5, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1, 5, 0, 4, 5, 11, 0, 5, 10, 11, 11, 3, 0, -1, -1, -1, -1, 0, 1, 9, 8, 4, 10, 8, 10, 11, 10, 4, 5, -1, -1, -1, -1, 10, 11, 4, 10, 4, 5, 11, 3, 4, 9, 4, 1, 3, 1, 4, -1, 2, 5, 1, 2, 8, 5, 2, 11, 8, 4, 5, 8, -1, -1, -1, -1, 0, 4, 11, 0, 11, 3, 4, 5, 11, 2, 11, 1, 5, 1, 11, -1, 0, 2, 5, 0, 5, 9, 2, 11, 5, 4, 5, 8, 11, 8, 5, -1, 9, 4, 5, 2, 11, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, 5, 10, 3, 5, 2, 3, 4, 5, 3, 8, 4, -1, -1, -1, -1, 5, 10, 2, 5, 2, 4, 4, 2, 0, -1, -1, -1, -1, -1, -1, -1, 3, 10, 2, 3, 5, 10, 3, 8, 5, 4, 5, 8, 0, 1, 9, -1, 5, 10, 2, 5, 2, 4, 1, 9, 2, 9, 4, 2, -1, -1, -1, -1, 8, 4, 5, 8, 5, 3, 3, 5, 1, -1, -1, -1, -1, -1, -1, -1, 0, 4, 5, 1, 0, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, 4, 5, 8, 5, 3, 9, 0, 5, 0, 3, 5, -1, -1, -1, -1, 9, 4, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 11, 7, 4, 9, 11, 9, 10, 11, -1, -1, -1, -1, -1, -1, -1, 0, 8, 3, 4, 9, 7, 9, 11, 7, 9, 10, 11, -1, -1, -1, -1, 1, 10, 11, 1, 11, 4, 1, 4, 0, 7, 4, 11, -1, -1, -1, -1, 3, 1, 4, 3, 4, 8, 1, 10, 4, 7, 4, 11, 10, 11, 4, -1, 4, 11, 7, 9, 11, 4, 9, 2, 11, 9, 1, 2, -1, -1, -1, -1, 9, 7, 4, 9, 11, 7, 9, 1, 11, 2, 11, 1, 0, 8, 3, -1, 11, 7, 4, 11, 4, 2, 2, 4, 0, -1, -1, -1, -1, -1, -1, -1, 11, 7, 4, 11, 4, 2, 8, 3, 4, 3, 2, 4, -1, -1, -1, -1, 2, 9, 10, 2, 7, 9, 2, 3, 7, 7, 4, 9, -1, -1, -1, -1, 9, 10, 7, 9, 7, 4, 10, 2, 7, 8, 7, 0, 2, 0, 7, -1, 3, 7, 10, 3, 10, 2, 7, 4, 10, 1, 10, 0, 4, 0, 10, -1, 1, 10, 2, 8, 7, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 9, 1, 4, 1, 7, 7, 1, 3, -1, -1, -1, -1, -1, -1, -1, 4, 9, 1, 4, 1, 7, 0, 8, 1, 8, 7, 1, -1, -1, -1, -1, 4, 0, 3, 7, 4, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 8, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 3, 0, 9, 3, 9, 11, 11, 9, 10, -1, -1, -1, -1, -1, -1, -1, 0, 1, 10, 0, 10, 8, 8, 10, 11, -1, -1, -1, -1, -1, -1, -1, 3, 1, 10, 11, 3, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 2, 11, 1, 11, 9, 9, 11, 8, -1, -1, -1, -1, -1, -1, -1, 3, 0, 9, 3, 9, 11, 1, 2, 9, 2, 11, 9, -1, -1, -1, -1, 0, 2, 11, 8, 0, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 3, 2, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, 3, 8, 2, 8, 10, 10, 8, 9, -1, -1, -1, -1, -1, -1, -1, 9, 10, 2, 0, 9, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, 3, 8, 2, 8, 10, 0, 1, 8, 1, 10, 8, -1, -1, -1, -1, 1, 10, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 3, 8, 9, 1, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
 	
 	exports.default = {
@@ -48159,18 +48166,19 @@
 	    lightPos: {
 	      type: "v3",
 	      value: new THREE.Vector3(1.0, 10.0, 2.0)
-	    },
-	    camPos: {
-	      type: "v3",
-	      value: new THREE.Color(5.0, 5.0, 30.0)
 	    }
 	  },
 	  vertexShader: __webpack_require__(12),
 	  fragmentShader: __webpack_require__(13)
 	});
 	
+	//Made balls[] and numMetaballs global variables to improve efficiency;
+	//This lets us calculate the normals at the isosurface for that point alone,
+	//instead of for all the corner points and then having to lerp between the resultant values.
 	var balls = [];
 	var numMetaballs;
+	//the indexLook up is just to avoid a lengthy string of if statements
+	var indexLookup = [0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7];
 	
 	var MarchingCubes = function () {
 	  function MarchingCubes(App) {
@@ -48190,8 +48198,8 @@
 	      this.origin = new THREE.Vector3(0);
 	
 	      this.isolevel = App.config.isolevel;
-	      this.minRadius = App.config.minRadius;
-	      this.maxRadius = App.config.maxRadius;
+	      this.minRadius = App.config.minRadius; //of metaballs
+	      this.maxRadius = App.config.maxRadius; //of metaballs
 	
 	      this.gridCellWidth = App.config.gridCellWidth;
 	      this.halfCellWidth = App.config.gridCellWidth / 2.0;
@@ -48254,13 +48262,11 @@
 	
 	    // Convert from 3D indices to 3D positions
 	    value: function i3toPos(i3) {
-	
 	      return new THREE.Vector3(i3[0] * this.gridCellWidth + this.origin.x + this.halfCellWidth, i3[1] * this.gridCellWidth + this.origin.y + this.halfCellWidth, i3[2] * this.gridCellWidth + this.origin.z + this.halfCellWidth);
 	    }
 	  }, {
 	    key: 'setupCells',
 	    value: function setupCells() {
-	
 	      // Allocate voxels based on our grid resolution
 	      this.voxels = [];
 	      for (var i = 0; i < this.res3; i++) {
@@ -48332,6 +48338,7 @@
 	    key: 'update',
 	    value: function update() {
 	      if (this.isPaused) {
+	        //there should be no change in the u=isosurface when the movement is paused
 	        return;
 	      }
 	
@@ -48341,30 +48348,29 @@
 	      });
 	
 	      for (var c = 0; c < this.res3; c++) {
-	        // Sampling the center point
-	        this.voxels[c].center.isovalue = this.sample(this.voxels[c].center.pos);
-	
 	        //Sampling at the vertices of the voxel instead
 	        //created 8 corner points inside the makeInspectPoints in voxel class
-	        this.voxels[c].corner0.isovalue = this.sample(this.voxels[c].corner0.pos);
-	        this.voxels[c].corner1.isovalue = this.sample(this.voxels[c].corner1.pos);
-	        this.voxels[c].corner2.isovalue = this.sample(this.voxels[c].corner2.pos);
-	        this.voxels[c].corner3.isovalue = this.sample(this.voxels[c].corner3.pos);
-	        this.voxels[c].corner4.isovalue = this.sample(this.voxels[c].corner4.pos);
-	        this.voxels[c].corner5.isovalue = this.sample(this.voxels[c].corner5.pos);
-	        this.voxels[c].corner6.isovalue = this.sample(this.voxels[c].corner6.pos);
-	        this.voxels[c].corner7.isovalue = this.sample(this.voxels[c].corner7.pos);
+	        this.voxels[c].corner[0].isovalue = this.sample(this.voxels[c].corner[0].pos);
+	        this.voxels[c].corner[1].isovalue = this.sample(this.voxels[c].corner[1].pos);
+	        this.voxels[c].corner[2].isovalue = this.sample(this.voxels[c].corner[2].pos);
+	        this.voxels[c].corner[3].isovalue = this.sample(this.voxels[c].corner[3].pos);
+	        this.voxels[c].corner[4].isovalue = this.sample(this.voxels[c].corner[4].pos);
+	        this.voxels[c].corner[5].isovalue = this.sample(this.voxels[c].corner[5].pos);
+	        this.voxels[c].corner[6].isovalue = this.sample(this.voxels[c].corner[6].pos);
+	        this.voxels[c].corner[7].isovalue = this.sample(this.voxels[c].corner[7].pos);
 	
+	        //uncomment this chunk to turn on visual debugging; also make the global visual_debug flag true
+	        /*
 	        // Visualizing grid
-	        if (VISUAL_DEBUG && this.showGrid) {
+	        if (VISUAL_DEBUG && this.showGrid)
+	        {
 	          // Toggle voxels on or off
-	          if (this.voxels[c].center.isovalue > this.isolevel) {
-	            this.voxels[c].show();
-	          } else {
-	            this.voxels[c].hide();
-	          }
-	
-	          this.voxels[c].corner0.updateLabel(this.camera);
+	            if (this.voxels[c].center.isovalue > this.isolevel) {
+	              this.voxels[c].show();
+	            } else {
+	              this.voxels[c].hide();
+	            }
+	            this.voxels[c].corner0.updateLabel(this.camera);
 	          this.voxels[c].corner1.updateLabel(this.camera);
 	          this.voxels[c].corner2.updateLabel(this.camera);
 	          this.voxels[c].corner3.updateLabel(this.camera);
@@ -48372,7 +48378,9 @@
 	          this.voxels[c].corner5.updateLabel(this.camera);
 	          this.voxels[c].corner6.updateLabel(this.camera);
 	          this.voxels[c].corner7.updateLabel(this.camera);
-	        } else {
+	        }
+	        else
+	        {
 	          this.voxels[c].corner0.clearLabel();
 	          this.voxels[c].corner1.clearLabel();
 	          this.voxels[c].corner2.clearLabel();
@@ -48382,11 +48390,11 @@
 	          this.voxels[c].corner6.clearLabel();
 	          this.voxels[c].corner7.clearLabel();
 	        }
+	        */
 	      }
 	      this.updateMesh();
 	
 	      color_Material.lightPos = this.lightPos;
-	      color_Material.camPos = this.camera.position;
 	    }
 	  }, {
 	    key: 'pause',
@@ -48436,6 +48444,7 @@
 	      this.faces = [];
 	
 	      for (var c = 0; c < this.res3; c++) {
+	        //get vertex data for every voxel from polygonize() and use it to update the overall mesh
 	        var VertexData = this.voxels[c].polygonize(this.isolevel);
 	
 	        for (var j = 0; j < VertexData.vertPositions.length; j++) {
@@ -48444,23 +48453,25 @@
 	        }
 	      }
 	
-	      var geo = this.mesh.geometry;
 	      this.mesh.geometry.vertices = this.vertexPos;
 	
 	      for (var i = 0; i < this.vertexPos.length; i = i + 3) {
 	        this.faces.push(new THREE.Face3(i, i + 1, i + 2));
-	        this.faces[this.faces.length - 1].vertexNormals = [this.vertexNor[i], this.vertexNor[i + 1], this.vertexNor[i + 2]];
+	        this.faces[this.faces.length - 1].vertexNormals[0] = this.vertexNor[i];
+	        this.faces[this.faces.length - 1].vertexNormals[1] = this.vertexNor[i + 1];
+	        this.faces[this.faces.length - 1].vertexNormals[2] = this.vertexNor[i + 2];
 	      }
 	      this.mesh.geometry.faces = this.faces;
 	
-	      //To visualize the face normals as 3D geometry on-screen
+	      ///Uncomment to help visualize the face normals as 3D geometry on-screen
 	      // var helper = new THREE.FaceNormalsHelper( this.mesh, 2, 0x00ff00, 1 );
 	      // this.scene.add( helper );
 	
-	      geo.computeVertexNormals();
+	      this.mesh.geometry.computeVertexNormals();
 	
-	      geo.verticesNeedUpdate = true;
-	      geo.elementsNeedUpdate = true;
+	      //just inform three.js that the mesh has been updated
+	      this.mesh.geometry.verticesNeedUpdate = true;
+	      this.mesh.geometry.elementsNeedUpdate = true;
 	    }
 	  }]);
 	
@@ -48484,6 +48495,7 @@
 	    value: function init(position, gridCellWidth) {
 	      this.pos = position;
 	      this.gridCellWidth = gridCellWidth;
+	      this.corner = new Array(8); //array of the 8 sample points at the corners of every grid cell
 	
 	      if (VISUAL_DEBUG) {
 	        this.makeMesh();
@@ -48491,6 +48503,9 @@
 	
 	      this.makeInspectPoints();
 	    }
+	
+	    //create geometry for the actual voxel grid; used only in debug mode
+	
 	  }, {
 	    key: 'makeMesh',
 	    value: function makeMesh() {
@@ -48519,6 +48534,9 @@
 	      this.mesh = new THREE.Mesh(geo, LAMBERT_GREEN);
 	      this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
 	    }
+	
+	    //creates points on the voxel gris that we can inspect for their isolevel
+	
 	  }, {
 	    key: 'makeInspectPoints',
 	    value: function makeInspectPoints() {
@@ -48528,18 +48546,18 @@
 	      var z = this.pos.z;
 	      var red = 0xff0000;
 	
-	      // Center dot
-	      this.center = new _inspect_point2.default(new THREE.Vector3(x, y, z), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-	
-	      //Paul Brooke's vertex indexing scheme
-	      this.corner0 = new _inspect_point2.default(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-	      this.corner1 = new _inspect_point2.default(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-	      this.corner2 = new _inspect_point2.default(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-	      this.corner3 = new _inspect_point2.default(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-	      this.corner4 = new _inspect_point2.default(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-	      this.corner5 = new _inspect_point2.default(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-	      this.corner6 = new _inspect_point2.default(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-	      this.corner7 = new _inspect_point2.default(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+	      //Paul Brooke's vertex indexing scheme; practically the indexing scheme can
+	      // be whatever you want as long as it is consistent
+	      //However for ease of understanding what is going on use this indexing scheme
+	      //as there are useful diagrams on Paul Brookes website
+	      this.corner[0] = new _inspect_point2.default(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+	      this.corner[1] = new _inspect_point2.default(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+	      this.corner[2] = new _inspect_point2.default(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+	      this.corner[3] = new _inspect_point2.default(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+	      this.corner[4] = new _inspect_point2.default(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+	      this.corner[5] = new _inspect_point2.default(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+	      this.corner[6] = new _inspect_point2.default(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+	      this.corner[7] = new _inspect_point2.default(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth), 0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
 	    }
 	  }, {
 	    key: 'show',
@@ -48571,62 +48589,34 @@
 	    value: function vertexInterpolation(isolevel, vertA, vertB) {
 	      var lerpPos = new THREE.Vector3(0.0, 0.0, 0.0);
 	
+	      //edge cases
 	      if (Math.abs(isolevel - vertA.isolevel) < 0.00001) {
-	        lerpPos.x = VertA.pos.x;
-	        lerpPos.y = VertA.pos.y;
-	        lerpPos.z = VertA.pos.z;
-	        return lerpPos;
+	        return VertA;
 	      }
 	      if (Math.abs(isolevel - vertB.isolevel) < 0.00001) {
-	        lerpPos.x = VertB.pos.x;
-	        lerpPos.y = VertB.pos.y;
-	        lerpPos.z = VertB.pos.z;
-	        return lerpPos;
+	        return VertB;
 	      }
 	      if (Math.abs(vertA.isolevel - vertB.isolevel) < 0.00001) {
-	        lerpPos.x = VertA.pos.x;
-	        lerpPos.y = VertA.pos.y;
-	        lerpPos.z = VertA.pos.z;
-	        return lerpPos;
+	        return VertA;
 	      }
 	
+	      //actual LERPing
 	      lerpPos.x = vertA.pos.x + (isolevel - vertA.isovalue) / (vertB.isovalue - vertA.isovalue) * (vertB.pos.x - vertA.pos.x);
 	      lerpPos.y = vertA.pos.y + (isolevel - vertA.isovalue) / (vertB.isovalue - vertA.isovalue) * (vertB.pos.y - vertA.pos.y);
 	      lerpPos.z = vertA.pos.z + (isolevel - vertA.isovalue) / (vertB.isovalue - vertA.isovalue) * (vertB.pos.z - vertA.pos.z);
 	      return lerpPos;
 	    }
-	  }, {
-	    key: 'normalInterpolation',
-	    value: function normalInterpolation(isolevel, vertA, vertB) {
-	      var lerpNor = new THREE.Vector3(0.0, 0.0, 1.0);
 	
-	      if (Math.abs(isolevel - vertA.isolevel) < 0.00001) {
-	        lerpNor.x = VertA.isonormal.x;
-	        lerpNor.y = VertA.isonormal.y;
-	        lerpNor.z = VertA.isonormal.z;
-	        return lerpNor;
-	      }
-	      if (Math.abs(isolevel - vertB.isolevel) < 0.00001) {
-	        lerpNor.x = VertB.isonormal.x;
-	        lerpNor.y = VertB.isonormal.y;
-	        lerpNor.z = VertB.isonormal.z;
-	        return lerpNor;
-	      }
-	      if (Math.abs(vertA.isolevel - vertB.isolevel) < 0.00001) {
-	        lerpNor.x = VertA.isonormal.x;
-	        lerpNor.y = VertA.isonormal.y;
-	        lerpNor.z = VertA.isonormal.z;
-	        return lerpNor;
-	      }
+	    //sampleNormal returns the normal of the isosurface for some point
+	    // in sapce in accordance to the field function the defines everything.
 	
-	      lerpNor.x = vertA.isonormal.x + (isolevel - vertA.isovalue) / (vertB.isovalue - vertA.isovalue) * (vertB.isonormal.x - vertA.isonormal.x);
-	      lerpNor.y = vertA.isonormal.y + (isolevel - vertA.isovalue) / (vertB.isovalue - vertA.isovalue) * (vertB.isonormal.y - vertA.isonormal.y);
-	      lerpNor.z = vertA.isonormal.z + (isolevel - vertA.isovalue) / (vertB.isovalue - vertA.isovalue) * (vertB.isonormal.z - vertA.isonormal.z);
-	      return lerpNor;
-	    }
 	  }, {
 	    key: 'sampleNormal',
 	    value: function sampleNormal(point) {
+	      //We can determine this by calculating the isovalue at 6 points a small delta
+	      //value away in the positive and negative of each axis, around the point in question.
+	      //This give us a gradient change along every axis which when normalised can give us the
+	      //normal at that point
 	      var isovalueposdx = 0.0;
 	      var isovaluenegdx = 0.0;
 	      var isovalueposdy = 0.0;
@@ -48641,13 +48631,6 @@
 	        var distnegdy = balls[i].pos.distanceTo(point - new THREE.Vector3(0.0, 0.00001, 0.0));
 	        var distposdz = balls[i].pos.distanceTo(point + new THREE.Vector3(0.0, 0.0, 0.00001));
 	        var distnegdz = balls[i].pos.distanceTo(point - new THREE.Vector3(0.0, 0.0, 0.00001));
-	
-	        // distposdx = Math.max(distposdx, 0.001);
-	        // distnegdx = Math.max(distnegdx, 0.001);
-	        // distposdy = Math.max(distposdy, 0.001);
-	        // distnegdy = Math.max(distnegdy, 0.001);
-	        // distposdz = Math.max(distposdz, 0.001);
-	        // distnegdz = Math.max(distnegdz, 0.001);
 	
 	        isovalueposdx += balls[i].radius2 / (distposdx * distposdx);
 	        isovaluenegdx += balls[i].radius2 / (distnegdx * distnegdx);
@@ -48667,14 +48650,17 @@
 	      var normalList = [];
 	
 	      var cubeindex = 0;
-	      if (this.corner0.isovalue > isolevel) cubeindex |= 1;
-	      if (this.corner1.isovalue > isolevel) cubeindex |= 2;
-	      if (this.corner2.isovalue > isolevel) cubeindex |= 4;
-	      if (this.corner3.isovalue > isolevel) cubeindex |= 8;
-	      if (this.corner4.isovalue > isolevel) cubeindex |= 16;
-	      if (this.corner5.isovalue > isolevel) cubeindex |= 32;
-	      if (this.corner6.isovalue > isolevel) cubeindex |= 64;
-	      if (this.corner7.isovalue > isolevel) cubeindex |= 128;
+	
+	      var temp;
+	
+	      //This for loop simply checks whcih corners of the voxel exceed the isolevel,
+	      // and then add it to the 8bit number, "cubeindex"
+	      for (var i = 0; i < 8; i++) {
+	        temp = Math.ceil(this.corner[i].isovalue - isolevel);
+	        temp = Math.max(0.0, Math.min(1.0, temp)); //clamp function
+	
+	        cubeindex += temp * Math.pow(2.0, i);
+	      }
 	
 	      var edges = _marching_cube_LUT2.default.EDGE_TABLE[cubeindex]; // retruns a 12 bit number as a
 	      // sort of bit switch for the edges
@@ -48691,41 +48677,10 @@
 	      //Find the vertices(on the edges) where the metaball intersects the voxel
 	      var lerpedEdgePoints = new Array(12);
 	
-	      if (edges & 1) {
-	        lerpedEdgePoints[0] = this.vertexInterpolation(isolevel, this.corner0, this.corner1);
-	      }
-	      if (edges & 2) {
-	        lerpedEdgePoints[1] = this.vertexInterpolation(isolevel, this.corner1, this.corner2);
-	      }
-	      if (edges & 4) {
-	        lerpedEdgePoints[2] = this.vertexInterpolation(isolevel, this.corner2, this.corner3);
-	      }
-	      if (edges & 8) {
-	        lerpedEdgePoints[3] = this.vertexInterpolation(isolevel, this.corner3, this.corner0);
-	      }
-	      if (edges & 16) {
-	        lerpedEdgePoints[4] = this.vertexInterpolation(isolevel, this.corner4, this.corner5);
-	      }
-	      if (edges & 32) {
-	        lerpedEdgePoints[5] = this.vertexInterpolation(isolevel, this.corner5, this.corner6);
-	      }
-	      if (edges & 64) {
-	        lerpedEdgePoints[6] = this.vertexInterpolation(isolevel, this.corner6, this.corner7);
-	      }
-	      if (edges & 128) {
-	        lerpedEdgePoints[7] = this.vertexInterpolation(isolevel, this.corner7, this.corner4);
-	      }
-	      if (edges & 256) {
-	        lerpedEdgePoints[8] = this.vertexInterpolation(isolevel, this.corner0, this.corner4);
-	      }
-	      if (edges & 512) {
-	        lerpedEdgePoints[9] = this.vertexInterpolation(isolevel, this.corner1, this.corner5);
-	      }
-	      if (edges & 1024) {
-	        lerpedEdgePoints[10] = this.vertexInterpolation(isolevel, this.corner2, this.corner6);
-	      }
-	      if (edges & 2048) {
-	        lerpedEdgePoints[11] = this.vertexInterpolation(isolevel, this.corner3, this.corner7);
+	      for (var i = 0.0; i < 12; i++) {
+	        if (edges & Math.pow(2, i)) {
+	          lerpedEdgePoints[i] = this.vertexInterpolation(isolevel, this.corner[indexLookup[i * 2.0]], this.corner[indexLookup[i * 2.0 + 1]]);
+	        }
 	      }
 	
 	      //Create the triangle(s) (upto 5 triangles) andstore those vertices into the vertexList
@@ -48734,6 +48689,7 @@
 	      //the other values can be up to 15 vertices for the triangles
 	
 	      for (var i = 0; _marching_cube_LUT2.default.TRI_TABLE[cubeindex * 16 + i] != -1; i++) {
+	        //push lerped vertex points and normals for those points for the triangles in the voxel
 	        vertexList.push(lerpedEdgePoints[_marching_cube_LUT2.default.TRI_TABLE[cubeindex * 16 + i]]);
 	        normalList.push(this.sampleNormal(lerpedEdgePoints[_marching_cube_LUT2.default.TRI_TABLE[cubeindex * 16 + i]]));
 	      }
@@ -48768,6 +48724,10 @@
 	var LAMBERT_WHITE = new THREE.MeshLambertMaterial({ color: 0x9EB3D8, transparent: true, opacity: 0.5 });
 	var offset = 0.1;
 	
+	//This class creates the spheres that move around in the voxelised
+	// grid and are emanation points for the field values.
+	//The field values when summed together give you iso-surface.
+	
 	var Metaball = function () {
 	  function Metaball(pos, radius, vel, gridWidth, visualDebug) {
 	    _classCallCheck(this, Metaball);
@@ -48794,6 +48754,7 @@
 	  }, {
 	    key: 'makeMesh',
 	    value: function makeMesh() {
+	      //create mesh for metaball
 	      this.mesh = new THREE.Mesh(SPHERE_GEO, LAMBERT_WHITE);
 	      this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
 	      this.mesh.scale.set(this.radius, this.radius, this.radius);
@@ -48815,6 +48776,9 @@
 	  }, {
 	    key: 'update',
 	    value: function update() {
+	      //move metaballs inside voxel grid;
+	      // changing the direction of velocity when the metaball comes
+	      // close enough to the boundary of the voxel grid
 	      if (this.pos.x >= this.gridWidth - offset || this.pos.x <= offset) {
 	        this.vel.x = -this.vel.x;
 	      }
@@ -48854,6 +48818,8 @@
 	var THREE = __webpack_require__(6);
 	
 	var POINT_MATERIAL = new THREE.PointsMaterial({ color: 0xee1111, size: 10, sizeAttenuation: true });
+	
+	//This entire class is used only for debugging to display iso-values at the gridpoints
 	
 	var InspectPoint = function () {
 	  function InspectPoint(pos, isovalue, isonormal, visualDebug) {
@@ -48901,6 +48867,7 @@
 	        this.label.style.top = screenPos.y + 'px';
 	        this.label.style.left = screenPos.x + 'px';
 	        this.label.innerHTML = this.isovalue.toFixed(2);
+	        //for dynamic opacity that changes wrt the isolevel
 	        // this.label.style.opacity = this.isovalue - 0.5;
 	      }
 	    }
@@ -48923,13 +48890,13 @@
 /* 12 */
 /***/ function(module, exports) {
 
-	module.exports = "varying vec2 f_uv;\r\nvarying vec3 f_normal;\r\nvarying vec3 f_position;\r\nvarying vec3 camP;\r\n\r\nvoid main()\r\n{\r\n    f_uv = uv;\r\n    f_normal = normal;\r\n    f_position = position;\r\n    camP = cameraPosition;\r\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\r\n}\r\n"
+	module.exports = "varying vec3 f_normal;\r\nvarying vec3 f_position;\r\nvarying vec3 camP;\r\n\r\nvoid main()\r\n{\r\n    f_normal = normal;\r\n    f_position = position;\r\n    camP = cameraPosition;\r\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\r\n}\r\n"
 
 /***/ },
 /* 13 */
 /***/ function(module, exports) {
 
-	module.exports = "uniform vec3 metaball_color;\r\nuniform vec3 lightPos;\r\nuniform vec3 camPos;\r\n\r\nvarying vec3 f_position;\r\nvarying vec3 f_normal;\r\nvarying vec2 f_uv;\r\n\r\nvarying vec3 camP;\r\n\r\nvoid main()\r\n{\r\n    vec4 color = vec4(metaball_color, 1.0);\r\n\r\n    float t = clamp(dot(f_normal, normalize(camP - f_position)), 0.0, 1.0);\r\n\r\n    //color pallete\r\n    float red = 0.5 + 0.5*(cos(6.28*(t)));\r\n    float green = 0.5 + 0.5*(cos(6.28*(t+0.33)));\r\n    float blue = 0.5 + 0.5*(cos(6.28*(t+0.67)));\r\n\r\n    vec3 iridescent_color = vec3(red, green, blue);\r\n\r\n    vec3 ambient = vec3(0.5, 0.5, 0.5);\r\n    vec3 lightIntensity = vec3(2.0, 2.0, 2.0);\r\n    vec3 lightColor = vec3(1.0, 1.0, 1.0);\r\n\r\n    gl_FragColor = vec4(t * iridescent_color * lightColor * lightIntensity + ambient * metaball_color, 1.0);\r\n}\r\n"
+	module.exports = "uniform vec3 metaball_color;\r\n\r\nvarying vec3 f_position; //point in the scene\r\nvarying vec3 f_normal; //normal of the same point\r\nvarying vec3 camP; //camera position\r\n\r\nvoid main()\r\n{\r\n    vec4 color = vec4(metaball_color, 1.0);\r\n\r\n    float t = clamp(dot(f_normal, normalize(camP - f_position)), 0.0, 1.0);\r\n\r\n    //color pallete\r\n    //condenses 3 color dimensions into a single dimensional quantity\r\n    float red = 0.5 + 0.5*(cos(6.28*(t)));\r\n    float green = 0.5 + 0.5*(cos(6.28*(t+0.33)));\r\n    float blue = 0.5 + 0.5*(cos(6.28*(t+0.67)));\r\n\r\n    vec3 iridescent_color = vec3(red, green, blue);\r\n\r\n    vec3 ambient = vec3(0.5, 0.5, 0.5);\r\n    vec3 lightIntensity = vec3(2.0, 2.0, 2.0);\r\n    vec3 lightColor = vec3(1.0, 1.0, 1.0);\r\n\r\n    gl_FragColor = vec4(t * iridescent_color * lightColor * lightIntensity + ambient * metaball_color, 1.0);\r\n}\r\n"
 
 /***/ },
 /* 14 */
