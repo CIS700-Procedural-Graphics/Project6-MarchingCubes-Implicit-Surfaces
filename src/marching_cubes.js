@@ -111,7 +111,6 @@ export default class MarchingCubes {
   setupMetaballs() {
 
     this.balls = [];
-
     var x, y, z, vx, vy, vz, radius, pos, vel;
     var matLambertWhite = LAMBERT_WHITE;
     var maxRadiusTRippled = this.maxRadius * 3;
@@ -119,19 +118,21 @@ export default class MarchingCubes {
 
     // Randomly generate metaballs with different sizes and velocities
     for (var i = 0; i < this.numMetaballs; i++) {
+
+      radius = Math.random() * (this.maxRadius - this.minRadius) + this.minRadius;
+
       x = this.gridWidth / 2;    
-      y = this.gridWidth / 2;    
+      y = Math.random() * (this.gridWidth - 4*radius) + 2*radius; //this.gridWidth / 2;    
       z = this.gridWidth / 2;    
       pos = new THREE.Vector3(x, y, z);
       
-      vx = (Math.random() * 2 - 1) * this.maxSpeed;
-      vy = (Math.random() * 2 - 1) * this.maxSpeed;
-      vz = (Math.random() * 2 - 1) * this.maxSpeed;
-      vel = new THREE.Vector3(vx, vy, vz);
-      
-      radius = Math.random() * (this.maxRadius - this.minRadius) + this.minRadius;
+      //replaced with maxSpeed, velocity calculated in metaball
+      //vx = (Math.random() * 2 - 1) * this.maxSpeed;
+      //vy = (Math.random() * 2 - 1) * this.maxSpeed;
+      //vz = (Math.random() * 2 - 1) * this.maxSpeed;
+      //vel = new THREE.Vector3(vx, vy, vz);
   
-      var ball = new Metaball(pos, radius, vel, this.gridWidth, VISUAL_DEBUG);
+      var ball = new Metaball(pos, radius, this.maxSpeed, this.gridWidth, VISUAL_DEBUG);
       this.balls.push(ball);
       
       if (VISUAL_DEBUG) {
@@ -188,7 +189,7 @@ export default class MarchingCubes {
         }
 
         //this.voxels[c].center.updateLabel(this.camera);
-
+        //updating the labels of the corners
         this.voxels[c].v0.updateLabel(this.camera);
         this.voxels[c].v1.updateLabel(this.camera);
         this.voxels[c].v2.updateLabel(this.camera);
@@ -202,7 +203,7 @@ export default class MarchingCubes {
       else {
 
         //this.voxels[c].center.clearLabel();
-
+        //clearing the labels of the corners
         this.voxels[c].v0.clearLabel();
         this.voxels[c].v1.clearLabel();
         this.voxels[c].v2.clearLabel();
@@ -240,7 +241,8 @@ export default class MarchingCubes {
   };
 
   makeMesh() {
-    var material = new THREE.ShaderMaterial( {
+
+    var material1 = new THREE.ShaderMaterial( {
       uniforms: {
         /*
           // float initialized to 0
@@ -255,7 +257,20 @@ export default class MarchingCubes {
       fragmentShader: require('./shaders/iridescence-frag.glsl')
     });
 
-    this.mesh = new THREE.Mesh(new THREE.Geometry(), material);
+    var material2 = new THREE.ShaderMaterial( {
+      uniforms: { 
+        tMatCap: { 
+            type: 't', 
+            value: THREE.ImageUtils.loadTexture( '../src/assets/baby2.png' ) 
+        }
+      },
+    
+      vertexShader: require('./shaders/litsphere-vert.glsl'),
+      fragmentShader: require('./shaders/litsphere-frag.glsl'),
+      shading: THREE.SmoothShading
+    });
+
+    this.mesh = new THREE.Mesh(new THREE.Geometry(), material2);
     this.mesh.geometry.dynamic = true;
     this.scene.add(this.mesh);
   }
@@ -274,6 +289,8 @@ export default class MarchingCubes {
       }
     });
     
+    this.mesh.geometry.dispose();
+    this.mesh.geometry = new THREE.Geometry();
     this.mesh.geometry.vertices = newVertices;
     this.mesh.geometry.faces = newFaces;
     this.mesh.geometry.verticesNeedUpdate = true;
@@ -420,7 +437,6 @@ class Voxel {
     if (this.v5.isovalue < isolevel) cubeindex |= 32;
     if (this.v6.isovalue < isolevel) cubeindex |= 64;
     if (this.v7.isovalue < isolevel) cubeindex |= 128;
-    
 
     // Cube is entirely in/out of the surface
     if (LUT.EDGE_TABLE[cubeindex] == 0) {

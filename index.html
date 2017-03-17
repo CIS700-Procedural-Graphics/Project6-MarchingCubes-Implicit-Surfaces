@@ -6,6 +6,12 @@
       html, body {
         margin: 0;
         overflow: hidden;
+        background: rgb(196,224,229); /* For browsers that do not support gradients */
+        /*rgb(0, 201, 255), rgb(146, 254, 157)*/
+        background: -webkit-linear-gradient(rgb(76,161,175), rgb(196,224,229) ); /* For Safari 5.1 to 6.0 */
+        background: -o-linear-gradient(rgb(76,161,175), rgb(196,224,229) ); /* For Opera 11.1 to 12.0 */
+        background: -moz-linear-gradient(rgb(76,161,175), rgb(196,224,229) ); /* For Firefox 3.6 to 15 */
+        background: linear-gradient(rgb(76,161,175), rgb(196,224,229) ); /* Standard syntax */
       }
       canvas {
         width: 100%;
