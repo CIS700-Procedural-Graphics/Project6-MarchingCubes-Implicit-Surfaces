@@ -261,7 +261,7 @@ export default class MarchingCubes {
       uniforms: { 
         tMatCap: { 
             type: 't', 
-            value: THREE.ImageUtils.loadTexture( '../src/assets/baby2.png' ) 
+            value: THREE.ImageUtils.loadTexture( '../src/assets/babymix2.png' ) 
         }
       },
     
