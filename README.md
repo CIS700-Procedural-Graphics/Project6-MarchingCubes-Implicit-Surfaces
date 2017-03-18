@@ -28,7 +28,7 @@ My original implementation of animating metaballs is reversing the velocity when
 ## Materials and post-processing
 I did not implement a lit-sphere shader before, but believed that this type of material would be strongest visually. This is because a lit-sphere shader is very flexible when it comes to the type of texture to apply on the metaballs. I was able to extract some lit-sphere textures from the Mudbox software, and have grown to like this one specifically:
 
-![](./src/assets/Mudbox/LiquidMetal.png)
+![](./src/assets/metal.png)
 
 However, I wanted the texture subject to be something more interesting. I thought, why not a face?
 
@@ -38,6 +38,12 @@ The problem with this face texture is that it does not have as strong of a three
 
 ![](./src/assets/babymix2.png)
 
-## Colors
+## Coloring
+A lava lamp with a purely diffuse color as the container itself did not seem realistic enough for me. After browsing the web and doing some research on lava lamp containers, I realized a majority of them have a chrome-like material. I decided to take advantage of the lit-sphere shader I wrote and applied the Mudbox chrome texture to my lava lamp.
+
+Because the face texture for the metaballs has a peachy-orange hue, I wanted to complement this color for the background. I decided to use a muted blue gradient because blue complements the peachy-orange, and the muted tone makes the metaballs stand out more.
+
+![](./src/assets/screenshot.png)
+
 
 
