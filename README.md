@@ -2,104 +2,42 @@
 
 **Goal:** Implement an isosurface created from metaballs using the marching cubes algorithm. 
 
-Metaballs are organic-looking n-dimensional objects. We will be implementing a 3-dimensional metaballs. They are great to make bloppy shapes. An isosurface is created whenever the metaball function crosses a certain threshold, called isolevel. The metaball function describes the total influences of each metaball to a given points. A metaball influence is a function between its radius and distance to the point:
+Metaballs are organic-looking n-dimensional objects. This is an implementation of 3-dimensional metaballs. They are great to make bloppy shapes. An isosurface is created whenever the metaball function crosses a certain threshold, called isolevel. The metaball function describes the total influences of each metaball to a given points. A metaball influence is a function between its radius and distance to the point:
 
 `f(point) = (radius * radius) / (distance * distance)`
 
-By summing up all these influences, you effectively describes all the points that are greater than the isolevel as inside, and less than the isolevel as outside (or vice versa). As an observation, the bigger the metaball's radius is, the bigger its influence is.
+By summing up all these influences, it effectively describes all the points that are greater than the isolevel as inside, and less than the isolevel as outside (or vice versa). As an observation, the bigger the metaball's radius is, the bigger its influence is.
 
 Marching cubes essentially voxelize the space, then generate triangles based on the density function distribution at the corners of each voxel. By increasing the voxelized grid's resolution, the surface eventually gets that blobby, organic look of the metaballs. Marching cubes can achieve a similar effect to ray marching for rendering implicit surfaces, but in addition to the rendered image, you also retain actual geometries. 
 
-Marching cubes are commonly used in MRI scanning, where you can generate geometries for the scans. Marching cubes are also used to generate complex terrains with caves in games. The additional geometry information can handily support collision and other physical calculation for game engines. For example, their bounding boxes can then be computed to construct the acceleration data structure for collisions.
-
-**Warning**: this assignment option requires more effort than the ray marching option. The two base codes diverge significantly, so switching options midway can be costly for  your time and effort.
+Marching cubes are commonly used in MRI scanning, where geometries are genereated for scans. Marching cubes are also used to generate complex terrains with caves in games. The additional geometry information can handily support collision and other physical calculation for game engines. For example, their bounding boxes can then be computed to construct the acceleration data structure for collisions.
 
 ## Resources
-We suggest reading the following resources before starting your assignment:
-
 - [Generating complex terrain](https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch01.html) from [GPU Gems 3](https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_pref01.html).
 - [Polygonising a scalar field](http://paulbourke.net/geometry/polygonise/) by Paul Bourke.
 - [Marching squares](http://jamie-wong.com/2014/08/19/metaballs-and-marching-squares/) by Jamie Wong.
 
-## Base code framework
+## Design Process
+I wanted to take advantage of the metaballs' blobby movement, so I started off with the idea of a metaball Newton's cradle. After figuring out the physics of the Newton's cradle and modeling it in code, I realized that the resting middle balls of Newton's cradle will be one long blob due to the influences. The visual appeal of one long blob was not strong to me, so I moved toward a different design. 
 
-We have provided a basecode as a reference. You are welcome to modify the framework for your project. The basecode implements metaballs on the CPU.
+The next idea I had was a metaball lava lamp. Even though the metaball lava lamp is a more straightforward design compared to Newton's cradle, it seemed more dynamic and interesting because the metaballs moved in all three dimensions. Of course, I did not want to have a mundane lava lamp as my project, so I decided to spice it up a bit with shaders.
 
-_main.js_:
+## Animating metaballs
+My original implementation of animating metaballs is reversing the velocity when the metaball goes out of bounds. However, since the metaballs are mimicking the movement of blobs in a lava lamp, the metaballs should be rising to the top, and then sinking once it touches the roof of the lamp. The sinking and rising can easily be simulated by changing the sign of the metaball's velocity's y-component. If it intersects with the cylinder side before it reaches the top, the velocity should be reflected about the normal at the intersection point of the cylinder (similar to a ray reflected on a perfectly specular material), where the normal is the cylinder center minus the intersection point. A new velocity is assigned to the metaball every time it touches the floor and roof of the lava lamp, mimicking the heat transfer that fuels the movement of blobs in a real lava lamp.
 
-  - `App`:
+## Materials and post-processing
+I did not implement a lit-sphere shader before, but believed that this type of material would be strongest visually. This is because a lit-sphere shader is very flexible when it comes to the type of texture to apply on the metaballs. I was able to extract some lit-sphere textures from the Mudbox software, and have grown to like this one specifically:
 
-This is a global configuration object. All information for the marching cubes are stored here. 
+![](./src/assets/Mudbox/LiquidMetal.png)
 
-**Note**: `App.visualDebug` is a global control of all the visual debugging components. Even though it is helpful for development, it could be memory intensive. Toggle this flag off for better perforamance at high resolution.
+However, I wanted the texture subject to be something more interesting. I thought, why not a face?
 
-_marching_cubes.js_:
+![](./src/assets/baby2.png)
 
-  - `class MarchingCubes`:
-    This class encapsulates everything about the metaballs, grid, voxels, and sampling information.
+The problem with this face texture is that it does not have as strong of a three-dimensional shade as the lit-sphere texture I found from the Mudbox software. I ended up overlapping these two textures in Photoshop and compling something in between:
 
-  - `class Voxel`:
-    This class contains information about a single voxel, and its sample points. Polygonization happens here.
+![](./src/assets/babymix2.png)
 
-_inspect_point.js_:
+## Colors
 
-  - `class InspectPoint`:
-    This class simply contains a single sample point that can output its value on the screen at its pixel location.
 
-_metaball.js_:
-
-  - `class Metaball`:
-    This class represents a single metaball.
-
-_marching_cube_LUT.js_:
-
-This file contains the edge table and the triangle table for the marching cubes.
-
-## Animate metaballs (5 points)
-Implement the `update` for metaballs to move its position based velocity. Reverse the velocity whenever the metaball goes out of bounds. Since the metaball function is not well defined at the boundaries, maintain an additional small margin so that the metaball can reverse its moving direction before reaching the bounds.
-
-## Metaball function (2 points)
-Implement the metaball function inside `sample` of `MarchingCubes`. This function should return the total influences of all moving metaballs with respect to a given point.
-
-## Sampling at corners (15 points)
-In order to polygonize a voxel, generate new samples at each corner of the voxel. Their isovalues must be updated as the metaball function changes due of metaballs moving.
-
-## Polygonization (50 points)
-Implement `polygonize` inside `Cell` class. This function should return the list of **vertices** and **normals** of the triangles polygonized in the voxel. 
-
-### Vertices (30 points out of 50)
-To compute the vertices, we have provided the look-up tables from Paul Bourke's. The table assumes the following indexing scheme:
-![](./ref_voxel_indexing.png)
-
-- _The eight corners can be represented as an 8-bit number, where 1 means the isovalue is above or below the isolevel based on your implementation._
-- _The twelve edges can be represented as a 12-bit number, where 1 means that the isosurface intersects with this edge._
-
-- **EDGE_TABLE**: This table returns a 12-bit number that represents the edges intersected by the isosurface. For each intersected edge, compute the linearly interpolated vertex position on the edge according to the isovalue at each end corner of the edge.
-
-- **TRI_TABLE**: This table acts as the triangle indices. Every 16 elements in the table represents a possible polygonizing configuration. Within each configuration, every three consecutive elements represents the indices of a triangle that should be created from the edges above. 
-
-### Normals (20 points out of 50)
-Compute the normals using the gradient of the vertex with respect to the x, y, and z. The normals are then used for shading different materials.
-
-## Meshing (18 points)
-The mesh for the metaball's isosurface should be created once. At each frame, using the list of **vertices** and **normals** polygonized from the voxels, update the mesh's geometry for the isosurface. Notice that the total volume of the mesh does change.
-
-## Materials and post-processing (10 points)
-Interesting shader materials beyond just the provided threejs materials. We encourage using your previous shaders assignment for this part.
-
-## Extra credits (Up to 30 points)
-- Metaball can be positive or negative. A negative metaball will substract from the surface, which pushed the surface inward. **Implement a scene with both positive and negative metaballs. (10 points)**
-- **More implicit surfaces!** For example: planes, mesh, etc.). Some very interesting ideas are to blend your metaballs into those surfaces. **(5 points for each)**
-
-## Submission
-
-- Update `README.md` to contain a solid description of your project
-- Publish your project to gh-pages. `npm run deploy`. It should now be visible at http://username.github.io/repo-name
-- Create a [pull request](https://help.github.com/articles/creating-a-pull-request/) to this repository, and in the comment, include a link to your published project.
-- Submit the link to your pull request on Canvas.
-
-## Deploy
-- `npm run build`
-- Add and commit all changes
-- `npm run deploy`
-- If you're having problems with assets not linking correctly, make sure you wrap you're filepaths in `require()`. This will make the bundler package and your static assets as well. So, instead of `loadTexture('./images/thing.bmp')`, do `loadTexture(require('./images/thing.bmp'))`.
