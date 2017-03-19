@@ -5,19 +5,20 @@ require('file-loader?name=[name].[ext]!../index.html');
 // http://paulbourke.net/geometry/polygonise/
 
 const THREE = require('three'); // older modules are imported like this. You shouldn't have to worry about this much
+const OBJLoader = require('three-obj-loader')(THREE)
 
 import Framework from './framework'
 import LUT from './marching_cube_LUT.js'
 import MarchingCubes from './marching_cubes.js'
 
-const DEFAULT_VISUAL_DEBUG = true;
+const DEFAULT_VISUAL_DEBUG = false;
 const DEFAULT_ISO_LEVEL = 1.0;
-const DEFAULT_GRID_RES = 4;
-const DEFAULT_GRID_WIDTH = 10;
-const DEFAULT_NUM_METABALLS = 10;
-const DEFAULT_MIN_RADIUS = 0.5;
-const DEFAULT_MAX_RADIUS = 1;
-const DEFAULT_MAX_SPEED = 0.01;
+const DEFAULT_GRID_RES = 40;
+const DEFAULT_GRID_WIDTH = 15;
+const DEFAULT_NUM_METABALLS = 7;
+const DEFAULT_MIN_RADIUS = 0.7;
+const DEFAULT_MAX_RADIUS = 1.2;
+const DEFAULT_MAX_SPEED = 0.05;
 
 var App = {
   // 
@@ -71,8 +72,9 @@ function onLoad(framework) {
   App.camera = camera;
   App.renderer = renderer;
 
-  renderer.setClearColor( 0xbfd1e5 );
-  scene.add(new THREE.AxisHelper(20));
+  renderer.alpha = true;
+  //renderer.setClearColor( 0xbfd1e5 );
+  //scene.add(new THREE.AxisHelper(20));
 
   setupCamera(App.camera);
   setupLights(App.scene);
@@ -90,8 +92,9 @@ function onUpdate(framework) {
 
 function setupCamera(camera) {
   // set camera position
-  camera.position.set(5, 5, 30);
-  camera.lookAt(new THREE.Vector3(0,0,0));
+  camera.position.set(5, 5, 40);
+  //make sure to set controls.target.set() in framework too
+  camera.lookAt(new THREE.Vector3(DEFAULT_GRID_WIDTH/2.0, DEFAULT_GRID_WIDTH/3.0, DEFAULT_GRID_WIDTH/2.0));
 }
 
 function setupLights(scene) {
@@ -101,19 +104,57 @@ function setupLights(scene) {
   directionalLight.color.setHSL(0.1, 1, 0.95);
   directionalLight.position.set(1, 10, 2);
   directionalLight.position.multiplyScalar(10);
-
   scene.add(directionalLight);
+
+  var ambientLight = new THREE.AmbientLight( 0xffffff, 0.3);
+  scene.add(ambientLight);
 }
 
 function setupScene(scene) {
   App.marchingCubes = new MarchingCubes(App);
+
+  //lamp base loading
+  var objLoader = new THREE.OBJLoader();
+  objLoader.load('../src/assets/LampBaseLarge.obj', function(obj) {
+    var geo = obj.children[0].geometry;
+
+    var material2 = new THREE.ShaderMaterial( {
+      uniforms: { 
+        tMatCap: { 
+            type: 't', 
+            value: THREE.ImageUtils.loadTexture( '../src/assets/Mudbox/LiquidMetal.png' ) 
+        }
+      },
+    
+      vertexShader: require('./shaders/litsphere-vert.glsl'),
+      fragmentShader: require('./shaders/litsphere-frag.glsl'),
+      shading: THREE.SmoothShading
+    });
+
+    var mesh = new THREE.Mesh(geo, material2);
+    mesh.geometry.translate(DEFAULT_GRID_WIDTH/2.0 , 0, DEFAULT_GRID_WIDTH/2.0);
+    scene.add(mesh);
+  });
+
+  //lamp transparent glass loading
+  objLoader.load('../src/assets/LampGlassLarge.obj', function(obj) {
+    var geo = obj.children[0].geometry;
+    var mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial());
+    mesh.material.metalness = 1.0;
+    mesh.material.roughness = 0.1;
+    mesh.material.transparent = true;
+    mesh.material.opacity = 0.1;
+    mesh.geometry.translate(DEFAULT_GRID_WIDTH/2.0, 0, DEFAULT_GRID_WIDTH/2.0);
+    scene.add(mesh);
+  });
+
 }
 
 
 function setupGUI(gui) {
 
   // more information here: https://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
-  
+  /*
   // --- CONFIG ---
   gui.add(App, 'isPaused').onChange(function(value) {
     App.isPaused = value;
@@ -154,6 +195,7 @@ function setupGUI(gui) {
     }
   });
   debugFolder.open();  
+  */
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
