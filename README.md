@@ -1,5 +1,11 @@
 # Project 6: Implicit surfaces - Marching cubes
 
+## View the Project
+
+# [Click Here](https://hanbollar.github.io/Project6-MarchingCubes-Implicit-Surfaces/)
+
+## The Project
+
 **Project Description:** Implemented an isosurface created from metaballs using the marching cubes algorithm. 
 
 Metaballs are organic-looking n-dimensional objects. I implemented 3-dimensional metaballs. Using these we can make blooping shapes such as those in a lava-lamp. An isosurface is created whenever the metaball function crosses a certain threshold, called isolevel. The metaball function describes the total influences of each metaball to a given points. A metaball influence is a function between its radius and distance to the point:
