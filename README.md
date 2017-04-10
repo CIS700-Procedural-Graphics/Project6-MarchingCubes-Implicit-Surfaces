@@ -2,6 +2,8 @@
 
 ## View the Project
 
+Note: unclick show grid and show spheres for faster loading time.</br>
+
 # [Click Here](https://hanbollar.github.io/Project6-MarchingCubes-Implicit-Surfaces/)
 
 ## The Project
