@@ -195,7 +195,7 @@ export default class MarchingCubes
   {
     if (this.isPaused)
     {
-      //there should be no change in the u=isosurface when the movement is paused
+      //there should be no change in the isosurface when the movement is paused
       return;
     }
 
@@ -302,38 +302,30 @@ export default class MarchingCubes
   updateMesh()
   {
       //now that all the triangles exist as a mesh, update them every frame via this function
-      this.vertexPos = [];
-      this.vertexNor = [];
-      this.faces = [];
+      var vertexPos = [];
+      var faces = [];
 
       for (var c = 0; c < this.res3; c++)
       {
         //get vertex data for every voxel from polygonize() and use it to update the overall mesh
         var VertexData = this.voxels[c].polygonize(this.isolevel);
 
-        for (var j = 0; j < VertexData.vertPositions.length; j++)
+        var offset = vertexPos.length;
+        for (var j = 0; j < VertexData.vertPositions.length; j+=3)
         {
-          this.vertexPos.push(VertexData.vertPositions[j]);
-          this.vertexNor.push(VertexData.vertNormals[j]);
+          vertexPos.push(VertexData.vertPositions[j]);
+          vertexPos.push(VertexData.vertPositions[j+1]);
+          vertexPos.push(VertexData.vertPositions[j+2]);
+
+          var vertnors = [VertexData.vertNormals[j], VertexData.vertNormals[j+1], VertexData.vertNormals[j+2]];
+          var face = new THREE.Face3(offset+j, offset+j+1, offset+j+2, vertnors);
+
+          faces.push(face);
         }
       }
 
-      this.mesh.geometry.vertices = this.vertexPos;
-
-      for(var i=0; i< this.vertexPos.length ;i=i+3)
-      {
-        this.faces.push(new THREE.Face3(i, i+1, i+2));
-        this.faces[this.faces.length - 1].vertexNormals[0] = this.vertexNor[i];
-        this.faces[this.faces.length - 1].vertexNormals[1] = this.vertexNor[i+1];
-        this.faces[this.faces.length - 1].vertexNormals[2] = this.vertexNor[i+2];
-      }
-      this.mesh.geometry.faces = this.faces;
-
-      ///Uncomment to help visualize the face normals as 3D geometry on-screen
-      // var helper = new THREE.FaceNormalsHelper( this.mesh, 2, 0x00ff00, 1 );
-      // this.scene.add( helper );
-
-      this.mesh.geometry.computeVertexNormals();
+      this.mesh.geometry.vertices = vertexPos;
+      this.mesh.geometry.faces = faces;
 
       //just inform three.js that the mesh has been updated
       this.mesh.geometry.verticesNeedUpdate = true;
@@ -354,7 +346,7 @@ class Voxel
   {
     this.pos = position;
     this.gridCellWidth = gridCellWidth;
-    this.corner = new Array(8); //array of the 8 sample points at the corners of every grid cell
+    this.corner = []; //new Array(8); //array of the 8 sample points at the corners of every grid cell
 
     if (VISUAL_DEBUG) {
       this.makeMesh();
@@ -502,12 +494,12 @@ class Voxel
 
     for (var i = 0; i < numMetaballs; i++)
     {
-      var distposdx = balls[i].pos.distanceTo(point + new THREE.Vector3(0.00001, 0.0, 0.0));
-      var distnegdx = balls[i].pos.distanceTo(point - new THREE.Vector3(0.00001, 0.0, 0.0));
-      var distposdy = balls[i].pos.distanceTo(point + new THREE.Vector3(0.0, 0.00001, 0.0));
-      var distnegdy = balls[i].pos.distanceTo(point - new THREE.Vector3(0.0, 0.00001, 0.0));
-      var distposdz = balls[i].pos.distanceTo(point + new THREE.Vector3(0.0, 0.0, 0.00001));
-      var distnegdz = balls[i].pos.distanceTo(point - new THREE.Vector3(0.0, 0.0, 0.00001));
+      var distposdx = balls[i].pos.distanceTo(new THREE.Vector3(point.x + 0.00001, point.y, point.z));
+      var distnegdx = balls[i].pos.distanceTo(new THREE.Vector3(point.x - 0.00001, point.y, point.z));
+      var distposdy = balls[i].pos.distanceTo(new THREE.Vector3(point.x, point.y + 0.00001, point.z));
+      var distnegdy = balls[i].pos.distanceTo(new THREE.Vector3(point.x, point.y - 0.00001, point.z));
+      var distposdz = balls[i].pos.distanceTo(new THREE.Vector3(point.x, point.y, point.z + 0.00001));
+      var distnegdz = balls[i].pos.distanceTo(new THREE.Vector3(point.x, point.y, point.z - 0.00001));
 
       isovalueposdx += balls[i].radius2/(distposdx*distposdx);
       isovaluenegdx += balls[i].radius2/(distnegdx*distnegdx);
@@ -517,9 +509,9 @@ class Voxel
       isovaluenegdz += balls[i].radius2/(distnegdz*distnegdz);
     }
 
-    return (new THREE.Vector3( isovalueposdx - isovaluenegdx,
-                               isovalueposdy - isovaluenegdy,
-                               isovalueposdz - isovaluenegdz)).normalize();
+    return (new THREE.Vector3( isovaluenegdx - isovalueposdx,
+                               isovaluenegdy - isovalueposdy,
+                               isovaluenegdz - isovalueposdz).normalize());
   }
 
   polygonize(isolevel) //called by a voxel
