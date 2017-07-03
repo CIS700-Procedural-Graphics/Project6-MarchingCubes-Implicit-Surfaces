@@ -42,7 +42,7 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -70,9 +70,9 @@
 	
 	var DEFAULT_VISUAL_DEBUG = false;
 	var DEFAULT_ISO_LEVEL = 1.0;
-	var DEFAULT_GRID_RES = 20;
+	var DEFAULT_GRID_RES = 30;
 	var DEFAULT_GRID_WIDTH = 10;
-	var DEFAULT_NUM_METABALLS = 3;
+	var DEFAULT_NUM_METABALLS = 6;
 	var DEFAULT_MIN_RADIUS = 1.0;
 	var DEFAULT_MAX_RADIUS = 1.5;
 	var DEFAULT_MAX_SPEED = 0.05;
@@ -137,7 +137,7 @@
 	  App.renderer = renderer;
 	
 	  renderer.setClearColor(0xbfd1e5);
-	  scene.add(new THREE.AxisHelper(20));
+	  //scene.add(new THREE.AxisHelper(20));
 	
 	  setupCamera(App.camera);
 	  setupLights(App.scene);
@@ -154,7 +154,7 @@
 	
 	function setupCamera(camera) {
 	  // set camera position
-	  camera.position.set(-1, 8, 20);
+	  camera.position.set(15, 8, 15);
 	  camera.lookAt(new THREE.Vector3(0, 0, 0));
 	}
 	
@@ -220,9 +220,9 @@
 	// when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
 	_framework2.default.init(onLoad, onUpdate);
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -314,9 +314,9 @@
 	  init: init
 	};
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	// stats.js - http://github.com/mrdoob/stats.js
 	var Stats=function(){var l=Date.now(),m=l,g=0,n=Infinity,o=0,h=0,p=Infinity,q=0,r=0,s=0,f=document.createElement("div");f.id="stats";f.addEventListener("mousedown",function(b){b.preventDefault();t(++s%2)},!1);f.style.cssText="width:80px;opacity:0.9;cursor:pointer";var a=document.createElement("div");a.id="fps";a.style.cssText="padding:0 0 3px 3px;text-align:left;background-color:#002";f.appendChild(a);var i=document.createElement("div");i.id="fpsText";i.style.cssText="color:#0ff;font-family:Helvetica,Arial,sans-serif;font-size:9px;font-weight:bold;line-height:15px";
@@ -326,16 +326,16 @@
 	a+"px",m=b,r=0);return b},update:function(){l=this.end()}}};"object"===typeof module&&(module.exports=Stats);
 
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	module.exports = __webpack_require__(4)
 	module.exports.color = __webpack_require__(5)
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	/**
 	 * dat-gui JavaScript Controller Library
@@ -3998,9 +3998,9 @@
 	dat.dom.dom,
 	dat.utils.common);
 
-/***/ },
+/***/ }),
 /* 5 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	/**
 	 * dat-gui JavaScript Controller Library
@@ -4758,9 +4758,9 @@
 	dat.color.toString,
 	dat.utils.common);
 
-/***/ },
+/***/ }),
 /* 6 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
 		 true ? factory(exports) :
@@ -47061,9 +47061,9 @@
 	})));
 
 
-/***/ },
+/***/ }),
 /* 7 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = function( THREE ) {
 		/**
@@ -48087,9 +48087,9 @@
 	};
 
 
-/***/ },
+/***/ }),
 /* 8 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	"use strict";
 	
@@ -48120,9 +48120,9 @@
 	    TRI_TABLE: TRI_TABLE
 	};
 
-/***/ },
+/***/ }),
 /* 9 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -48338,7 +48338,7 @@
 	    key: 'update',
 	    value: function update() {
 	      if (this.isPaused) {
-	        //there should be no change in the u=isosurface when the movement is paused
+	        //there should be no change in the isosurface when the movement is paused
 	        return;
 	      }
 	
@@ -48439,35 +48439,28 @@
 	    key: 'updateMesh',
 	    value: function updateMesh() {
 	      //now that all the triangles exist as a mesh, update them every frame via this function
-	      this.vertexPos = [];
-	      this.vertexNor = [];
-	      this.faces = [];
+	      var vertexPos = [];
+	      var faces = [];
 	
 	      for (var c = 0; c < this.res3; c++) {
 	        //get vertex data for every voxel from polygonize() and use it to update the overall mesh
 	        var VertexData = this.voxels[c].polygonize(this.isolevel);
 	
-	        for (var j = 0; j < VertexData.vertPositions.length; j++) {
-	          this.vertexPos.push(VertexData.vertPositions[j]);
-	          this.vertexNor.push(VertexData.vertNormals[j]);
+	        var offset = vertexPos.length;
+	        for (var j = 0; j < VertexData.vertPositions.length; j += 3) {
+	          vertexPos.push(VertexData.vertPositions[j]);
+	          vertexPos.push(VertexData.vertPositions[j + 1]);
+	          vertexPos.push(VertexData.vertPositions[j + 2]);
+	
+	          var vertnors = [VertexData.vertNormals[j], VertexData.vertNormals[j + 1], VertexData.vertNormals[j + 2]];
+	          var face = new THREE.Face3(offset + j, offset + j + 1, offset + j + 2, vertnors);
+	
+	          faces.push(face);
 	        }
 	      }
 	
-	      this.mesh.geometry.vertices = this.vertexPos;
-	
-	      for (var i = 0; i < this.vertexPos.length; i = i + 3) {
-	        this.faces.push(new THREE.Face3(i, i + 1, i + 2));
-	        this.faces[this.faces.length - 1].vertexNormals[0] = this.vertexNor[i];
-	        this.faces[this.faces.length - 1].vertexNormals[1] = this.vertexNor[i + 1];
-	        this.faces[this.faces.length - 1].vertexNormals[2] = this.vertexNor[i + 2];
-	      }
-	      this.mesh.geometry.faces = this.faces;
-	
-	      ///Uncomment to help visualize the face normals as 3D geometry on-screen
-	      // var helper = new THREE.FaceNormalsHelper( this.mesh, 2, 0x00ff00, 1 );
-	      // this.scene.add( helper );
-	
-	      this.mesh.geometry.computeVertexNormals();
+	      this.mesh.geometry.vertices = vertexPos;
+	      this.mesh.geometry.faces = faces;
 	
 	      //just inform three.js that the mesh has been updated
 	      this.mesh.geometry.verticesNeedUpdate = true;
@@ -48495,7 +48488,7 @@
 	    value: function init(position, gridCellWidth) {
 	      this.pos = position;
 	      this.gridCellWidth = gridCellWidth;
-	      this.corner = new Array(8); //array of the 8 sample points at the corners of every grid cell
+	      this.corner = []; //new Array(8); //array of the 8 sample points at the corners of every grid cell
 	
 	      if (VISUAL_DEBUG) {
 	        this.makeMesh();
@@ -48625,12 +48618,12 @@
 	      var isovaluenegdz = 0.0;
 	
 	      for (var i = 0; i < numMetaballs; i++) {
-	        var distposdx = balls[i].pos.distanceTo(point + new THREE.Vector3(0.00001, 0.0, 0.0));
-	        var distnegdx = balls[i].pos.distanceTo(point - new THREE.Vector3(0.00001, 0.0, 0.0));
-	        var distposdy = balls[i].pos.distanceTo(point + new THREE.Vector3(0.0, 0.00001, 0.0));
-	        var distnegdy = balls[i].pos.distanceTo(point - new THREE.Vector3(0.0, 0.00001, 0.0));
-	        var distposdz = balls[i].pos.distanceTo(point + new THREE.Vector3(0.0, 0.0, 0.00001));
-	        var distnegdz = balls[i].pos.distanceTo(point - new THREE.Vector3(0.0, 0.0, 0.00001));
+	        var distposdx = balls[i].pos.distanceTo(new THREE.Vector3(point.x + 0.00001, point.y, point.z));
+	        var distnegdx = balls[i].pos.distanceTo(new THREE.Vector3(point.x - 0.00001, point.y, point.z));
+	        var distposdy = balls[i].pos.distanceTo(new THREE.Vector3(point.x, point.y + 0.00001, point.z));
+	        var distnegdy = balls[i].pos.distanceTo(new THREE.Vector3(point.x, point.y - 0.00001, point.z));
+	        var distposdz = balls[i].pos.distanceTo(new THREE.Vector3(point.x, point.y, point.z + 0.00001));
+	        var distnegdz = balls[i].pos.distanceTo(new THREE.Vector3(point.x, point.y, point.z - 0.00001));
 	
 	        isovalueposdx += balls[i].radius2 / (distposdx * distposdx);
 	        isovaluenegdx += balls[i].radius2 / (distnegdx * distnegdx);
@@ -48640,7 +48633,7 @@
 	        isovaluenegdz += balls[i].radius2 / (distnegdz * distnegdz);
 	      }
 	
-	      return new THREE.Vector3(isovalueposdx - isovaluenegdx, isovalueposdy - isovaluenegdy, isovalueposdz - isovaluenegdz).normalize();
+	      return new THREE.Vector3(isovaluenegdx - isovalueposdx, isovaluenegdy - isovalueposdy, isovaluenegdz - isovalueposdz).normalize();
 	    }
 	  }, {
 	    key: 'polygonize',
@@ -48704,9 +48697,9 @@
 	  return Voxel;
 	}();
 
-/***/ },
+/***/ }),
 /* 10 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -48801,9 +48794,9 @@
 	
 	exports.default = Metaball;
 
-/***/ },
+/***/ }),
 /* 11 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -48886,24 +48879,24 @@
 	
 	exports.default = InspectPoint;
 
-/***/ },
+/***/ }),
 /* 12 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = "varying vec3 f_normal;\r\nvarying vec3 f_position;\r\nvarying vec3 camP;\r\n\r\nvoid main()\r\n{\r\n    f_normal = normal;\r\n    f_position = position;\r\n    camP = cameraPosition;\r\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\r\n}\r\n"
 
-/***/ },
+/***/ }),
 /* 13 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = "uniform vec3 metaball_color;\r\n\r\nvarying vec3 f_position; //point in the scene\r\nvarying vec3 f_normal; //normal of the same point\r\nvarying vec3 camP; //camera position\r\n\r\nvoid main()\r\n{\r\n    vec4 color = vec4(metaball_color, 1.0);\r\n\r\n    float t = clamp(dot(f_normal, normalize(camP - f_position)), 0.0, 1.0);\r\n\r\n    //color pallete\r\n    //condenses 3 color dimensions into a single dimensional quantity\r\n    float red = 0.5 + 0.5*(cos(6.28*(t)));\r\n    float green = 0.5 + 0.5*(cos(6.28*(t+0.33)));\r\n    float blue = 0.5 + 0.5*(cos(6.28*(t+0.67)));\r\n\r\n    vec3 iridescent_color = vec3(red, green, blue);\r\n\r\n    vec3 ambient = vec3(0.5, 0.5, 0.5);\r\n    vec3 lightIntensity = vec3(2.0, 2.0, 2.0);\r\n    vec3 lightColor = vec3(1.0, 1.0, 1.0);\r\n\r\n    gl_FragColor = vec4(t * iridescent_color * lightColor * lightIntensity + ambient * metaball_color, 1.0);\r\n}\r\n"
 
-/***/ },
+/***/ }),
 /* 14 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	module.exports = __webpack_require__.p + "index.html";
 
-/***/ }
+/***/ })
 /******/ ]);
 //# sourceMappingURL=bundle.js.map
