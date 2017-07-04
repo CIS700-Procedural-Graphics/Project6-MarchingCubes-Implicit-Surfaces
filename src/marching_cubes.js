@@ -47,6 +47,26 @@ export default class MarchingCubes
     this.init(App);
   }
 
+  reset()
+  {
+  	cleanscene();
+  }
+	
+  	cleanscene()
+	{
+		//remove all objects from the scene
+		for( var i = this.scene.children.length - 1; i >= 0; i--)
+		{
+			var obj = this.scene.children[i];
+			this.scene.remove(obj);
+		}
+
+		if(this.mesh)
+	  	{
+	  		this.scene.remove(this.mesh);
+	  	}
+	}
+
   init(App)
   {
     this.isPaused = false;

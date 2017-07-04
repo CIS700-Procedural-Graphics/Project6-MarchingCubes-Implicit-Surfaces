@@ -184,10 +184,10 @@
 	    }
 	  });
 	
-	  gui.add(App.config, 'numMetaballs', 1, 10).onChange(function (value) {
-	    App.config.numMetaballs = value;
-	    App.marchingCubes.init(App);
-	  });
+	  // gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
+	  //   App.config.numMetaballs = value;
+	  //   App.marchingCubes.init(App);
+	  // });
 	
 	  // --- DEBUG ---
 	  //uncomment for debugging purposes
@@ -48188,6 +48188,24 @@
 	  }
 	
 	  _createClass(MarchingCubes, [{
+	    key: 'reset',
+	    value: function reset() {
+	      cleanscene();
+	    }
+	  }, {
+	    key: 'cleanscene',
+	    value: function cleanscene() {
+	      //remove all objects from the scene
+	      for (var i = this.scene.children.length - 1; i >= 0; i--) {
+	        var obj = this.scene.children[i];
+	        this.scene.remove(obj);
+	      }
+	
+	      if (this.mesh) {
+	        this.scene.remove(this.mesh);
+	      }
+	    }
+	  }, {
 	    key: 'init',
 	    value: function init(App) {
 	      this.isPaused = false;
@@ -48889,7 +48907,7 @@
 /* 13 */
 /***/ (function(module, exports) {
 
-	module.exports = "uniform vec3 metaball_color;\r\n\r\nvarying vec3 f_position; //point in the scene\r\nvarying vec3 f_normal; //normal of the same point\r\nvarying vec3 camP; //camera position\r\n\r\nvoid main()\r\n{\r\n    vec4 color = vec4(metaball_color, 1.0);\r\n\r\n    float t = clamp(dot(f_normal, normalize(camP - f_position)), 0.0, 1.0);\r\n\r\n    //color pallete\r\n    //condenses 3 color dimensions into a single dimensional quantity\r\n    float red = 0.5 + 0.5*(cos(6.28*(t)));\r\n    float green = 0.5 + 0.5*(cos(6.28*(t+0.33)));\r\n    float blue = 0.5 + 0.5*(cos(6.28*(t+0.67)));\r\n\r\n    vec3 iridescent_color = vec3(red, green, blue);\r\n\r\n    vec3 ambient = vec3(0.5, 0.5, 0.5);\r\n    vec3 lightIntensity = vec3(2.0, 2.0, 2.0);\r\n    vec3 lightColor = vec3(1.0, 1.0, 1.0);\r\n\r\n    gl_FragColor = vec4(t * iridescent_color * lightColor * lightIntensity + ambient * metaball_color, 1.0);\r\n}\r\n"
+	module.exports = "uniform vec3 metaball_color;\r\n\r\nvarying vec3 f_position; //point in the scene\r\nvarying vec3 f_normal; //normal of the same point\r\nvarying vec3 camP; //camera position\r\n\r\nvoid main()\r\n{\r\n    vec4 color = vec4(metaball_color, 1.0);\r\n\r\n    float t = clamp(dot(f_normal, normalize(camP - f_position)), 0.0, 1.0);\r\n\r\n    //color pallete\r\n    //condenses 3 color dimensions into a single dimensional quantity\r\n    float red = 0.1 + 0.5*(cos(6.28*(t)));\r\n    float green = 0.4 + 0.5*(cos(6.28*(t+0.33)));\r\n    float blue = 0.6 + 0.5*(cos(6.28*(t+0.67)));\r\n\r\n    vec3 iridescent_color = vec3(red, green, blue);\r\n\r\n    vec3 ambient = vec3(0.5, 0.5, 0.5);\r\n    vec3 lightIntensity = vec3(2.0, 2.0, 2.0);\r\n    vec3 lightColor = vec3(1.0, 1.0, 1.0);\r\n\r\n    gl_FragColor = vec4(t * iridescent_color * lightColor * lightIntensity + ambient * metaball_color, 1.0);\r\n}\r\n"
 
 /***/ }),
 /* 14 */

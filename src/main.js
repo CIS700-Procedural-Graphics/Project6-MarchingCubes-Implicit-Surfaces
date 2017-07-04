@@ -127,10 +127,10 @@ function setupGUI(gui)
     }
   });
 
-  gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
-    App.config.numMetaballs = value;
-    App.marchingCubes.init(App);
-  });
+  // gui.add(App.config, 'numMetaballs', 1, 10).onChange(function(value) {
+  //   App.config.numMetaballs = value;
+  //   App.marchingCubes.init(App);
+  // });
 
   // --- DEBUG ---
   //uncomment for debugging purposes

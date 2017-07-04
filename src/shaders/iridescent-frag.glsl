@@ -12,9 +12,9 @@ void main()
 
     //color pallete
     //condenses 3 color dimensions into a single dimensional quantity
-    float red = 0.5 + 0.5*(cos(6.28*(t)));
-    float green = 0.5 + 0.5*(cos(6.28*(t+0.33)));
-    float blue = 0.5 + 0.5*(cos(6.28*(t+0.67)));
+    float red = 0.1 + 0.5*(cos(6.28*(t)));
+    float green = 0.4 + 0.5*(cos(6.28*(t+0.33)));
+    float blue = 0.6 + 0.5*(cos(6.28*(t+0.67)));
 
     vec3 iridescent_color = vec3(red, green, blue);
 
