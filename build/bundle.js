@@ -231,7 +231,7 @@
 	function LoadLavaLamp(scene) {
 		var objLoader = new THREE.OBJLoader();
 	
-		var obj = objLoader.load('./assets/models/LavaLamp_metal.obj', function (obj) {
+		var obj = objLoader.load(__webpack_require__(18), function (obj) {
 			lavalamp_metalGeo = obj.children[0].geometry;
 			lampmetal = new THREE.Mesh(lavalamp_metalGeo, metal_mat);
 			lampmetal.position.set(DEFAULT_GRID_WIDTH * 0.5, -7, DEFAULT_GRID_DEPTH * 0.5);
@@ -239,7 +239,7 @@
 			scene.add(lampmetal);
 		});
 	
-		var obj = objLoader.load('./assets/models/LavaLamp_glass.obj', function (obj) {
+		var obj = objLoader.load(__webpack_require__(19), function (obj) {
 			lavalamp_glassGeo = obj.children[0].geometry;
 			lampglass = new THREE.Mesh(lavalamp_glassGeo, glass_mat);
 			lampglass.position.set(DEFAULT_GRID_WIDTH * 0.5, -7, DEFAULT_GRID_DEPTH * 0.5);
@@ -51592,6 +51592,18 @@
 /***/ (function(module, exports) {
 
 	module.exports = "uniform sampler2D texture;\r\nuniform vec3 u_albedo;\r\nuniform vec3 lightPos;\r\n\r\nvarying vec2 f_uv;\r\n\r\nvoid main() \r\n{\r\n    gl_FragColor = vec4(texture2D(texture, f_uv).rgb * u_albedo, 1.0);\r\n}"
+
+/***/ }),
+/* 18 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__.p + "./assets/LavaLamp_metal-8b63ab.obj";
+
+/***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__.p + "./assets/LavaLamp_glass-b51713.obj";
 
 /***/ })
 /******/ ]);

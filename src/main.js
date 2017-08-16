@@ -174,7 +174,7 @@ function LoadLavaLamp(scene)
 {
 	var objLoader = new THREE.OBJLoader();
 
-	var obj = objLoader.load('./assets/models/LavaLamp_metal.obj', function(obj) {
+	var obj = objLoader.load(require('./assets/models/LavaLamp_metal.obj'), function(obj) {
 		lavalamp_metalGeo = obj.children[0].geometry;
 		lampmetal = new THREE.Mesh(lavalamp_metalGeo, metal_mat);
 		lampmetal.position.set(DEFAULT_GRID_WIDTH*0.5,-7,DEFAULT_GRID_DEPTH*0.5);
@@ -182,7 +182,7 @@ function LoadLavaLamp(scene)
 		scene.add(lampmetal);
 	});
 
-	var obj = objLoader.load('./assets/models/LavaLamp_glass.obj', function(obj) {
+	var obj = objLoader.load(require('./assets/models/LavaLamp_glass.obj'), function(obj) {
 		lavalamp_glassGeo = obj.children[0].geometry;
 		lampglass = new THREE.Mesh(lavalamp_glassGeo, glass_mat);
 		lampglass.position.set(DEFAULT_GRID_WIDTH*0.5,-7,DEFAULT_GRID_DEPTH*0.5);
