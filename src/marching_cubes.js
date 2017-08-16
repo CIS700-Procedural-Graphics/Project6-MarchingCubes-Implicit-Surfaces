@@ -52,7 +52,7 @@ export default class MarchingCubes
   	cleanscene();
   }
 	
-  	cleanscene()
+  cleanscene()
 	{
 		//remove all objects from the scene
 		for( var i = this.scene.children.length - 1; i >= 0; i--)
@@ -62,9 +62,9 @@ export default class MarchingCubes
 		}
 
 		if(this.mesh)
-	  	{
-	  		this.scene.remove(this.mesh);
-	  	}
+  	{
+  		this.scene.remove(this.mesh);
+  	}
 	}
 
   init(App)
@@ -81,14 +81,22 @@ export default class MarchingCubes
     this.maxRadius = App.config.maxRadius; //of metaballs
 
     this.gridCellWidth = App.config.gridCellWidth;
+    this.gridCellHeight = App.config.gridCellHeight;
+    this.gridCellDepth = App.config.gridCellDepth;
+
     this.halfCellWidth = App.config.gridCellWidth / 2.0;
+    this.halfCellHeight = App.config.gridCellHeight / 2.0;
+    this.halfCellDepth = App.config.gridCellDepth / 2.0;
+
     this.gridWidth = App.config.gridWidth;
+    this.gridHeight = App.config.gridHeight;
+    this.gridDepth = App.config.gridDepth;
 
     this.res = App.config.gridRes;
     this.res2 = App.config.gridRes * App.config.gridRes;
     this.res3 = App.config.gridRes * App.config.gridRes * App.config.gridRes;
 
-    this.maxSpeed = App.config.maxSpeed;
+    this.maxSpeed = App.config.speed;
     numMetaballs = App.config.numMetaballs;
 
     this.camera = App.camera;
@@ -102,11 +110,7 @@ export default class MarchingCubes
     this.showSpheres = true;
     this.showGrid = true;
 
-    if (App.config.material) {
-      this.material = new THREE.MeshPhongMaterial({ color: 0xff6a1d});
-    } else {
-      this.material = App.config.material;
-    }
+    this.material = App.config.material;
 
     this.setupCells();
     this.setupMetaballs();
@@ -114,10 +118,9 @@ export default class MarchingCubes
   };
 
   // Convert from 1D index to 3D indices
-  i1toi3(i1) {
-
+  i1toi3(i1) 
+  {
     // [i % w, i % (h * w)) / w, i / (h * w)]
-
     // @note: ~~ is a fast substitute for Math.floor()
     return [
       i1 % this.res,
@@ -127,10 +130,9 @@ export default class MarchingCubes
   };
 
   // Convert from 3D indices to 1 1D
-  i3toi1(i3x, i3y, i3z) {
-
+  i3toi1(i3x, i3y, i3z) 
+  {
     // [x + y * w + z * w * h]
-
     return i3x + i3y * this.res + i3z * this.res2;
   };
 
@@ -139,8 +141,8 @@ export default class MarchingCubes
   {
     return new THREE.Vector3(
       i3[0] * this.gridCellWidth + this.origin.x + this.halfCellWidth,
-      i3[1] * this.gridCellWidth + this.origin.y + this.halfCellWidth,
-      i3[2] * this.gridCellWidth + this.origin.z + this.halfCellWidth
+      i3[1] * this.gridCellHeight + this.origin.y + this.halfCellHeight,
+      i3[2] * this.gridCellDepth + this.origin.z + this.halfCellDepth
       );
   };
 
@@ -153,7 +155,7 @@ export default class MarchingCubes
       var i3 = this.i1toi3(i);
       var {x, y, z} = this.i3toPos(i3);
 
-      var voxel = new Voxel(new THREE.Vector3(x, y, z), this.gridCellWidth);
+      var voxel = new Voxel(new THREE.Vector3(x, y, z), this.gridCellWidth, this.gridCellHeight, this.gridCellDepth);
       this.voxels.push(voxel);
 
       if (VISUAL_DEBUG) {
@@ -161,6 +163,28 @@ export default class MarchingCubes
         this.scene.add(voxel.mesh);
       }
     }
+
+    // this.voxels = [];
+    // for (var i = 0; i < this.res; i++)
+    // {
+    //   for (var j = 0; j < this.res; j++)
+    //   {
+    //     for (var k = 0; k < this.res; k++)
+    //     {
+    //       var x = i * this.gridCellWidth + this.origin.x + this.halfCellWidth;
+    //       var y = j * this.gridCellWidth + this.origin.y + this.halfCellWidth;
+    //       var z = z * this.gridCellWidth + this.origin.z + this.halfCellWidth;
+
+    //       var voxel = new Voxel(new THREE.Vector3(x, y, z), this.gridCellWidth);
+    //       this.voxels.push(voxel);
+
+    //       if (VISUAL_DEBUG) {
+    //         this.scene.add(voxel.wireframe);
+    //         this.scene.add(voxel.mesh);
+    //       }
+    //     }
+    //   }
+    // }
   }
 
   setupMetaballs()
@@ -174,8 +198,8 @@ export default class MarchingCubes
     // Randomly generate metaballs with different sizes and velocities
     for (var i = 0; i < numMetaballs; i++) {
       x = this.gridWidth / 2;
-      y = this.gridWidth / 2;
-      z = this.gridWidth / 2;
+      y = this.gridHeight / 2;
+      z = this.gridDepth / 2;
       pos = new THREE.Vector3(x, y, z);
 
       vx = (Math.random() * 2 - 1) * this.maxSpeed;
@@ -185,7 +209,7 @@ export default class MarchingCubes
 
       radius = Math.random() * (this.maxRadius - this.minRadius) + this.minRadius;
 
-      var ball = new Metaball(pos, radius, vel, this.gridWidth, VISUAL_DEBUG);
+      var ball = new Metaball(pos, radius, vel, this.gridWidth, this.gridHeight, this.gridDepth, VISUAL_DEBUG);
       balls.push(ball);
 
       if (VISUAL_DEBUG)
@@ -357,21 +381,25 @@ export default class MarchingCubes
 
 class Voxel
 {
-  constructor(position, gridCellWidth)
+  constructor(position, gridCellWidth, gridCellHeight, gridCellDepth)
   {
-    this.init(position, gridCellWidth);
+    this.init(position, gridCellWidth, gridCellHeight, gridCellDepth);
   }
 
-  init(position, gridCellWidth)
+  init(position, gridCellWidth, gridCellHeight, gridCellDepth)
   {
     this.pos = position;
+
     this.gridCellWidth = gridCellWidth;
+    this.gridCellHeight = gridCellHeight;
+    this.gridCellDepth = gridCellDepth;
+
     this.corner = []; //new Array(8); //array of the 8 sample points at the corners of every grid cell
 
     if (VISUAL_DEBUG) {
       this.makeMesh();
     }
-
+    
     this.makeInspectPoints();
   }
 
@@ -379,19 +407,21 @@ class Voxel
   makeMesh()
   {
     var halfGridCellWidth = this.gridCellWidth / 2.0;
+    var halfGridCellHeight = this.gridCellHeight / 2.0;
+    var halfGridCellDepth = this.gridCellDepth / 2.0;
 
     var positions = new Float32Array([
       // Front face
-       halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth,
-       halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth,
-      -halfGridCellWidth, -halfGridCellWidth, halfGridCellWidth,
-      -halfGridCellWidth, halfGridCellWidth,  halfGridCellWidth,
+      halfGridCellWidth, halfGridCellHeight,  halfGridCellDepth,
+      halfGridCellWidth, -halfGridCellHeight, halfGridCellDepth,
+      -halfGridCellWidth, -halfGridCellHeight, halfGridCellDepth,
+      -halfGridCellWidth, halfGridCellHeight,  halfGridCellDepth,
 
       // Back face
-      -halfGridCellWidth,  halfGridCellWidth, -halfGridCellWidth,
-      -halfGridCellWidth, -halfGridCellWidth, -halfGridCellWidth,
-       halfGridCellWidth, -halfGridCellWidth, -halfGridCellWidth,
-       halfGridCellWidth,  halfGridCellWidth, -halfGridCellWidth,
+      -halfGridCellWidth,  halfGridCellHeight, -halfGridCellDepth,
+      -halfGridCellWidth, -halfGridCellHeight, -halfGridCellDepth,
+      halfGridCellWidth, -halfGridCellHeight, -halfGridCellDepth,
+      halfGridCellWidth,  halfGridCellHeight, -halfGridCellDepth,
     ]);
 
     var indices = new Uint16Array([
@@ -413,7 +443,7 @@ class Voxel
     this.wireframe.position.set(this.pos.x, this.pos.y, this.pos.z);
 
     // Green cube
-    geo = new THREE.BoxBufferGeometry(this.gridCellWidth, this.gridCellWidth, this.gridCellWidth);
+    geo = new THREE.BoxBufferGeometry(this.gridCellWidth, this.gridCellHeight, this.gridCellDepth);
     this.mesh = new THREE.Mesh( geo, LAMBERT_GREEN );
     this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
   }
@@ -422,6 +452,9 @@ class Voxel
   makeInspectPoints()
   {
     var halfGridCellWidth = this.gridCellWidth / 2.0;
+    var halfGridCellHeight = this.gridCellHeight / 2.0;
+    var halfGridCellDepth = this.gridCellWidth / 2.0;
+
     var x = this.pos.x;
     var y = this.pos.y;
     var z = this.pos.z;
@@ -431,22 +464,22 @@ class Voxel
     // be whatever you want as long as it is consistent
     //However for ease of understanding what is going on use this indexing scheme
     //as there are useful diagrams on Paul Brookes website
-    this.corner[0] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth),
-                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-    this.corner[1] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z - halfGridCellWidth),
-                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-    this.corner[2] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth),
-                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-    this.corner[3] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellWidth, z + halfGridCellWidth),
-                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-    this.corner[4] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth),
-                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-    this.corner[5] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z - halfGridCellWidth),
-                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-    this.corner[6] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth),
-                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
-    this.corner[7] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellWidth, z + halfGridCellWidth),
-                                    0, new THREE.Vector3(0.0, 0.0, 1.0), VISUAL_DEBUG);
+    this.corner[0] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellHeight, z - halfGridCellDepth),
+                                    0, VISUAL_DEBUG);
+    this.corner[1] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellHeight, z - halfGridCellDepth),
+                                    0,VISUAL_DEBUG);
+    this.corner[2] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y - halfGridCellHeight, z + halfGridCellDepth),
+                                    0, VISUAL_DEBUG);
+    this.corner[3] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y - halfGridCellHeight, z + halfGridCellDepth),
+                                    0, VISUAL_DEBUG);
+    this.corner[4] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellHeight, z - halfGridCellDepth),
+                                    0, VISUAL_DEBUG);
+    this.corner[5] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellHeight, z - halfGridCellDepth),
+                                    0, VISUAL_DEBUG);
+    this.corner[6] = new InspectPoint(new THREE.Vector3(x + halfGridCellWidth, y + halfGridCellHeight, z + halfGridCellDepth),
+                                    0, VISUAL_DEBUG);
+    this.corner[7] = new InspectPoint(new THREE.Vector3(x - halfGridCellWidth, y + halfGridCellHeight, z + halfGridCellDepth),
+                                    0, VISUAL_DEBUG);
   }
 
   show() {
