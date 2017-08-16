@@ -63,7 +63,7 @@ var litSphere_Material = new THREE.ShaderMaterial({
   uniforms: {
 	texture: {
 		type: "t", 
-		value: THREE.ImageUtils.loadTexture('./assets/textures/Silver.jpg')
+		value: THREE.ImageUtils.loadTexture(require('./assets/textures/Silver.bmp'))
 	},
 	u_albedo: {
 	    type: 'v3',
@@ -240,31 +240,31 @@ function setupGUI(gui, scene)
 		App.Shader = 2;
 		if(value==1)
 		{
-			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Green.jpg');
+			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(require('./assets/textures/Green.bmp'));
 		}
 		else if(value==2)
 		{
-			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Gold.jpg');
+			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(require('./assets/textures/Gold.bmp'));
 		}
 		else if(value==3)
 		{
-			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Silver.jpg');
+			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(require('./assets/textures/Silver.bmp'));
 		}
 		else if(value==4)
 		{
-			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Flame.jpg');
+			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(require('./assets/textures/Flame.bmp'));
 		}
 		else if(value==5)
 		{
-			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Lights.jpg');
+			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(require('./assets/textures/Lights.bmp'));
 		}
 		else if(value==6)
 		{
-			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Brown.bmp');
+			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(require('./assets/textures/Brown.bmp'));
 		}
 		else
 		{
-			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Normal1.jpg');
+			litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(require('./assets/textures/Normal.bmp'));
 		}
 
 		onreset(App.scene);

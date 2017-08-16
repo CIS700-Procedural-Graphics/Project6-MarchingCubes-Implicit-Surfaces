@@ -120,7 +120,7 @@
 		uniforms: {
 			texture: {
 				type: "t",
-				value: THREE.ImageUtils.loadTexture('./assets/textures/Silver.jpg')
+				value: THREE.ImageUtils.loadTexture(__webpack_require__(16))
 			},
 			u_albedo: {
 				type: 'v3',
@@ -131,8 +131,8 @@
 				value: new THREE.Vector3(1.0, 10.0, 2.0)
 			}
 		},
-		vertexShader: __webpack_require__(16),
-		fragmentShader: __webpack_require__(17)
+		vertexShader: __webpack_require__(17),
+		fragmentShader: __webpack_require__(18)
 	});
 	
 	//------------------------------------------------------------------------------------------------------------------
@@ -231,7 +231,7 @@
 	function LoadLavaLamp(scene) {
 		var objLoader = new THREE.OBJLoader();
 	
-		var obj = objLoader.load(__webpack_require__(18), function (obj) {
+		var obj = objLoader.load(__webpack_require__(19), function (obj) {
 			lavalamp_metalGeo = obj.children[0].geometry;
 			lampmetal = new THREE.Mesh(lavalamp_metalGeo, metal_mat);
 			lampmetal.position.set(DEFAULT_GRID_WIDTH * 0.5, -7, DEFAULT_GRID_DEPTH * 0.5);
@@ -239,7 +239,7 @@
 			scene.add(lampmetal);
 		});
 	
-		var obj = objLoader.load(__webpack_require__(19), function (obj) {
+		var obj = objLoader.load(__webpack_require__(20), function (obj) {
 			lavalamp_glassGeo = obj.children[0].geometry;
 			lampglass = new THREE.Mesh(lavalamp_glassGeo, glass_mat);
 			lampglass.position.set(DEFAULT_GRID_WIDTH * 0.5, -7, DEFAULT_GRID_DEPTH * 0.5);
@@ -292,19 +292,19 @@
 		gui.add(App, 'LitSphereTexture', { Green: 1, Gold: 2, Silver: 3, Flame: 4, Lights: 5, Brown: 6, Normal: 7 }).name("LitSphere Texture").onChange(function (value) {
 			App.Shader = 2;
 			if (value == 1) {
-				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Green.jpg');
+				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(__webpack_require__(21));
 			} else if (value == 2) {
-				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Gold.jpg');
+				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(__webpack_require__(22));
 			} else if (value == 3) {
-				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Silver.jpg');
+				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(__webpack_require__(16));
 			} else if (value == 4) {
-				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Flame.jpg');
+				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(__webpack_require__(23));
 			} else if (value == 5) {
-				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Lights.jpg');
+				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(__webpack_require__(24));
 			} else if (value == 6) {
-				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Brown.bmp');
+				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(__webpack_require__(25));
 			} else {
-				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture('./assets/textures/Normal1.jpg');
+				litSphere_Material.uniforms.texture.value = THREE.ImageUtils.loadTexture(__webpack_require__(26));
 			}
 	
 			onreset(App.scene);
@@ -51583,27 +51583,69 @@
 
 /***/ }),
 /* 16 */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
 
-	module.exports = "varying vec2 f_uv;\r\n\r\nvoid main()\r\n{\r\n    vec4 pos = vec4(position, 1.0);\r\n    vec3 dir_camToVertex = normalize(vec3(modelViewMatrix * pos)); //direction vector: camera to vertex position\r\n\t\r\n\t//normalMatrix is inverse transpose of model view matrix\r\n    vec3 nor = normalize(normalMatrix * normal); //normal in screen space\r\n\r\n    vec3 reflected = reflect(dir_camToVertex, nor);\r\n\t\r\n\tf_uv.x = reflected.x / (2.0 * sqrt(pow(reflected.x, 2.0) + \r\n\t\t\t\t\t\t\t\t       pow(reflected.y, 2.0) + \r\n        \t\t\t\t\t\t\t   pow(reflected.z + 1.0, 2.0))) + 0.5;\r\n\t\r\n\tf_uv.y = reflected.y / (2.0 * sqrt(pow(reflected.x, 2.0) + \r\n\t\t\t\t\t\t\t\t       pow(reflected.y, 2.0) + \r\n        \t\t\t\t\t\t\t   pow(reflected.z + 1.0, 2.0))) + 0.5;\r\n\r\n    gl_Position = projectionMatrix * modelViewMatrix * pos;\r\n}"
+	module.exports = __webpack_require__.p + "./assets/Silver-bb39da.bmp";
 
 /***/ }),
 /* 17 */
 /***/ (function(module, exports) {
 
-	module.exports = "uniform sampler2D texture;\r\nuniform vec3 u_albedo;\r\nuniform vec3 lightPos;\r\n\r\nvarying vec2 f_uv;\r\n\r\nvoid main() \r\n{\r\n    gl_FragColor = vec4(texture2D(texture, f_uv).rgb * u_albedo, 1.0);\r\n}"
+	module.exports = "varying vec2 f_uv;\r\n\r\nvoid main()\r\n{\r\n    vec4 pos = vec4(position, 1.0);\r\n    vec3 dir_camToVertex = normalize(vec3(modelViewMatrix * pos)); //direction vector: camera to vertex position\r\n\t\r\n\t//normalMatrix is inverse transpose of model view matrix\r\n    vec3 nor = normalize(normalMatrix * normal); //normal in screen space\r\n\r\n    vec3 reflected = reflect(dir_camToVertex, nor);\r\n\t\r\n\tf_uv.x = reflected.x / (2.0 * sqrt(pow(reflected.x, 2.0) + \r\n\t\t\t\t\t\t\t\t       pow(reflected.y, 2.0) + \r\n        \t\t\t\t\t\t\t   pow(reflected.z + 1.0, 2.0))) + 0.5;\r\n\t\r\n\tf_uv.y = reflected.y / (2.0 * sqrt(pow(reflected.x, 2.0) + \r\n\t\t\t\t\t\t\t\t       pow(reflected.y, 2.0) + \r\n        \t\t\t\t\t\t\t   pow(reflected.z + 1.0, 2.0))) + 0.5;\r\n\r\n    gl_Position = projectionMatrix * modelViewMatrix * pos;\r\n}"
 
 /***/ }),
 /* 18 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-	module.exports = __webpack_require__.p + "./assets/LavaLamp_metal-8b63ab.obj";
+	module.exports = "uniform sampler2D texture;\r\nuniform vec3 u_albedo;\r\nuniform vec3 lightPos;\r\n\r\nvarying vec2 f_uv;\r\n\r\nvoid main() \r\n{\r\n    gl_FragColor = vec4(texture2D(texture, f_uv).rgb * u_albedo, 1.0);\r\n}"
 
 /***/ }),
 /* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
+	module.exports = __webpack_require__.p + "./assets/LavaLamp_metal-8b63ab.obj";
+
+/***/ }),
+/* 20 */
+/***/ (function(module, exports, __webpack_require__) {
+
 	module.exports = __webpack_require__.p + "./assets/LavaLamp_glass-b51713.obj";
+
+/***/ }),
+/* 21 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__.p + "./assets/Green-13adc2.bmp";
+
+/***/ }),
+/* 22 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__.p + "./assets/Gold-18a4ff.bmp";
+
+/***/ }),
+/* 23 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__.p + "./assets/Flame-6aaec9.bmp";
+
+/***/ }),
+/* 24 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__.p + "./assets/Lights-eaf0da.bmp";
+
+/***/ }),
+/* 25 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__.p + "./assets/Brown-47ac47.bmp";
+
+/***/ }),
+/* 26 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__.p + "./assets/Normal-38c0d1.bmp";
 
 /***/ })
 /******/ ]);
