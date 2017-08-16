@@ -26,7 +26,7 @@ export default class Metaball
     this.visualDebug = visualDebug;
 
     this.radius = radius;
-    offset = 1.5 * radius; //offset is more than radius because we can have influences from multiple spheres
+    offset = 1.9 * radius; //offset is more than radius because we can have influences from multiple spheres
     this.radius2 = radius * radius;
     this.mesh = null;
 
@@ -66,7 +66,7 @@ export default class Metaball
     {
       this.vel.x = -this.vel.x;
     }
-    if((this.pos.y >= this.gridHeight - offset) || (this.pos.y <= offset))
+    if((this.pos.y >= this.gridHeight - offset*0.7) || (this.pos.y <= offset*0.7))
     {
       this.vel.y = -this.vel.y;
     }
@@ -76,7 +76,7 @@ export default class Metaball
     }
 
     this.pos.x += this.vel.x;
-    this.pos.y += this.vel.y;
+    this.pos.y += 2*this.vel.y;
     this.pos.z += this.vel.z;
     this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
   }

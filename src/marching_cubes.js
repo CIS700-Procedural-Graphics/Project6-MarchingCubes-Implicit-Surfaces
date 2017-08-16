@@ -10,23 +10,6 @@ const LAMBERT_GREEN = new THREE.MeshBasicMaterial( { color: 0x00ee00, transparen
 const WIREFRAME_MAT = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10 } );
 const LAMBERT_BLUE = new THREE.MeshLambertMaterial( { color: 0x2194ce, side: THREE.DoubleSide } );
 
-var color_Material = new THREE.ShaderMaterial({
-  uniforms: {
-    metaball_color:
-    {
-        type: "v3",
-        value: new THREE.Color(0x2194ce)
-    },
-    lightPos:
-    {
-        type: "v3",
-        value: new THREE.Vector3(1.0, 10.0, 2.0)
-    }
-  },
-  vertexShader: require('./shaders/iridescent-vert.glsl'),
-  fragmentShader: require('./shaders/iridescent-frag.glsl')
-});
-
 //Made balls[] and numMetaballs global variables to improve efficiency;
 //This lets us calculate the normals at the isosurface for that point alone,
 //instead of for all the corner points and then having to lerp between the resultant values.
@@ -298,7 +281,7 @@ export default class MarchingCubes
     }
     this.updateMesh();
 
-    color_Material.lightPos = this.lightPos;
+    this.material.lightPos = this.lightPos;
   }
 
 
@@ -337,7 +320,7 @@ export default class MarchingCubes
     //this way you don't have to keep re-allocating and de-allocating memory.
 
     var trigeo = new THREE.Geometry();
-    this.mesh = new THREE.Mesh(trigeo, color_Material);
+    this.mesh = new THREE.Mesh(trigeo, this.material);
     this.mesh.geometry.dynamic = true;
 
     this.scene.add(this.mesh);

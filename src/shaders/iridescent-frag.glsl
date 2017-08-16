@@ -2,13 +2,13 @@ uniform vec3 metaball_color;
 
 varying vec3 f_position; //point in the scene
 varying vec3 f_normal; //normal of the same point
-varying vec3 camP; //camera position
+varying vec3 cam_position; //camera position
 
 void main()
 {
     vec4 color = vec4(metaball_color, 1.0);
 
-    float t = clamp(dot(f_normal, normalize(camP - f_position)), 0.0, 1.0);
+    float t = clamp(dot(f_normal, normalize(cam_position - f_position)), 0.0, 1.0);
 
     //color pallete
     //condenses 3 color dimensions into a single dimensional quantity
