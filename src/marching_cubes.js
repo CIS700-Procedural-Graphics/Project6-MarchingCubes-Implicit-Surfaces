@@ -351,6 +351,9 @@ export default class MarchingCubes
         }
       }
 
+      //uncomment to print number of triangles ---> 32fps with ~3500 triangles on a 1070
+      //console.log("triangles: " + (faces.length));
+
       this.mesh.geometry.vertices = vertexPos;
       this.mesh.geometry.faces = faces;
 

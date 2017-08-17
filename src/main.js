@@ -225,7 +225,7 @@ function setupGUI(gui, scene)
 	// 	onreset(App.scene);
 	// });
 
-	gui.add(App.config, 'numMetaballs', 1, 10).name("Number of Metaballs").onChange(function(value) {
+	gui.add(App.config, 'numMetaballs', 1, 10).name("Number of Metaballs").step(1).onChange(function(value) {
 		onreset(App.scene);
 	});
 	gui.add(App.config, 'speed', 0.01, DEFAULT_MAX_SPEED).name("Speed").onChange(function(value) {
