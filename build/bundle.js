@@ -278,7 +278,7 @@
 		// 	onreset(App.scene);
 		// });
 	
-		gui.add(App.config, 'numMetaballs', 1, 10).name("Number of Metaballs").onChange(function (value) {
+		gui.add(App.config, 'numMetaballs', 1, 10).name("Number of Metaballs").step(1).onChange(function (value) {
 			onreset(App.scene);
 		});
 		gui.add(App.config, 'speed', 0.01, DEFAULT_MAX_SPEED).name("Speed").onChange(function (value) {
@@ -50474,6 +50474,9 @@
 	          faces.push(face);
 	        }
 	      }
+	
+	      //uncomment to print number of triangles ---> 32fps with ~3500 triangles on a 1070
+	      //console.log("triangles: " + (faces.length));
 	
 	      this.mesh.geometry.vertices = vertexPos;
 	      this.mesh.geometry.faces = faces;
