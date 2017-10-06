@@ -14,7 +14,7 @@ function init(callback, update) {
   stats.domElement.style.top = '0px';
   document.body.appendChild(stats.domElement);
 
-  var gui = new DAT.GUI();
+  var gui = new DAT.GUI( { width: 300 } );
 
   var framework = {
     gui: gui,
@@ -34,7 +34,7 @@ function init(callback, update) {
     var controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.enableZoom = true;
-    controls.target.set(0, 0, 0);
+    controls.target.set(0, 10, 0);
     controls.rotateSpeed = 0.3;
     controls.zoomSpeed = 1.0;
     controls.panSpeed = 2.0;

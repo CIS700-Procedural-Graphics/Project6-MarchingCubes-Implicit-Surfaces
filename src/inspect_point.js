@@ -2,6 +2,7 @@ const THREE = require('three');
 
 const POINT_MATERIAL = new THREE.PointsMaterial( { color: 0xee1111, size: 10, sizeAttenuation: true } );
 
+//This entire class is used only for debugging to display iso-values at the gridpoints
 export default class InspectPoint {
 
   constructor(pos, isovalue, visualDebug) {
@@ -26,9 +27,9 @@ export default class InspectPoint {
     this.label.style.height = 100;
     this.label.style.userSelect = 'none';
     this.label.style.cursor = 'default';
-    this.label.style.fontSize = '0.3em';
+    this.label.style.fontSize = '0.7em';
     this.label.style.pointerEvents = 'none';
-    document.body.appendChild(this.label);    
+    document.body.appendChild(this.label);
   };
 
   updateLabel(camera) {
@@ -40,7 +41,8 @@ export default class InspectPoint {
       this.label.style.top = screenPos.y + 'px';
       this.label.style.left = screenPos.x + 'px';
       this.label.innerHTML = this.isovalue.toFixed(2);
-      this.label.style.opacity = this.isovalue - 0.5;      
+      //for dynamic opacity that changes wrt the isolevel
+      this.label.style.opacity = this.isovalue - 0.5;
     }
   };
 

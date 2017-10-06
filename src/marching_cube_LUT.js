@@ -7,6 +7,8 @@
 // http://local.wasp.uwa.edu.au/~pbourke/geometry/polygonise/
 // who in turn got them from Cory Gene Bloyd.
 
+//EDGE_TABLE stores all possible combinations for the edges
+//intersected by the isosurface as 12bit numbers
 var EDGE_TABLE = new Int32Array([
     0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
     0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
@@ -42,6 +44,10 @@ var EDGE_TABLE = new Int32Array([
     0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0
 ])
 
+//TRI_TABLE stores indices that determine the which edges the triangle vertices lie on;
+// So for every triangle there are a set of 3 indices;
+//every voxel can contain 0-5 triangles
+// every 16th element is -1, which is used as a indicator telling us that there are no more triangles
 var TRI_TABLE = new Int32Array([
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
