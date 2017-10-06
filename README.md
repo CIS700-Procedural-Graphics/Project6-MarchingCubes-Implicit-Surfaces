@@ -12,16 +12,16 @@ Since the resulting iso-surface is defined by a density or influence function, t
 
 ### Marching Cubes Algorithm
 
-To ease the computation involved, we voxelize the space up to a desired resolution and then for every voxel query the density function and use the reulting values to draw a 3D polygonal approximation of the surface. There are 256 (2^8) configurations for a voxel sampled at its 8 corners, however only 15 different configurations can be used to represent all 256 due to symmetry and with the help of rotations; and all of these configurations can be represented with upto 5 triangles/voxel.
-
 ![](Images/MC_Cases.jpg)
+
+To ease the computation involved, we voxelize the space up to a desired resolution and then for every voxel query the density function and use the reulting values to draw a 3D polygonal approximation of the surface. There are 256 (2^8) configurations for a voxel sampled at its 8 corners, however only 15 different configurations can be used to represent all 256 due to symmetry and with the help of rotations; and all of these configurations can be represented with upto 5 triangles/voxel.
 
 #### Linear Interpolation
 
-The polygonal configurations above can be made a more accurate representation of the isosurface even at low resolutions by using the density values at the corners to find new points on the bounding box of the voxel to define the lines that make the triangles of the isosurface.
-
 ![](Images/Lerp_examples.jpg)
 _A 2D example showing how varying densities can effect the edge (isoline) that is formed._
+
+The polygonal configurations above can be made a more accurate representation of the isosurface even at low resolutions by using the density values at the corners to find new points on the bounding box of the voxel to define the lines that make the triangles of the isosurface.
 
 ### Look Up Tables
 
@@ -33,9 +33,9 @@ This table returns a 12-bit number that represents the edges intersected by the 
 
 #### TRI_TABLE: 
 
-This table stores the triangle indices corresponding to the vertex positions on the edges identified above. Every 16 elements in the table represents a possible polygonizing configuration. Within each configuration, every three consecutive elements represents the indices of a triangle that should be created from the edges above.
-
 ![](Images/Voxel_Indexing.jpg)
+
+This table stores the triangle indices corresponding to the vertex positions on the edges identified above. Every 16 elements in the table represents a possible polygonizing configuration. Within each configuration, every three consecutive elements represents the indices of a triangle that should be created from the edges above.
 
 ### Normal Calculations
 
