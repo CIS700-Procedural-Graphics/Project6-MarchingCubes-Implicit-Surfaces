@@ -23,21 +23,21 @@ The polygonal configurations above can be made a more accurate representation of
 ![](images/Lerp_examples.jpg)
 _A 2D example showing how varying densities can effect the edge (isoline) that is formed._
 
-#### Look Up Tables
+### Look Up Tables
 
 The eight corners of the voxel can be represented by an 8-bit number, where 1 means the isovalue is above or below the isolevel based on some predefined threshold.And the twelve edges of the voxel can be represented as a 12-bit number, where 1 means that the isosurface intersects with this edge.
 
-##### EDGE_TABLE: 
+#### EDGE_TABLE: 
 
 This table returns a 12-bit number that represents the edges intersected by the isosurface. For each intersected edge, we can compute the linearly interpolated vertex position on the edge according to the isovalue at each end corner of the edge.
 
-##### TRI_TABLE: 
+#### TRI_TABLE: 
 
 This table stores the triangle indices corresponding to the vertex positions on the edges identified above. Every 16 elements in the table represents a possible polygonizing configuration. Within each configuration, every three consecutive elements represents the indices of a triangle that should be created from the edges above.
 
 ![](images/Voxel_Indexing.jpg)
 
-#### Normal Calculations
+### Normal Calculations
 
 Having implemented all of the above, our metaballs would look quite low poly at lower resolutions. An easy fix for this is to calculate the normal for all the points that makes the polygonal configuration of the voxel. This gives us per-vertex data for normals which when passed through a fragment shader results in a much smoother surface than before (it is the equivalent of the switch from having normals per face to having normals per vertex of the mesh). 
 
@@ -51,7 +51,7 @@ For 3D density functions the normal would be represented as:
 
 ![](images/normalEquation.png)
 
-#### Density Function
+### Density Function
 Defined as the sum of the influences of all the metaballs within its vicinity, which have a inverse square fall-off in terms of intensity
 
 ![](images/isoValueEquation.png)
