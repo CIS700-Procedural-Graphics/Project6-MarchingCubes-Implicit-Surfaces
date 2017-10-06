@@ -19,6 +19,7 @@ To ease the computation involved, we voxelize the space up to a desired resoluti
 #### Linear Interpolation
 
 ![](Images/Lerp_examples.jpg)
+
 _A 2D example showing how varying densities can effect the edge (isoline) that is formed._
 
 The polygonal configurations above can be made a more accurate representation of the isosurface even at low resolutions by using the density values at the corners to find new points on the bounding box of the voxel to define the lines that make the triangles of the isosurface.
