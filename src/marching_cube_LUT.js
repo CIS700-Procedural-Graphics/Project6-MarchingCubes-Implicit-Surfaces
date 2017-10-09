@@ -4,7 +4,7 @@
 
 // Got these tables from https://www.clicktorelease.com/code/bumpy-metaballs/
 // These tables are straight from Paul Bourke's page:
-// http://local.wasp.uwa.edu.au/~pbourke/geometry/polygonise/
+// http://paulbourke.net/geometry/polygonise/
 // who in turn got them from Cory Gene Bloyd.
 
 var EDGE_TABLE = new Int32Array([

@@ -17,7 +17,7 @@ export default class Metaball {
     this.radius2 = radius * radius;
     this.mesh = null;
 
-    if (visualDebug) {      
+    if (visualDebug) {
       this.makeMesh();
     }
   }
@@ -26,6 +26,7 @@ export default class Metaball {
     this.mesh = new THREE.Mesh(SPHERE_GEO, LAMBERT_WHITE);
     this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
     this.mesh.scale.set(this.radius, this.radius, this.radius);
+    this.mesh.geometry.dynamic = true;
   }
 
   show() {
@@ -40,7 +41,23 @@ export default class Metaball {
     }
   };
 
-  update() {
-    // @TODO
+  update(visualDebug) {
+    // TODO: Move metaball position based on its velocity
+    // Reverse the velocity whenever the metaball goes out of bounds
+    var thres = this.radius + this.gridWidth * 0.1;
+    var max = this.gridWidth - thres;
+    var pos = this.pos;
+    if (pos.x < thres || pos.y < thres || pos.z < thres ||
+        pos.x > max || pos.y > max || pos.z > max) {
+      this.vel.multiplyScalar(-1);
+    }
+    this.pos.set(pos.x + this.vel.x, pos.y + this.vel.y, pos.z + this.vel.z);
+    if (visualDebug) {
+      if (!this.mesh) {
+        this.makeMesh();
+      }
+      this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
+      this.mesh.geometry.verticesNeedUpdate = true;
+    }
   }
 }
