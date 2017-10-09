@@ -1,6 +1,6 @@
 # Metaballs and Marching cubes
 
-### View the project [here](https://sknop8.github.io/Metaballs/)!
+### View the project [here](https://sknop8.github.io/MarchingCubes-Metaballs/)!
 
 I implemented an isosurface created from metaballs using the marching cubes algorithm!!
 
