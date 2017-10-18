@@ -1,2 +1,4 @@
 node_modules
 npm-debug.log
+.DS_Store
+images/.DS_Store
