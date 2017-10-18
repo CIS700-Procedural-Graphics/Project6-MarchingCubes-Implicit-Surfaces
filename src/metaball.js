@@ -6,8 +6,8 @@ var LAMBERT_WHITE = new THREE.MeshLambertMaterial( { color: 0x9EB3D8, transparen
 var frame = 0;
 
 export default class Metaball {
-  constructor(pos, radius, vel, gridWidth, visualDebug) {
-    this.init(pos, radius, vel, gridWidth, visualDebug);
+  constructor(pos, radius, vel, gridWidth, maxRadius, visualDebug) {
+    this.init(pos, radius, vel, gridWidth, maxRadius, visualDebug);
   }
 
   init(pos, radius, vel, gridWidth, maxRadius, visualDebug) {
@@ -45,36 +45,36 @@ export default class Metaball {
 
   update(i) {
     
-    var offset = 1.0;
+  //   var offset = 1.0;
 	  
-		var x = this.pos.x + offset + this.radius;
-		var minX = this.pos.x - offset - this.radius;
+		// var x = this.pos.x + offset + this.radius;
+		// var minX = this.pos.x - offset - this.radius;
 
-    var y = this.pos.y + offset + this.radius;
-    var minY = this.pos.y - offset - this.radius;
+  //   var y = this.pos.y + offset + this.radius;
+  //   var minY = this.pos.y - offset - this.radius;
 
-    var z = this.pos.z + offset + this.radius;
-    var minZ = this.pos.z - offset - this.radius;
+  //   var z = this.pos.z + offset + this.radius;
+  //   var minZ = this.pos.z - offset - this.radius;
 
-    if (x >= this.gridWidth || minX <= 0.0) {
-      this.vel.x = -this.vel.x;
-    }
-    if (y >= this.gridWidth || minY <= 0.0) {
-      this.vel.y = -this.vel.y;
-    }
-    if (z >= this.gridWidth || minZ <= 0.0) {
-      this.vel.z = -this.vel.z;
-    }
+  //   if (x >= this.gridWidth || minX <= 0.0) {
+  //     this.vel.x = -this.vel.x;
+  //   }
+  //   if (y >= this.gridWidth || minY <= 0.0) {
+  //     this.vel.y = -this.vel.y;
+  //   }
+  //   if (z >= this.gridWidth || minZ <= 0.0) {
+  //     this.vel.z = -this.vel.z;
+  //   }
 
     
-		//this.pos.x += this.vel.x;
-    //this.pos.y += this.vel.y;
-		//this.pos.z += this.vel.z;
+		// this.pos.x += this.vel.x;
+    // this.pos.y += this.vel.y;
+		// this.pos.z += this.vel.z;
     var angleOffset = 2.0 * Math.PI / 360;
     var origin = this.gridWidth / 2;
     var radius = this.gridWidth / 2 - this.maxRadius*2-1;
-    this.pos.x = origin + radius * Math.cos(angleOffset*frame*i/20);
-    this.pos.y = origin + radius * Math.sin(angleOffset*frame*i/20);
+    this.pos.x = origin + radius * Math.cos(angleOffset*frame*i/30);
+    this.pos.y = origin + radius * Math.sin(angleOffset*frame*i/30);
     frame++;
     
     if (this.mesh)

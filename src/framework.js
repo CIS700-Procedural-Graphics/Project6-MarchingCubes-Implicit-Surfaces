@@ -8,16 +8,16 @@ import DAT from 'dat-gui'
 // then, every frame, the function passed as `update` will be executed
 function init(callback, update) {
   var stats = new Stats();
-  stats.setMode(1);
+  stats.setMode(0);
   stats.domElement.style.position = 'absolute';
   stats.domElement.style.left = '0px';
   stats.domElement.style.top = '0px';
-  document.body.appendChild(stats.domElement);
+  //document.body.appendChild(stats.domElement);
 
-  var gui = new DAT.GUI();
+  //var gui = new DAT.GUI();
 
   var framework = {
-    gui: gui,
+    //gui: gui,
     stats: stats
   };
 
@@ -55,6 +55,7 @@ function init(callback, update) {
     framework.scene = scene;
     framework.camera = camera;
     framework.renderer = renderer;
+    framework.controls = controls;
 
     // begin the animation loop
     (function tick() {
