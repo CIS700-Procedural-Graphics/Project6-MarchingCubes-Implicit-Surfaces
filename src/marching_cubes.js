@@ -288,14 +288,14 @@ export default class MarchingCubes {
 
     var currGeo = new THREE.Geometry();
     currGeo.dynamic = true;
-    var redMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, transparent: true, opacity: 0.5 });
+    var redMaterial = new THREE.MeshLambertMaterial( { color: 0xff0000, transparent: true, opacity: 1, side: THREE.DoubleSide });
 
     var workingMaterial = new THREE.ShaderMaterial({
       vertexShader: require('./shaders/my-vert.glsl'),
       fragmentShader: require('./shaders/my-frag.glsl')
     }); //-HB
 
-    var m = new THREE.Mesh( currGeo, workingMaterial );
+    var m = new THREE.Mesh( currGeo, redMaterial );
     m.position.set(0.0, 0.0, 0.0);
 
     this.scene.add(m);
