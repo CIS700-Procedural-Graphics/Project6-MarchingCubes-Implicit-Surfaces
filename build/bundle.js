@@ -42,7 +42,7 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -70,12 +70,12 @@
 	
 	var DEFAULT_VISUAL_DEBUG = true;
 	var DEFAULT_ISO_LEVEL = 1.0;
-	var DEFAULT_GRID_RES = 20;
+	var DEFAULT_GRID_RES = 25;
 	var DEFAULT_GRID_WIDTH = 10;
 	var DEFAULT_NUM_METABALLS = 10;
 	var DEFAULT_MIN_RADIUS = 0.5;
 	var DEFAULT_MAX_RADIUS = 1;
-	var DEFAULT_MAX_SPEED = 0.01;
+	var DEFAULT_MAX_SPEED = 0.3;
 	
 	var App = {
 	  // 
@@ -220,9 +220,9 @@
 	// when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
 	_framework2.default.init(onLoad, onUpdate);
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -314,9 +314,9 @@
 	  init: init
 	};
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	// stats.js - http://github.com/mrdoob/stats.js
 	var Stats=function(){var l=Date.now(),m=l,g=0,n=Infinity,o=0,h=0,p=Infinity,q=0,r=0,s=0,f=document.createElement("div");f.id="stats";f.addEventListener("mousedown",function(b){b.preventDefault();t(++s%2)},!1);f.style.cssText="width:80px;opacity:0.9;cursor:pointer";var a=document.createElement("div");a.id="fps";a.style.cssText="padding:0 0 3px 3px;text-align:left;background-color:#002";f.appendChild(a);var i=document.createElement("div");i.id="fpsText";i.style.cssText="color:#0ff;font-family:Helvetica,Arial,sans-serif;font-size:9px;font-weight:bold;line-height:15px";
@@ -326,16 +326,16 @@
 	a+"px",m=b,r=0);return b},update:function(){l=this.end()}}};"object"===typeof module&&(module.exports=Stats);
 
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	module.exports = __webpack_require__(4)
 	module.exports.color = __webpack_require__(5)
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	/**
 	 * dat-gui JavaScript Controller Library
@@ -3998,9 +3998,9 @@
 	dat.dom.dom,
 	dat.utils.common);
 
-/***/ },
+/***/ }),
 /* 5 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	/**
 	 * dat-gui JavaScript Controller Library
@@ -4758,9 +4758,9 @@
 	dat.color.toString,
 	dat.utils.common);
 
-/***/ },
+/***/ }),
 /* 6 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
 		 true ? factory(exports) :
@@ -47061,9 +47061,9 @@
 	})));
 
 
-/***/ },
+/***/ }),
 /* 7 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = function( THREE ) {
 		/**
@@ -48087,9 +48087,9 @@
 	};
 
 
-/***/ },
+/***/ }),
 /* 8 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	"use strict";
 	
@@ -48114,9 +48114,9 @@
 	    TRI_TABLE: TRI_TABLE
 	};
 
-/***/ },
+/***/ }),
 /* 9 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -48450,14 +48450,14 @@
 	
 	      var currGeo = new THREE.Geometry();
 	      currGeo.dynamic = true;
-	      var redMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.5 });
+	      var redMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000, transparent: true, opacity: 1, side: THREE.DoubleSide });
 	
 	      var workingMaterial = new THREE.ShaderMaterial({
 	        vertexShader: __webpack_require__(12),
 	        fragmentShader: __webpack_require__(13)
 	      }); //-HB
 	
-	      var m = new THREE.Mesh(currGeo, workingMaterial);
+	      var m = new THREE.Mesh(currGeo, redMaterial);
 	      m.position.set(0.0, 0.0, 0.0);
 	
 	      this.scene.add(m);
@@ -48772,9 +48772,9 @@
 	  return Voxel;
 	}();
 
-/***/ },
+/***/ }),
 /* 10 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -48883,9 +48883,9 @@
 	
 	exports.default = Metaball;
 
-/***/ },
+/***/ }),
 /* 11 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -48964,24 +48964,24 @@
 	
 	exports.default = InspectPoint;
 
-/***/ },
+/***/ }),
 /* 12 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = "\nvarying vec2 f_uv;\nvarying vec3 f_normal;\nvarying vec3 f_position;\n\nvoid main() {\n\n\tf_uv = uv;\n    f_normal = normal;\n    f_position = position;\n    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n}"
 
-/***/ },
+/***/ }),
 /* 13 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = "\n #define M_PI 3.1415926535897932384626433832795\n\nvarying vec3 f_position;\nvarying vec3 f_normal;\nvarying vec2 f_uv;\n\nfloat colorFunc(float t, float rgb) {\n\tfloat a = 0.5;\n\tfloat b = 0.5;\n\tfloat c = 1.0;\n\tfloat d = 0.0;\n\n\t// r component\n\tif (rgb == 0.0) {\n\t\td = 0.0;\n\t// g component\n\t} else if (rgb == 1.0) {\n\t\td = .33;\n\t// b component\n\t} else if (rgb == 2.0) {\n\t\td = .67;\n\t} else {\n\t\td = -1.0; // want to error because inputed wrong rgb val\n\t}\n\n\treturn a + b * cos(2.0 * M_PI * (c*t + d));\n}\n\nvoid main() {\n    // not including texture color because did not look nice together with iridescence\n\n    float d = clamp(dot(f_normal, normalize(cameraPosition - f_position)), 0.0, 1.0);\n    // d = dot between frag normal and ray from camera to frag vertex\n    // using d as weight on color palette\n\n    // getting color value based on cos function\n\tgl_FragColor = vec4(colorFunc(d, 0.0), colorFunc(d, 1.0), colorFunc(d, 2.0), 1.0);    \n}"
 
-/***/ },
+/***/ }),
 /* 14 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	module.exports = __webpack_require__.p + "index.html";
 
-/***/ }
+/***/ })
 /******/ ]);
 //# sourceMappingURL=bundle.js.map
