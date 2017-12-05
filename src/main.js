@@ -17,7 +17,7 @@ const DEFAULT_GRID_WIDTH = 10;
 const DEFAULT_NUM_METABALLS = 10;
 const DEFAULT_MIN_RADIUS = 0.5;
 const DEFAULT_MAX_RADIUS = 1;
-const DEFAULT_MAX_SPEED = 0.01;
+const DEFAULT_MAX_SPEED = 0.3;
 
 var App = {
   // 
