@@ -12,12 +12,12 @@ import MarchingCubes from './marching_cubes.js'
 
 const DEFAULT_VISUAL_DEBUG = true;
 const DEFAULT_ISO_LEVEL = 1.0;
-const DEFAULT_GRID_RES = 4;
+const DEFAULT_GRID_RES = 25;
 const DEFAULT_GRID_WIDTH = 10;
 const DEFAULT_NUM_METABALLS = 10;
 const DEFAULT_MIN_RADIUS = 0.5;
 const DEFAULT_MAX_RADIUS = 1;
-const DEFAULT_MAX_SPEED = 0.01;
+const DEFAULT_MAX_SPEED = 0.3;
 
 var App = {
   // 
@@ -145,11 +145,11 @@ function setupGUI(gui) {
     App.marchingCubes.showSpheres = value;
     if (value) {
       for (var i = 0; i < App.config.numMetaballs; i++) {
-        App.marchingCubes.balls[i].show();
+        App.marchingCubes.showBall(i);
       }
     } else {
       for (var i = 0; i < App.config.numMetaballs; i++) {
-        App.marchingCubes.balls[i].hide();
+        App.marchingCubes.hideBall(i);
       }
     }
   });
